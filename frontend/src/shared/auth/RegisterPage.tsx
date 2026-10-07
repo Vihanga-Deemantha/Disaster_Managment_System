@@ -1,135 +1,27 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, type ComponentType, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
-import type { RegisterRequest } from '@contracts/auth';
-import { DISTRICTS, type District } from '@contracts/enums';
-import { ApiError } from '@/shared/api/errors';
+import type { District } from '@contracts/enums';
 import { districtLabel, useI18n } from '@/shared/i18n/I18nProvider';
-import { translateCode, translateError } from '@/shared/i18n/translateError';
+import { translateError } from '@/shared/i18n/translateError';
+import { useDocumentTitle } from '@/shared/layout/useDocumentTitle';
 import { Alert } from '@/shared/ui/Alert';
 import { Button } from '@/shared/ui/Button';
 import { Dialog } from '@/shared/ui/Dialog';
-import { Spinner } from '@/shared/ui/Spinner';
+import { Icon } from '@/shared/ui/Icon';
+import { ScreenSpinner } from '@/shared/ui/ScreenSpinner';
 import { useAuth } from './AuthContext';
 import { AuthLayout } from './AuthLayout';
 import { homePathFor } from './homePath';
-import {
-  emptyForm,
-  serverFieldCodes,
-  toRequest,
-  validate,
-  type FieldCodes,
-  type FieldName,
-  type RegisterFormValues,
-} from './registerForm';
-import { AlertSection, IdentitySection, LocationSection } from './RegisterSections';
+import { LAST_STEP, STEPS, type Step } from './registrationSteps';
+import { AboutStep, AlertsStep, LocationStep, type StepProps } from './RegisterSteps';
+import { StepIndicator } from './StepIndicator';
+import { useRegistration } from './useRegistration';
 
-/** Which visible field a changed value belongs to, so typing clears that field's server error. */
-const FIELD_OF_KEY: Partial<Record<keyof RegisterFormValues, FieldName>> = {
-  nic: 'nic',
-  fullName: 'fullName',
-  phone: 'phone',
-  password: 'password',
-  district: 'district',
-  lat: 'location',
-  lng: 'location',
-  addressLine: 'addressLine',
-  email: 'email',
+const STEP_BODY: Record<Step, ComponentType<StepProps>> = {
+  1: AboutStep,
+  2: LocationStep,
+  3: AlertsStep,
 };
-
-function suggestedDistrict(error: ApiError): District | undefined {
-  const value = error.details.suggestedDistrict;
-  return DISTRICTS.find((district) => district === value);
-}
-
-/** All the form's state and the submit flow, kept out of the markup so the page stays readable. */
-function useRegistration(onRegistered: (role: Parameters<typeof homePathFor>[0]) => void) {
-  const { t, language } = useI18n();
-  const auth = useAuth();
-  const [values, setValues] = useState(() => emptyForm(language));
-  const [touched, setTouched] = useState<ReadonlySet<FieldName>>(new Set());
-  const [submitted, setSubmitted] = useState(false);
-  const [serverCodes, setServerCodes] = useState<FieldCodes>({});
-  const [failure, setFailure] = useState<unknown>();
-  const [busy, setBusy] = useState(false);
-  const [mismatch, setMismatch] = useState<District | null>(null);
-  const [focusRequest, setFocusRequest] = useState(0);
-  const clientCodes = useMemo(() => validate(values), [values]);
-
-  // Until the person picks an alert language themselves, it follows the interface language: a Sinhala
-  // speaker who switches the page to Sinhala should not end up with English alerts by accident.
-  const alertLanguageChosen = useRef(false);
-  useEffect(() => {
-    if (!alertLanguageChosen.current)
-      setValues((previous) => ({ ...previous, preferredLanguage: language }));
-  }, [language]);
-
-  const set: <K extends keyof RegisterFormValues>(key: K, value: RegisterFormValues[K]) => void = (
-    key,
-    value,
-  ) => {
-    if (key === 'preferredLanguage') alertLanguageChosen.current = true;
-    setValues((previous) => ({ ...previous, [key]: value }));
-    const field = FIELD_OF_KEY[key];
-    if (field) setServerCodes((previous) => ({ ...previous, [field]: undefined }));
-  };
-  const touch = (field: FieldName): void => setTouched((previous) => new Set(previous).add(field));
-  const error = (field: FieldName): string | undefined => {
-    const shown = submitted || touched.has(field) ? clientCodes[field] : undefined;
-    const code = serverCodes[field] ?? shown;
-    return code ? translateCode(t, code) : undefined;
-  };
-
-  function handleFailure(caught: unknown): void {
-    const suggestion =
-      caught instanceof ApiError && caught.code === 'DISTRICT_LOCATION_MISMATCH'
-        ? suggestedDistrict(caught)
-        : undefined;
-    if (suggestion) return setMismatch(suggestion);
-    if (caught instanceof ApiError) {
-      const codes = serverFieldCodes(caught.code, caught.fields);
-      if (Object.keys(codes).length > 0) {
-        setServerCodes(codes);
-        return setFocusRequest((count) => count + 1);
-      }
-    }
-    setFailure(caught);
-  }
-
-  async function submit(next: RegisterFormValues, confirmMismatch: boolean): Promise<void> {
-    setValues(next);
-    setSubmitted(true);
-    setServerCodes({});
-    setFailure(undefined);
-    setMismatch(null);
-    if (Object.keys(validate(next)).length > 0) return setFocusRequest((count) => count + 1);
-    setBusy(true);
-    try {
-      const user = await auth.register(toRequest(next, confirmMismatch) as RegisterRequest);
-      onRegistered(user.role);
-    } catch (caught) {
-      handleFailure(caught);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return { values, set, touch, error, busy, failure, mismatch, setMismatch, submit, focusRequest };
-}
-
-function PrivacyNotice() {
-  const { t } = useI18n();
-  return (
-    <aside
-      aria-labelledby="privacy-title"
-      className="mb-6 rounded-md border border-line bg-accent-100 p-4 text-sm"
-    >
-      <h2 id="privacy-title" className="font-bold text-navy-900">
-        {t('auth.privacy.title')}
-      </h2>
-      <p className="mt-1 text-ink">{t('auth.privacy.body')}</p>
-    </aside>
-  );
-}
 
 interface MismatchDialogProps {
   /** The district the server thinks is nearer, or null when the dialog is closed. */
@@ -171,65 +63,100 @@ function DistrictMismatchDialog({
   );
 }
 
+/** "Step 2 of 3", the step's title and a line saying why we ask. The title takes focus when the step changes. */
+function StepHeading({ step, focusOnChange }: { step: Step; focusOnChange: boolean }) {
+  const { t } = useI18n();
+  const heading = useRef<HTMLHeadingElement>(null);
+  const shownStep = useRef(step);
+  useEffect(() => {
+    if (focusOnChange && shownStep.current !== step) heading.current?.focus();
+    shownStep.current = step;
+  }, [step, focusOnChange]);
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[13px] font-bold text-accent-600">
+        {t('auth.register.stepCounter', { current: step, total: STEPS.length })}
+      </p>
+      <h1
+        ref={heading}
+        tabIndex={-1}
+        className="text-[32px] leading-[1.15] font-extrabold tracking-[-0.02em] break-words text-navy-900 focus-visible:outline-none"
+      >
+        {t(`auth.register.step${step}.title`)}
+      </h1>
+      <p className="text-[15px] leading-[1.6] text-ink-soft">
+        {t(`auth.register.step${step}.intro`)}
+      </p>
+    </div>
+  );
+}
+
+function WizardButtons({ step, busy, onBack }: { step: Step; busy: boolean; onBack: () => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="flex gap-2.5">
+      {step > 1 ? (
+        <Button variant="secondary" size="lg" onClick={onBack}>
+          {t('common.back')}
+        </Button>
+      ) : null}
+      <Button
+        type="submit"
+        size="lg"
+        className="flex-1"
+        loading={busy}
+        loadingLabel={t('auth.register.submitting')}
+      >
+        {step === LAST_STEP ? t('auth.register.submit') : t('auth.register.next')}
+        <Icon name="arrowRight" size={16} strokeWidth={2.4} />
+      </Button>
+    </div>
+  );
+}
+
 export function RegisterPage() {
   const { t } = useI18n();
   const { status, user } = useAuth();
   const navigate = useNavigate();
   const form = useRegistration((role) => navigate(homePathFor(role), { replace: true }));
   const formRef = useRef<HTMLFormElement>(null);
-  const { focusRequest } = form;
+  const { focusRequest, step } = form;
+  useDocumentTitle(`${t('auth.register.title')} · ${t('app.name')}`);
 
-  useEffect(() => {
-    const previous = document.title;
-    document.title = `${t('auth.register.title')} · ${t('app.name')}`;
-    return () => {
-      document.title = previous;
-    };
-  }, [t]);
+  // Declared after the heading's own focus effect, so when a failed submit both changes the step and
+  // asks for focus, the cursor ends up on the field with the problem and not on the title.
   useEffect(() => {
     if (focusRequest > 0)
       formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }, [focusRequest]);
 
-  if (status === 'loading') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-navy-900 text-white">
-        <Spinner />
-      </div>
-    );
-  }
+  if (status === 'loading') return <ScreenSpinner />;
   if (status === 'authenticated' && user) return <Navigate to={homePathFor(user.role)} replace />;
 
-  const section = { values: form.values, set: form.set, error: form.error, touch: form.touch };
+  const Body = STEP_BODY[step];
+  const stepProps = { values: form.values, set: form.set, error: form.error, touch: form.touch };
 
   return (
-    <AuthLayout title={t('auth.register.title')} intro={t('auth.register.intro')}>
-      <PrivacyNotice />
+    <AuthLayout variant="register">
+      <StepHeading step={step} focusOnChange />
+      <StepIndicator current={step} onSelect={form.goTo} />
       <form
         ref={formRef}
         noValidate
-        className="space-y-8"
+        className="flex flex-col gap-[18px]"
         onSubmit={(event: FormEvent) => {
           event.preventDefault();
-          void form.submit(form.values, false);
+          if (step === LAST_STEP) void form.submit(form.values, false);
+          else form.next();
         }}
       >
         {form.failure ? <Alert tone="danger">{translateError(t, form.failure)}</Alert> : null}
-        <IdentitySection {...section} />
-        <LocationSection {...section} />
-        <AlertSection {...section} />
-        <Button
-          type="submit"
-          className="w-full"
-          loading={form.busy}
-          loadingLabel={t('auth.register.submitting')}
-        >
-          {t('auth.register.submit')}
-        </Button>
+        <Body {...stepProps} />
+        <WizardButtons step={step} busy={form.busy} onBack={form.back} />
       </form>
-      <p className="mt-6 text-center text-sm text-ink-soft">
+      <p className="flex justify-center gap-1.5 text-sm text-ink-soft">
         {t('auth.register.haveAccount')}{' '}
-        <Link to="/login" className="font-semibold text-accent-700 underline">
+        <Link to="/login" className="font-bold text-accent-600 hover:text-accent-700">
           {t('auth.register.signInLink')}
         </Link>
       </p>
