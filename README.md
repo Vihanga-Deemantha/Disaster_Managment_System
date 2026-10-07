@@ -158,6 +158,14 @@ to their folders.
   MongoDB instead; each test file gets its own throwaway database.
 - **`argon2` fails to install**: the API falls back to bcrypt automatically and logs a warning; existing argon2 hashes
   cannot be checked on that machine, so seed it with its own database.
+- **CI fails with `Cannot find module '@rollup/rollup-linux-x64-gnu'`** (or `@esbuild/linux-x64`,
+  `lightningcss-linux-x64-gnu`, ...): `package-lock.json` has lost the Linux and macOS builds of the packages that ship one
+  native build per system (an npm bug, [npm/cli#4828](https://github.com/npm/cli/issues/4828)). It happens when a lockfile
+  is created next to an existing `node_modules` folder. `npm run verify:lockfile` lists what is missing (the pre-commit hook
+  and CI run it too). Do not add those packages as dependencies, and `npm ci --include=optional` changes nothing: optional
+  packages are installed by default. To repair it, delete `package-lock.json` **and** `node_modules`, run `npm install` in
+  the clean folder, then run `npm run verify:lockfile` and the whole test suite (a new lockfile re-resolves every package, so
+  expect some version changes).
 - **Repository inside OneDrive / Dropbox**: syncing `node_modules` is slow and can lock files during `npm install`.
   Prefer a folder outside the synced area (for example `C:\dev\safezone`), or exclude `node_modules` from sync.
 

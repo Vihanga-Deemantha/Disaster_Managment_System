@@ -19,6 +19,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "verify:lockfile": "node scripts/check-lockfile.mjs",
     "test": "npm run test -w backend && npm run test -w frontend",
     "test:e2e": "playwright test",
     "test:mutation": "npm run test:mutation -w backend --",
@@ -31,7 +32,8 @@
     ],
     "*.{json,md,css,yml,yaml}": [
       "prettier --write"
-    ]
+    ],
+    "package-lock.json": "node scripts/check-lockfile.mjs"
   },
   "overrides": {
     "shell-quote": "^1.12.0"
