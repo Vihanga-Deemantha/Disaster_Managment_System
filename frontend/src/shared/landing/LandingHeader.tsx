@@ -35,12 +35,16 @@ function TopBar() {
 const NAV_LINK =
   'flex min-h-11 items-center rounded-[10px] px-[11px] text-ink hover:bg-paper hover:text-accent-600';
 
+/**
+ * The section links. Tamil words are long: with them the header needs about 1090px, so Tamil gets the
+ * links later than English and Sinhala (which fit from 1024px) rather than wrapping onto a second row.
+ */
 function SiteNav() {
   const t = useT();
   return (
     <nav
       aria-label={t('landing.nav.label')}
-      className="ml-auto hidden items-center text-[14.5px] font-semibold whitespace-nowrap lg:flex"
+      className="ml-auto hidden items-center text-[14.5px] font-semibold whitespace-nowrap lg:[&:not(:lang(ta))]:flex min-[1160px]:flex"
     >
       <a href="#what-we-do" className={NAV_LINK}>
         {t('landing.nav.whatWeDo')}
@@ -64,7 +68,10 @@ export function LandingHeader() {
       <header className="sticky top-0 z-20 border-b border-line-soft bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex min-h-[76px] max-w-[1200px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:gap-x-5 sm:px-6">
           <Link to="/" className="flex-none rounded-lg">
-            <BrandMark tagline taglineClass="hidden min-[1260px]:block" />
+            <BrandMark
+              tagline
+              taglineClass="hidden min-[1260px]:block min-[1260px]:[&:lang(ta)]:hidden"
+            />
           </Link>
           <SiteNav />
           <div className="ml-auto flex flex-none items-center gap-1.5 lg:ml-0">
