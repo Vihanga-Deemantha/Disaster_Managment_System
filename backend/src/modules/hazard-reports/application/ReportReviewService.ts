@@ -14,7 +14,7 @@ import type { HazardReportRepository, ReportClusterRepository, ReportSearch } fr
 export interface ReviewDeps {
   reports: HazardReportRepository;
   clusters: ReportClusterRepository;
-  clustering: Pick<ClusteringService, 'rescore' | 'evaluate'>;
+  clustering: Pick<ClusteringService, 'rescore'>;
   events: EventBus;
   audit: AuditLog;
   clock: Clock;
@@ -147,9 +147,9 @@ export class ReportReviewService {
     return { report, cluster };
   }
 
-  private async describe(cluster: ReportCluster): Promise<ScoredCluster> {
-    const reports = await this.deps.reports.findByCluster(cluster.id);
-    return { cluster, reports, escalation: this.deps.clustering.evaluate(cluster, reports) };
+  /** A score only decays with time, so reading a cluster brings it up to date (and withdraws a stale recommendation). */
+  private describe(cluster: ReportCluster): Promise<ScoredCluster> {
+    return this.deps.clustering.rescore(cluster);
   }
 
   private async loadReport(reportId: string): Promise<HazardReport> {

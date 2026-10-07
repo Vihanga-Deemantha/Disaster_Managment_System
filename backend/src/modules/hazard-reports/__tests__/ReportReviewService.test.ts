@@ -116,6 +116,35 @@ describe('ReportReviewService.queue', () => {
   });
 });
 
+describe('ReportReviewService: scores are current when read', () => {
+  /** A High cluster with Escalation recommended that then sits untouched past the 6-hour window. */
+  async function staleRecommended() {
+    const ctx = build();
+    await seed(ctx, { count: 10, verified: 3 });
+    expect((await ctx.clusters.findById('c1'))?.status).toBe('ESCALATION_RECOMMENDED');
+    ctx.clock.advance(6 * HOUR_MS);
+    return ctx;
+  }
+
+  it('UC-3 step 11: the queue shows the decayed score and withdraws a recommendation that no longer holds', async () => {
+    const ctx = await staleRecommended();
+    const [item] = await ctx.service.queue(['OPEN', 'ESCALATION_RECOMMENDED']);
+    expect(item?.cluster.snapshot()).toMatchObject({
+      priorityScore: 69,
+      band: 'ELEVATED',
+      status: 'OPEN',
+    });
+    expect(item?.escalation.unmet).toEqual(['HIGH_BAND']);
+  });
+
+  it('UC-3 steps 11–12: opening the cluster shows the same current state', async () => {
+    const ctx = await staleRecommended();
+    const { cluster } = await ctx.service.cluster('c1');
+    expect(cluster.snapshot()).toMatchObject({ priorityScore: 69, status: 'OPEN' });
+    expect((await ctx.clusters.findById('c1'))?.status).toBe('OPEN');
+  });
+});
+
 describe('ReportReviewService.cluster and report lookups', () => {
   it('UC-3 steps 11–12: returns the cluster with its reports and what escalation still needs', async () => {
     const ctx = build();
@@ -312,7 +341,6 @@ describe('ReportReviewService.escalate', () => {
         reports: [],
         escalation: decision,
       }),
-      evaluate: () => decision,
     };
     const service = new ReportReviewService({ ...ctx, clustering: inconsistent });
     await expect(service.escalate('c9', OFFICER)).rejects.toMatchObject({
