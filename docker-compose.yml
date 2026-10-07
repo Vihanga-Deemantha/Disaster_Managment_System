@@ -1,0 +1,15 @@
+# Optional: a throwaway MongoDB for development.  Start it with:  docker compose up -d mongo
+# Port 27017 already taken (e.g. a local MongoDB service)?  Run with MONGO_PORT=27018 and set
+# MONGODB_URI=mongodb://127.0.0.1:27018/safezone_dev in backend/.env.
+services:
+  mongo:
+    image: mongo:7
+    container_name: safezone-mongo
+    restart: unless-stopped
+    ports:
+      - '${MONGO_PORT:-27017}:27017'
+    volumes:
+      - safezone-mongo-data:/data/db
+
+volumes:
+  safezone-mongo-data:
