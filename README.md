@@ -87,7 +87,7 @@ backend/src/
 ├─ modules/<use case>/     domain/  application/  infrastructure/  api/  composition.ts  seed/  __tests__/
 ├─ app.ts  bootstrap.ts    assemble the HTTP app and wire the shared services (frozen)
 frontend/src/
-├─ shared/                 AppShell, API client, auth pages, i18n (Si/Ta/En), offline layer, UI kit (frozen)
+├─ shared/                 AppShell, landing page, auth pages, API client, i18n (Si/Ta/En), offline layer, UI kit (frozen)
 ├─ features/<use case>/    index.tsx (your screens)  nav.ts (your sidebar entry)
 └─ routes.tsx  navigation.ts
 ```
@@ -119,6 +119,19 @@ The app shell is cached by a service worker, reads are cached per user in Indexe
 offline wait in an ordered outbox (`useOfflineWrite`) that replays when the connection returns: in order, refreshing the
 session first, stopping at the first rejected change and showing it, retrying server errors with back-off, and applying each
 change once thanks to idempotency keys. Signing out (or a different person signing in) wipes the offline store.
+
+## The public pages
+
+- `/` is the landing page. Someone who is already signed in is sent straight to their own screen instead.
+- `/login` and `/register` share one frame: a photo panel on wide screens, the form alone on phones. Registration is
+  three short steps (about you, where you live, how we alert you); "Continue" only checks the step you are on.
+- All three pages are written in Sinhala, Tamil and English, work without sideways scrolling from 320px wide, and open
+  offline after one visit (the service worker keeps the photos from `frontend/public/images` that the visitor has seen).
+- The palette and the Plus Jakarta Sans font (self-hosted, so it works offline) come from the design; the tokens are
+  in `frontend/src/index.css`.
+- They deliberately show **no live warnings** yet. When UC-1 exposes a public feed, add a "Live warnings" section to
+  `frontend/src/shared/landing/` that reads it, and never show a message such as "No active warnings" while the feed is
+  not connected: on a disaster site that would be a claim nobody has checked.
 
 ## Quality gates
 
@@ -152,6 +165,9 @@ to their folders.
 
 - `HazardType` and `Severity` values in `backend/src/shared/contracts/enums.ts` are **provisional**: align them with the
   report's class diagram (Section 2.6) before the modules depend on them.
+- The top strip of the landing page says "Official early warning service of the Disaster Management Centre", and its
+  footer carries the DMC's name. This is a coursework project, so reword both (or add "prototype") before it is hosted
+  anywhere public.
 - Sinhala and Tamil strings (`frontend/src/shared/i18n/messages.si.ts`, `messages.ta.ts`) are drafts: have a native speaker
   proofread them.
 - The home-district check uses approximate district centres, not boundaries (a citizen can always confirm their choice).
