@@ -329,6 +329,7 @@ export class AuthService {
    */
   private async verifiedUser(user: User | null, password: string): Promise<User | null> {
     if (!user || user.status !== 'ACTIVE') {
+      // Stryker disable next-line StringLiteral: any text will do, only the cost of one verification counts
       this.dummyHash ??= this.deps.hasher.hash('timing-equaliser');
       await this.deps.hasher.verify(await this.dummyHash, password);
       return null;
