@@ -2,12 +2,12 @@ import { screen } from '@testing-library/react';
 import { delay, http } from 'msw';
 import type { RouteObject } from 'react-router';
 import { ROLES, type Role } from '@contracts/enums';
+import { LandingPage } from '@/shared/landing/LandingPage';
 import { apiError, makeMe, okUser } from '@/shared/testing/fixtures';
 import { renderRoutes } from '@/shared/testing/render';
-import { settle, signIn } from '@/shared/testing/auth';
+import { signIn } from '@/shared/testing/auth';
 import { server } from '@/shared/testing/server';
 import { ForbiddenPage } from '../ForbiddenPage';
-import { HomeRedirect } from '../HomeRedirect';
 import { RequireAuth } from '../RequireAuth';
 import { homePathFor } from '../homePath';
 
@@ -30,7 +30,7 @@ const routes: RouteObject[] = [
     ),
   },
   { path: '/forbidden', element: <ForbiddenPage /> },
-  { path: '/', element: <HomeRedirect /> },
+  { path: '/', element: <LandingPage /> },
   // Several roles share a home screen, so label each route by its path, not by a role.
   ...[...new Set(ROLES.map(homePathFor))].map((path) => ({ path, element: <p>home at {path}</p> })),
 ];
@@ -102,7 +102,7 @@ describe('ForbiddenPage', () => {
   });
 });
 
-describe('HomeRedirect and homePathFor', () => {
+describe('the landing page sends signed-in people home (homePathFor)', () => {
   const homes: [Role, string][] = [
     ['CITIZEN', '/hazard-reports'],
     ['COMMUNITY_VOLUNTEER', '/hazard-reports'],
@@ -128,12 +128,17 @@ describe('HomeRedirect and homePathFor', () => {
     expect(view.router.state.location.pathname).toBe(path);
   });
 
-  it('renders nothing for someone who is not signed in', async () => {
+  it('shows the public landing page to someone who is not signed in', async () => {
     anonymous();
 
     const view = renderRoutes(routes, { route: '/' });
-    await settle(() => undefined);
 
-    expect(view.container).toBeEmptyDOMElement();
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Warnings that reach every district, in time.',
+      }),
+    ).toBeInTheDocument();
+    expect(view.router.state.location.pathname).toBe('/');
   });
 });
