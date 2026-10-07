@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { routes } from '@/routes';
@@ -167,12 +167,103 @@ describe('Login page', () => {
     expect(screen.getByLabelText('මුරපදය')).toBeInTheDocument();
   });
 
-  it('lets the person switch language on the page itself', async () => {
+  it('lets the person switch language on the page itself, from three pills', async () => {
+    renderRoutes(routes, { route: '/login' });
+    await screen.findByRole('heading', { name: 'Sign in' });
+    const group = screen.getByRole('group', { name: 'Language' });
+    expect(within(group).getByRole('button', { name: 'English' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await userEvent.click(within(group).getByRole('button', { name: 'தமிழ்' }));
+
+    expect(await screen.findByRole('heading', { name: 'உள்நுழைக' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'தமிழ்' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('marks each language pill with its own language, so a screen reader pronounces it right', async () => {
     renderRoutes(routes, { route: '/login' });
     await screen.findByRole('heading', { name: 'Sign in' });
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'TA');
+    expect(screen.getByRole('button', { name: 'සිංහල' })).toHaveAttribute('lang', 'si');
+    expect(screen.getByRole('button', { name: 'தமிழ்' })).toHaveAttribute('lang', 'ta');
+    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute('lang', 'en');
+  });
 
-    expect(await screen.findByRole('heading', { name: 'உள்நுழைக' })).toBeInTheDocument();
+  it('lets the password be revealed and hidden again', async () => {
+    renderRoutes(routes, { route: '/login' });
+    const password = await screen.findByLabelText('Password');
+    expect(password).toHaveAttribute('type', 'password');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(password).toHaveAttribute('type', 'text');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    expect(password).toHaveAttribute('type', 'password');
+  });
+
+  it('explains how officers get an account, and does not offer a password reset that does not exist', async () => {
+    renderRoutes(routes, { route: '/login' });
+
+    expect(await screen.findByText(/Officer accounts are created by the DMC./)).toBeInTheDocument();
+    expect(screen.queryByText(/forgot/i)).not.toBeInTheDocument();
+  });
+
+  it('shows an example of what to type in the identifier box', async () => {
+    renderRoutes(routes, { route: '/login' });
+
+    expect(
+      await screen.findByPlaceholderText('077 123 4567 or name@dmc.gov.lk'),
+    ).toBeInTheDocument();
+  });
+});
+
+describe('Sign-in frame (the photo panel and the way home)', () => {
+  beforeEach(anonymous);
+
+  it('puts the product’s promise beside the form, with the emergency hotline one tap away', async () => {
+    renderRoutes(routes, { route: '/login' });
+    await screen.findByRole('heading', { name: 'Sign in' });
+
+    expect(
+      screen.getByText('Report, verify and respond to hazards across Sri Lanka'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Works when the network drops')).toBeInTheDocument();
+    expect(screen.getByText('Changes sync when you reconnect')).toBeInTheDocument();
+    expect(screen.getByText('One account for every module')).toBeInTheDocument();
+    const hotline = screen.getByRole('link', { name: /Call the emergency hotline 117/ });
+    expect(hotline).toHaveAttribute('href', 'tel:117');
+    expect(screen.getByText('In danger right now?')).toBeInTheDocument();
+  });
+
+  it('describes the photo for people who cannot see it', async () => {
+    renderRoutes(routes, { route: '/login' });
+    await screen.findByRole('heading', { name: 'Sign in' });
+
+    expect(screen.getByRole('img', { name: /responding to a flood at dusk/ })).toHaveAttribute(
+      'src',
+      '/images/flood-response-at-dusk.webp',
+    );
+  });
+
+  it('offers a way back to the landing page from the logo and from "Back to home"', async () => {
+    renderRoutes(routes, { route: '/login' });
+    await screen.findByRole('heading', { name: 'Sign in' });
+
+    expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
+    const brandLinks = screen.getAllByRole('link', { name: /Safe Zone/ });
+    expect(brandLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of brandLinks) expect(link).toHaveAttribute('href', '/');
+  });
+
+  it('writes the panel in the chosen language too', async () => {
+    renderRoutes(routes, { route: '/login', language: 'SI' });
+
+    expect(await screen.findByText('සියලු මොඩියුල සඳහා එකම ගිණුමක්')).toBeInTheDocument();
   });
 });

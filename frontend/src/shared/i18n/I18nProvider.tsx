@@ -13,7 +13,8 @@ import { si } from './messages.si';
 import { ta } from './messages.ta';
 
 const CATALOGS: Record<Language, Messages> = { EN: en, SI: si, TA: ta };
-const HTML_LANG: Record<Language, string> = { EN: 'en', SI: 'si', TA: 'ta' };
+/** The BCP 47 code of each language: for `<html lang>` and for text written in a language other than the page's. */
+export const HTML_LANG: Record<Language, string> = { EN: 'en', SI: 'si', TA: 'ta' };
 export const LANGUAGE_STORAGE_KEY = 'safezone.language';
 
 export type TranslationParams = Record<string, string | number>;

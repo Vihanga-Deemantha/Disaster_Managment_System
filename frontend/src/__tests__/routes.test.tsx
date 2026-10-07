@@ -243,16 +243,17 @@ describe('the shell', () => {
     expect(await screen.findByText('You are offline. Showing saved data.')).toBeInTheDocument();
   });
 
-  it('shows nothing at all when it somehow renders without a user', async () => {
+  it('shows the public landing page, never the app shell, to a visitor at /', async () => {
     server.use(
       http.get('/api/auth/me', () => apiError(401, 'UNAUTHENTICATED')),
       http.post('/api/auth/refresh', () => apiError(401, 'SESSION_INVALID')),
     );
 
     const view = renderRoutes(routes, { route: '/' });
-    await screen.findByRole('heading', { name: 'Sign in' });
 
+    expect(await heading('Warnings that reach every district, in time.')).toBeInTheDocument();
     expect(view.container.querySelector('aside')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Main navigation' })).not.toBeInTheDocument();
   });
 });
 

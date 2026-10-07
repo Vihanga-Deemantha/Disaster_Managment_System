@@ -4,7 +4,7 @@ import { useT } from '@/shared/i18n/I18nProvider';
 import { translateError } from '@/shared/i18n/translateError';
 import { Alert } from '@/shared/ui/Alert';
 import { Button } from '@/shared/ui/Button';
-import { TextField } from '@/shared/ui/Field';
+import { PasswordField, TextField } from '@/shared/ui/Field';
 import { useAuth } from './AuthContext';
 
 /** The sign-in form, shared by the login page and the "session expired" prompt. */
@@ -44,11 +44,11 @@ export function SignInForm({
   }
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate className="space-y-4">
+    <form onSubmit={(event) => void submit(event)} noValidate className="flex flex-col gap-[18px]">
       {failure ? <Alert tone="danger">{translateError(t, failure)}</Alert> : null}
       <TextField
         label={t('auth.login.identifier')}
-        hint={t('auth.login.identifierHint')}
+        placeholder={t('auth.login.identifierPlaceholder')}
         value={identifier}
         onChange={(event) => setIdentifier(event.target.value)}
         error={missing.identifier ? t('error.IDENTIFIER_REQUIRED') : undefined}
@@ -56,9 +56,10 @@ export function SignInForm({
         autoCapitalize="none"
         inputMode="email"
       />
-      <TextField
+      <PasswordField
         label={t('auth.login.password')}
-        type="password"
+        showLabel={t('common.show')}
+        hideLabel={t('common.hide')}
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         error={missing.password ? t('error.PASSWORD_REQUIRED') : undefined}
@@ -66,7 +67,8 @@ export function SignInForm({
       />
       <Button
         type="submit"
-        className="w-full"
+        size="lg"
+        className="mt-1.5 w-full"
         loading={busy}
         loadingLabel={t('auth.login.submitting')}
       >

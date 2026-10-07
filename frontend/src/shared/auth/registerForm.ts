@@ -56,6 +56,18 @@ const coordinate = (text: string): number | undefined => {
 const blankToUndefined = (text: string): string | undefined =>
   text.trim() === '' ? undefined : text.trim();
 
+const NATIONAL_MOBILE = /^7\d{8}$/;
+
+/**
+ * The phone box shows "+94" in front, so people type the rest ("77 123 4567"). That is completed to
+ * the international form; anything else ("077 123 4567", "+94 77 …") is sent as typed and the same
+ * schema the server uses decides whether it is a Sri Lankan mobile number.
+ */
+export function phoneForRequest(typed: string): string {
+  const compact = typed.replace(/[\s\-()]/g, '');
+  return NATIONAL_MOBILE.test(compact) ? `+94${compact}` : typed;
+}
+
 /** Builds what the API receives, from what the person typed. */
 export function toRequest(values: RegisterFormValues, confirmDistrictMismatch: boolean): unknown {
   const lat = coordinate(values.lat);
@@ -63,7 +75,7 @@ export function toRequest(values: RegisterFormValues, confirmDistrictMismatch: b
   return {
     nic: values.nic,
     fullName: values.fullName,
-    phone: values.phone,
+    phone: phoneForRequest(values.phone),
     password: values.password,
     preferredLanguage: values.preferredLanguage,
     district: values.district,

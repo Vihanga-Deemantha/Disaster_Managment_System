@@ -1,41 +1,47 @@
 @import 'tailwindcss';
 
 /*
- * Theme tokens: dark navy chrome with a brown accent, taken from the original hi-fi wireframes
- * (master plan §5). Use these names (bg-navy-900, bg-accent-600, text-ink...) instead of raw colours
- * so every module looks like one product.
+ * Theme tokens: dark navy chrome with a brown accent, matched to the original hi-fi wireframes and the
+ * landing / sign-in designs (master plan §5). Use these names (bg-navy-900, bg-accent-600, text-ink...)
+ * instead of raw colours so every module looks like one product.
  */
 @theme {
+  /* Plus Jakarta Sans is self-hosted (see main.tsx) so it also works offline. Sinhala and Tamil fall
+     back to the device's own fonts, which are always installed where those scripts are read. */
   --font-sans:
-    system-ui, 'Segoe UI', 'Nirmala UI', 'Iskoola Pota', 'Noto Sans Sinhala', 'Noto Sans Tamil',
-    sans-serif;
+    'Plus Jakarta Sans Variable', system-ui, 'Segoe UI', 'Nirmala UI', 'Iskoola Pota',
+    'Noto Sans Sinhala', 'Noto Sans Tamil', sans-serif;
 
-  --color-navy-950: #0a1426;
-  --color-navy-900: #0f1d36;
-  --color-navy-800: #162a4a;
-  --color-navy-700: #1f3a63;
-  --color-navy-600: #2b4b7c;
+  --color-navy-950: #0c1a33;
+  --color-navy-900: #142848;
+  --color-navy-800: #1e3a5f;
+  --color-navy-700: #2b4b7c;
+  --color-navy-600: #3d609a;
+  --color-navy-100: #d5dce6;
 
-  --color-accent-700: #7a4a22;
-  --color-accent-600: #8f5a2b;
-  --color-accent-500: #a96d38;
-  --color-accent-400: #c28a57;
+  --color-accent-700: #733b1a;
+  --color-accent-600: #8c4820;
+  --color-accent-500: #a9602d;
+  --color-accent-400: #e8a06a;
   --color-accent-100: #f3e6d8;
+  --color-accent-50: #fcf7f2;
 
-  --color-paper: #f6f4f1;
+  --color-paper: #f8f4f0;
   --color-card: #ffffff;
-  --color-line: #ddd6cd;
-  --color-ink: #1b2430;
-  --color-ink-soft: #55606e;
+  --color-line: #e5ddd5;
+  --color-line-soft: #efe7df;
+  --color-line-strong: #d6ccc1;
+  --color-ink: #1f2937;
+  --color-ink-soft: #4b5563;
 
-  --color-danger-600: #b42318;
-  --color-danger-100: #fde7e4;
-  --color-success-600: #1f7a4d;
-  --color-success-100: #e2f4ea;
-  --color-warning-600: #9a6700;
-  --color-warning-100: #fdf1d3;
-  --color-info-600: #1f5fa8;
-  --color-info-100: #e1edfa;
+  --color-danger-600: #b91c1c;
+  --color-danger-100: #fce0e0;
+  --color-success-600: #15803d;
+  --color-success-100: #eaf6ea;
+  --color-warning-600: #92400e;
+  --color-warning-100: #f8ecd8;
+  --color-info-600: #1e4e8c;
+  --color-info-100: #e0ecf8;
 
   /* Severity is always shown as colour AND text (never colour alone). */
   --color-sev-low: #1f7a4d;
@@ -53,12 +59,18 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* A visible focus ring for keyboard users everywhere. */
-:focus-visible {
-  outline: 3px solid var(--color-accent-500);
-  outline-offset: 2px;
+/*
+ * A visible focus ring for keyboard users everywhere. It lives in the base layer so a component can
+ * replace it with its own indicator (text fields show a brown border and halo instead).
+ */
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--color-accent-500);
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
