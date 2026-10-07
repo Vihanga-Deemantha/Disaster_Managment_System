@@ -127,6 +127,10 @@ export default defineConfig({
     setupFiles: ['./src/shared/testing/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // The multi-step registration tests take about 3 seconds on a laptop. CI machines are slower, so the
+    // 5-second default would make them fail for reasons that have nothing to do with the code.
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
