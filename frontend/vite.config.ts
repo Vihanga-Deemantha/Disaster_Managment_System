@@ -43,8 +43,8 @@ export default defineConfig({
               name: 'Safe Zone',
               short_name: 'Safe Zone',
               description: 'Disaster alerts and coordination for Sri Lanka',
-              theme_color: '#0f1d36',
-              background_color: '#0f1d36',
+              theme_color: '#142848',
+              background_color: '#142848',
               display: 'standalone',
               start_url: '/',
               icons: [
@@ -63,10 +63,22 @@ export default defineConfig({
               // IndexedDB layer (so it can be scoped per user and wiped on logout), never by the worker.
               navigateFallback: '/index.html',
               navigateFallbackDenylist: [/^\/api\//],
+              // woff2: the self-hosted font, so text keeps its look offline.
+              globPatterns: ['**/*.{js,css,html,woff2}'],
               runtimeCaching: [
                 {
                   urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
                   handler: 'NetworkOnly',
+                },
+                {
+                  // The photos on the landing and sign-in pages are large, so they are not precached;
+                  // they are kept after the first visit so those pages still look right offline.
+                  urlPattern: ({ url }) => url.pathname.startsWith('/images/'),
+                  handler: 'CacheFirst',
+                  options: {
+                    cacheName: 'site-images',
+                    expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                  },
                 },
                 {
                   urlPattern: /^https:\/\/[a-c]\.tile\.openstreetmap\.org\/.*/,
