@@ -120,6 +120,42 @@ offline wait in an ordered outbox (`useOfflineWrite`) that replays when the conn
 session first, stopping at the first rejected change and showing it, retrying server errors with back-off, and applying each
 change once thanks to idempotency keys. Signing out (or a different person signing in) wipes the offline store.
 
+## UC-1 Issue Warning: try it
+
+`npm run seed` adds 200 demo citizens (phones `0771500001` to `0771500200`, same demo password) and the five pending
+warnings of the wireframe: Gampaha, Ratnapura, the Kalu Ganga basin, the Kelani Ganga basin and Kegalle. Sign in as
+`dmc.officer2@safezone.lk` and open **Pending Approvals**. The Kalu Ganga warning was submitted by
+`dmc.officer@safezone.lk`, so that account cannot approve it (BR2, four eyes).
+
+| Try this                                                              | What it shows                                                                         |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Review → Approve & Issue → type the password → Issue                  | Main flow; the password is checked again first (`/api/auth/reauth`, BR3)              |
+| Review → Approve & Issue → Cancel                                     | A4: nothing is sent, nothing changes                                                  |
+| Review → Edit → clear the Tamil text → Save                           | A2 and E1: inline errors; saving the edit moves the version on                        |
+| Review → Reject (a reason is required)                                | A3                                                                                    |
+| Open _Demo controls_ → Push notification: **Some sends fail** → Issue | A1: SMS still reaches everyone; the summary shows the failed pushes → Retry failed    |
+| Demo controls → Push and SMS: **Down** → Issue                        | E2: still issued, "every channel unavailable", download the list of citizens to visit |
+| Demo controls → back to **Working** → Retry failed                    | E3: everything that was waiting is delivered                                          |
+| Go offline (browser DevTools → Network → Offline) on a review screen  | BR6: saved copy with "last synced"; Approve & Issue is off; edits are queued          |
+
+The **Demo controls** panel (and `PUT /api/dev/gateways/:channel` with `{ "mode": "OK" | "FAIL_SOME" | "DOWN" }`) exists only
+while developing (`npm run dev`) or in a build made with `VITE_DEMO_TOOLS=true`. The API mounts the routes only outside
+production. Push, SMS, WhatsApp and e-mail are simulated behind ports; real gateways would be new adapter classes.
+
+| Method and path                                          | Purpose                                                                              |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `GET /api/warnings?status=`                              | The list (step 1)                                                                    |
+| `GET /api/warnings/:id`                                  | The warning, who it would reach per channel, and what is still wrong                 |
+| `PATCH /api/warnings/:id`                                | Edit; the version travels in `expectedVersion` or `If-Match` (409 on a clash)        |
+| `POST /api/warnings/:id/reject`                          | Reject with a reason                                                                 |
+| `POST /api/warnings/:id/issue` (needs `Idempotency-Key`) | Approve and send; step-up guarded; 503 `ALL_CHANNELS_UNAVAILABLE` still means issued |
+| `GET /api/warnings/:id/delivery`, `POST …/retry-failed`  | The summary, and send again what did not get through                                 |
+| `GET /api/warnings/:id/unreached.csv`                    | The follow-up list for door-to-door visits                                           |
+
+Failed sends are retried automatically by a timer (every 15 s, 3 retries per channel, back-off 30 s doubling to 10 min);
+a gateway that was down never uses up the retries. The Sinhala and Tamil texts of the demo data are drafts: have a
+native speaker read them before the demonstration.
+
 ## The public pages
 
 - `/` is the landing page. Someone who is already signed in is sent straight to their own screen instead.
