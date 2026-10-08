@@ -6,7 +6,7 @@ import { renderRoutes } from '@/shared/testing/render';
 import { server } from '@/shared/testing/server';
 import { routes } from '@/routes';
 import { HazardReportsPage } from '../index';
-import { cluster } from '../testing/clusterFixtures';
+import { cluster, report } from '../testing/clusterFixtures';
 
 beforeEach(() =>
   server.use(
@@ -14,6 +14,9 @@ beforeEach(() =>
     http.get('/api/hazard-reports/clusters', () => HttpResponse.json([])),
     http.get('/api/hazard-reports/clusters/cluster-1', () =>
       HttpResponse.json(cluster({ id: 'cluster-1' })),
+    ),
+    http.get('/api/hazard-reports/report-1', () =>
+      HttpResponse.json({ ...report('PENDING', 'report-1'), clusterId: 'cluster-1' }),
     ),
   ),
 );
