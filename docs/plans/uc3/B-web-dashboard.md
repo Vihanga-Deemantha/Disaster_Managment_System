@@ -424,7 +424,7 @@ ESCALATION_NOT_ALLOWED` the dialog shows the translated error and `reload()` run
 | `unknown cluster shows the error state`                                                                                                                | 404 `CLUSTER_NOT_FOUND`                                                                                     |
 | `ConfirmActionDialog`: confirm calls the action once, shows busy, closes on success; failure keeps it open with the message; Esc is ignored while busy |                                                                                                             |
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): cluster detail and escalation confirmation (steps 15–16, H4)`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): cluster detail and escalation confirmation (steps 15–16, H4)`.
 
 ---
 
