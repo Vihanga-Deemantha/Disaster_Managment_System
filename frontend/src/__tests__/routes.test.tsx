@@ -2,7 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { ROLES, type Role } from '@contracts/enums';
-import { aReview } from '@/features/warnings/testing/fixtures';
+import { aReview, aWarning } from '@/features/warnings/testing/fixtures';
 import { routes } from '@/routes';
 import { apiError, makeMe, okUser } from '@/shared/testing/fixtures';
 import { renderRoutes } from '@/shared/testing/render';
@@ -26,7 +26,7 @@ const NAV_BY_ROLE: Record<Role, string[]> = {
   CITIZEN: ['Hazard Reports'],
   COMMUNITY_VOLUNTEER: ['Hazard Reports'],
   DUTY_OFFICER: ['Hazard Reports'],
-  DMC_OFFICER: ['Pending Approvals', 'Impact Analytics'],
+  DMC_OFFICER: ['Pending Approvals', 'Issued Warnings', 'Rejected Warnings', 'Impact Analytics'],
   DISTRICT_OFFICER: ['Resource Allocation'],
   NGO_MANAGER: ['Resource Allocation', 'Impact Analytics'],
   ARMED_FORCES_LIAISON: ['Resource Allocation'],
@@ -67,7 +67,7 @@ describe('the route table (master plan §5: all routes registered up front)', ()
 
     renderRoutes(routes, { route: '/warnings/W-102' });
 
-    expect(await heading('Review warning')).toBeInTheDocument();
+    expect(await heading('Review Warning')).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
 
@@ -153,6 +153,46 @@ describe('the sidebar (one navigation for every module, report HCI-01)', () => {
     expect(screen.getByRole('link', { name: 'Impact Analytics' })).not.toHaveAttribute(
       'aria-current',
     );
+  });
+
+  it('marks Issued Warnings, not Pending Approvals, below /warnings/issued', async () => {
+    signIn(makeMe());
+
+    renderRoutes(routes, { route: '/warnings/issued' });
+
+    expect(await screen.findByRole('link', { name: 'Issued Warnings' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(screen.getByRole('link', { name: 'Pending Approvals' })).not.toHaveAttribute(
+      'aria-current',
+    );
+  });
+
+  it('shows how many warnings are waiting beside Pending Approvals, and drops it when one is rejected', async () => {
+    signIn(makeMe());
+    let waiting = ['W-101', 'W-102', 'W-103'].map((warningId) => aWarning({ warningId }));
+    server.use(
+      http.get('/api/warnings', () => HttpResponse.json(waiting)),
+      http.get('/api/warnings/W-102', () => HttpResponse.json(aReview())),
+      http.post('/api/warnings/W-102/reject', () => {
+        waiting = waiting.filter((warning) => warning.warningId !== 'W-102');
+        return HttpResponse.json(aWarning({ status: 'REJECTED' }));
+      }),
+    );
+    const user = userEvent.setup();
+    renderRoutes(routes, { route: '/warnings/W-102' });
+    const link = await screen.findByRole('link', { name: 'Pending Approvals' });
+    await waitFor(() => expect(link).toHaveAccessibleDescription('3 waiting'));
+
+    await user.click(await screen.findByRole('button', { name: 'Reject' }));
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Reason for rejecting' }),
+      'Duplicate',
+    );
+    await user.click(screen.getByRole('button', { name: 'Reject warning' }));
+
+    await waitFor(() => expect(link).toHaveAccessibleDescription('2 waiting'));
   });
 
   it('navigates between modules without a reload', async () => {

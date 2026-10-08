@@ -11,9 +11,14 @@ import {
   missingLanguages,
   oldestSubmittedAt,
   reachedPercent,
+  searchText,
   smsLength,
+  submittedTodayCount,
+  submitterCount,
+  submitterLabel,
   toLocalInput,
   urgentCount,
+  waitingOverADay,
 } from '../format';
 import { aBasin, aDistrict, aResult, aWarning } from '../testing/fixtures';
 
@@ -122,11 +127,91 @@ describe('UC-1 step 1: the Pending Approvals helpers', () => {
   });
 });
 
+describe('UC-1 step 1: the numbers on the four cards', () => {
+  /** Midday, local time, so "today" and "yesterday" below do not depend on when the test runs. */
+  const NOW = new Date(2026, 9, 8, 12, 0, 0).getTime();
+  const at = (hours: number): string => new Date(NOW - hours * 3_600_000).toISOString();
+
+  it('submittedTodayCount counts the warnings that came in on the officer’s own calendar day', () => {
+    const list = [
+      aWarning({ submittedAt: at(1) }),
+      aWarning({ submittedAt: at(11.5) }),
+      aWarning({ submittedAt: at(12.5) }),
+      aWarning({ submittedAt: at(40) }),
+    ];
+
+    expect(submittedTodayCount(list, NOW)).toBe(2);
+    expect(submittedTodayCount([], NOW)).toBe(0);
+  });
+
+  it('waitingOverADay counts only those that have waited more than 24 hours', () => {
+    const list = [
+      aWarning({ submittedAt: at(1) }),
+      aWarning({ submittedAt: at(24) }),
+      aWarning({ submittedAt: at(24.01) }),
+      aWarning({ submittedAt: at(72) }),
+    ];
+
+    expect(waitingOverADay(list, NOW)).toBe(2);
+  });
+
+  it('submitterCount is how many different people sent them', () => {
+    const list = [
+      aWarning({ submittedBy: 'u1' }),
+      aWarning({ submittedBy: 'u2' }),
+      aWarning({ submittedBy: 'u1' }),
+    ];
+
+    expect(submitterCount(list)).toBe(2);
+    expect(submitterCount([])).toBe(0);
+  });
+});
+
+describe('UC-1 step 1: who sent it, and what a search can find', () => {
+  it('submitterLabel prefers the name saved with the warning', () => {
+    const warning = aWarning({ submittedByName: 'Nimali Perera', sourceClusterId: 'CL-1' });
+
+    expect(submitterLabel(warning, t)).toBe('Nimali Perera');
+  });
+
+  it('submitterLabel says Duty Officer for a draft confirmed from a UC-3 cluster, which carries no name', () => {
+    expect(submitterLabel(aWarning({ sourceClusterId: 'CL-1' }), t)).toBe('Duty Officer');
+  });
+
+  it('submitterLabel falls back to the id rather than showing nothing', () => {
+    expect(submitterLabel(aWarning({ submittedBy: 'usr-duty-9' }), t)).toBe('usr-duty-9');
+  });
+
+  it('searchText is one lower-case line of the hazard, places, sender, id and rejection reason', () => {
+    const warning = aWarning({
+      warningId: 'W-77',
+      hazardType: 'LANDSLIDE',
+      targetAreas: [aDistrict(), aBasin()],
+      submittedByName: 'Nimali Perera',
+      rejectionReason: 'Duplicate of W-9',
+    });
+
+    expect(searchText(warning, t)).toBe(
+      'landslide gampaha, kelani ganga basin nimali perera w-77 duplicate of w-9',
+    );
+  });
+
+  it('searchText has no stray text for a warning that was not rejected', () => {
+    expect(searchText(aWarning({ warningId: 'W-1' }), t)).toBe('flood gampaha usr-duty-1 w-1 ');
+  });
+});
+
 describe('UC-1 A2: the date boxes', () => {
   it('formatDateTime writes a date and time in the language’s own style', () => {
     for (const language of ['EN', 'SI', 'TA'] as const) {
       expect(formatDateTime('2026-10-07T09:00:00.000Z', language)).toMatch(/2026/);
     }
+  });
+
+  it('formatDateTime writes English day first with a 24-hour clock, as people in Sri Lanka do', () => {
+    const iso = new Date(2026, 9, 7, 14, 5).toISOString();
+
+    expect(formatDateTime(iso, 'EN')).toBe('7 Oct 2026, 14:05');
   });
 
   it('toLocalInput shows the officer’s own clock, to the minute, with leading zeros', () => {

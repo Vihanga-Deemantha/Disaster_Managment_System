@@ -25,7 +25,8 @@ const open = async (delivery = aDelivery(), options = {}) => {
   return view;
 };
 
-const figure = (label: string) => screen.getByText(label).nextElementSibling;
+/** The big number on the card called `label`: the card's first paragraph. */
+const figure = (label: string) => screen.getByRole('group', { name: label }).querySelector('p');
 const cells = (channel: string): (string | null)[] =>
   [...screen.getByRole('rowheader', { name: channel }).parentElement!.querySelectorAll('td')].map(
     (cell) => cell.textContent,

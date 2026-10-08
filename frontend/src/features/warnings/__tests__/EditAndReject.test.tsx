@@ -50,7 +50,7 @@ function serve(options: { after?: unknown; writeStatus?: Response } = {}) {
 
 async function openReview() {
   const view = renderWarnings('/warnings/W-102');
-  await screen.findByRole('heading', { level: 1, name: 'Review warning' });
+  await screen.findByText('Warning Information');
   return view;
 }
 

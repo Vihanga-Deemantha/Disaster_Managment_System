@@ -25,11 +25,15 @@ beforeEach(() => signIn(makeMe({ userId: 'user-1' })));
 const open = async (review = aReview(), options = {}) => {
   serveWarnings({ review });
   const view = renderWarnings('/warnings/W-102', options);
-  await screen.findByRole('heading', { level: 1, name: 'Review warning' });
+  await screen.findByText('Warning Information');
   return view;
 };
 
 const button = (name: string) => screen.getByRole('button', { name });
+
+/** The value beside a label in "Warning Information" (its `<dd>` follows the label's `<dt>`). */
+const info = (label: string) =>
+  screen.getByText(label, { selector: 'dt' }).nextElementSibling as HTMLElement;
 
 describe('UC-1 step 2: Review Warning (screen 2)', () => {
   it('shows a spinner while it loads, and a way back to the list', async () => {
@@ -38,11 +42,11 @@ describe('UC-1 step 2: Review Warning (screen 2)', () => {
     renderWarnings('/warnings/W-102');
 
     expect(screen.getByText('Loading…')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Back to Pending Approvals' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Back to pending list' })).toHaveAttribute(
       'href',
       '/warnings',
     );
-    await screen.findByRole('heading', { level: 1, name: 'Review warning' });
+    await screen.findByText('Warning Information');
   });
 
   it('shows what the warning is: hazard, severity, status, area and its type, validity and age', async () => {
@@ -57,13 +61,37 @@ describe('UC-1 step 2: Review Warning (screen 2)', () => {
       }),
     );
 
-    expect(screen.getByText('Flood')).toBeInTheDocument();
-    expect(screen.getByText('High')).toBeInTheDocument();
-    expect(screen.getByText('Waiting for approval')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Flood Warning' })).toBeInTheDocument();
+    expect(screen.getByText('Warning Information')).toBeInTheDocument();
+    expect(info('Hazard Type')).toHaveTextContent('Flood');
+    expect(info('Severity')).toHaveTextContent('High');
+    expect(screen.getByText('Pending Approval')).toBeInTheDocument();
     expect(screen.getByText('Gampaha')).toHaveTextContent('District');
     expect(screen.getByText('Kelani Ganga basin')).toHaveTextContent('River basin');
-    expect(screen.getByText(/^Valid from .*2026.* until .*2026/)).toBeInTheDocument();
-    expect(screen.getByText('Submitted 3 hours ago')).toBeInTheDocument();
+    expect(info('Validity Period').textContent).toMatch(/2026.* — .*2026/);
+    expect(info('Submitted at')).toHaveTextContent('3 hours ago');
+  });
+
+  it.each([
+    ['the name saved with the warning', { submittedByName: 'Nimali Perera' }, 'Nimali Perera'],
+    [
+      'Duty Officer for a draft confirmed from a cluster',
+      { sourceClusterId: 'CL-7' },
+      'Duty Officer',
+    ],
+    ['the id when nothing else is known', {}, 'usr-duty-1'],
+  ])('says who submitted it: %s', async (_case, overrides, shown) => {
+    await open(aReview({ warning: aWarning(overrides) }));
+
+    expect(info('Submitted by')).toHaveTextContent(shown);
+  });
+
+  it('shows the warning message in a card of its own, and explains the map in words', async () => {
+    await open();
+
+    expect(screen.getByText('Warning Message')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Location & Map' })).toBeInTheDocument();
+    expect(screen.getByText('Affected area (Gampaha)')).toBeInTheDocument();
   });
 
   it('draws the target area on a map', async () => {
@@ -310,10 +338,8 @@ describe('UC-1 BR6: Review Warning offline', () => {
 
     renderWarnings('/warnings/W-102');
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Review warning' }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Last synced 2 minutes ago/)).toBeInTheDocument();
+    expect(await screen.findByText(/Last synced 2 minutes ago/)).toBeInTheDocument();
+    expect(screen.getByText('Warning Information')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Approve & Issue' })).toBeDisabled();
   });
 });
@@ -325,10 +351,8 @@ describe('UC-1: loading, reloading and errors', () => {
     renderWarnings('/warnings/nope');
 
     expect(await screen.findByRole('alert')).toHaveTextContent('This warning no longer exists.');
-    expect(screen.getByRole('link', { name: 'Back to Pending Approvals' })).toBeInTheDocument();
-    expect(
-      screen.queryByRole('heading', { level: 1, name: 'Review warning' }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to pending list' })).toBeInTheDocument();
+    expect(screen.queryByText('Warning Information')).not.toBeInTheDocument();
   });
 
   it('tries again on request', async () => {
@@ -344,9 +368,7 @@ describe('UC-1: loading, reloading and errors', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Review warning' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Warning Information')).toBeInTheDocument();
   });
 
   it('reloads from the server with the Reload button, to pick up what someone else changed', async () => {
@@ -379,6 +401,8 @@ describe('UC-1: loading, reloading and errors', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'எச்சரிக்கை மதிப்பாய்வு' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ஒப்புதல் அளித்து வெளியிடு' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'ஒப்புதல் அளித்து வெளியிடு' }),
+    ).toBeInTheDocument();
   });
 });
