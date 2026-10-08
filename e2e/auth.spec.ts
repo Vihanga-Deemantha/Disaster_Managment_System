@@ -97,7 +97,7 @@ test.describe('authentication', () => {
     await expect(dialog).toContainText('closer to Colombo than to Jaffna');
     await dialog.getByRole('button', { name: 'Use Colombo' }).click();
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Hazard Reports' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'My reports' })).toBeVisible();
     await expect(page.getByText('E2E Citizen')).toBeVisible();
   });
 

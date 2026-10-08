@@ -184,7 +184,7 @@ error.REPORT_NOT_FOUND | CLUSTER_NOT_FOUND | REPORT_ALREADY_REVIEWED | ESCALATIO
 no query string; `{ status: 'REJECTED', q: 'bridge road' }` → `?status=REJECTED&q=bridge+road` · ids are URL-encoded ·
 `reject` sends `{ reason }`.
 
-- [ ] Tests → fail → implement → pass → `npm run typecheck -w frontend` (catches a missing translation key) → commit
+- [x] Tests → fail → implement → pass → `npm run typecheck -w frontend` (catches a missing translation key) → commit
       `feat(uc3-web): api module, types and strings`.
 
 ### Task W1.2: Pure model functions
@@ -243,7 +243,7 @@ BLOCKED carrying them; CLOSED → BLOCKED; recommended + online → READY; recom
 every band / report status / cluster status (table test) · `formatTime('2026-10-07T09:02:00.000Z', 'EN')` contains
 `14:32`.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): view-model functions`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): view-model functions`.
 
 ### Task W1.3: Shared pieces and the route shell
 
@@ -311,7 +311,7 @@ when `document.visibilityState` is `hidden`, stops after unmount · routes: a du
 dashboard heading; a citizen sees "My reports"; `/hazard-reports/nope` redirects to the dashboard (all with MSW
 handlers returning `[]`).
 
-- [ ] Tests → fail → implement (screens can be one-line stubs for now) → pass → commit `feat(uc3-web): route shell and shared components`.
+- [x] Tests → fail → implement (screens can be one-line stubs for now) → pass → commit `feat(uc3-web): route shell and shared components`.
 
 ---
 

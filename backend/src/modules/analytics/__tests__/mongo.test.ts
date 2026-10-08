@@ -66,7 +66,8 @@ describe('UC-4 projection repositories', () => {
   it('UC-4 seed: six months, richest districts, real demo organisation IDs and empty Jaffna', async () => {
     const store = new MongoAnalyticsStore();
     await seedAnalyticsStore(store, new Date('2026-10-07T09:00:00Z'));
-    expect(await store.list()).toHaveLength(12);
+    // Ten district profiles across six months; the current month has seven days.
+    expect(await store.list()).toHaveLength(60);
     const filter = AnalyticsFilter.create(
       {
         district: 'ALL',
@@ -78,8 +79,8 @@ describe('UC-4 projection repositories', () => {
       [],
       new Date('2026-10-07'),
     );
-    expect(await store.distributionByDistrict(filter)).toHaveLength(14);
-    expect(await store.countReach(filter)).toHaveLength(14);
+    expect(await store.distributionByDistrict(filter)).toHaveLength(70);
+    expect(await store.countReach(filter)).toHaveLength(70);
     expect(
       await store.distributionByDistrict(
         AnalyticsFilter.create({ ...filter.value, district: 'JAFFNA' }, [], new Date('2026-10-07')),

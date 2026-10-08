@@ -84,7 +84,7 @@ describe('Login page', () => {
 
     await fillAndSubmit('0771234567');
 
-    expect(await screen.findByRole('heading', { name: 'Hazard Reports' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'My reports' })).toBeInTheDocument();
     expect(view.router.state.location.pathname).toBe('/hazard-reports');
   });
 
