@@ -349,7 +349,7 @@ describe('UC-4 BR3 / A2 report strategies', () => {
       .withChecksum('checksum')
       .build();
     const csv = await new CsvReportExporter().export(model);
-    expect(csv.toString()).toContain('checksum');
+    expect(csv.toString()).toContain('contentChecksum');
     expect(csv.toString()).toContain('"dataset"');
     expect(
       new PdfWriter().write(['', 'Unicode: à·ƒà·’à¶‚à·„à¶½', '(a) \\ test']).toString(),
