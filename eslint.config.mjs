@@ -99,6 +99,10 @@ export default tseslint.config(
       '**/playwright-report/**',
       '**/test-results/**',
       'frontend/public/**',
+      'mobile/android/**',
+      'mobile/ios/**',
+      'mobile/.expo/**',
+      'mobile/dist/**',
     ],
   },
 
@@ -183,6 +187,46 @@ export default tseslint.config(
     files: [`frontend/src/features/${own}/**/*.{ts,tsx}`],
     rules: restrict({ patterns: crossUseCase(own, 'feature') }),
   })),
+
+  // ---- Mobile (Expo) ---------------------------------------------------------------------------
+  {
+    files: ['mobile/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      // As on the web: a component that returns a whole screen is longer than a backend function.
+      'max-lines-per-function': ['error', { max: 90, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    // The offline and API core stays free of React and Expo so Jest can test it without native mocks.
+    files: [
+      'mobile/src/features/*/domain/**/*.ts',
+      'mobile/src/features/*/offline/**/*.ts',
+      'mobile/src/features/*/api/**/*.ts',
+    ],
+    rules: {
+      ...restrict({
+        patterns: [
+          {
+            group: [
+              'react',
+              'react-native',
+              'react-native-*',
+              'expo',
+              'expo-*',
+              '@react-native-*/*',
+              '**/adapters/**',
+              '**/screens/**',
+            ],
+            message:
+              'The offline core must not import React, React Native, Expo or adapters. Depend on a port instead.',
+          },
+        ],
+      }),
+      ...DETERMINISM,
+    },
+  },
 
   // ---- Tests, scripts, config files ----------------------------------------------------------------
   {

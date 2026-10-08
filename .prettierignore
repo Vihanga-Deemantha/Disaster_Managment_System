@@ -7,3 +7,8 @@ playwright-report
 test-results
 package-lock.json
 frontend/public
+mobile/android
+mobile/ios
+mobile/.expo
+mobile/dist
+mobile/expo-env.d.ts
