@@ -18,6 +18,7 @@ import {
 } from '../testing/inMemory';
 
 const OFFICER = 'usr-duty-1';
+const ACTOR = { userId: OFFICER, role: 'DUTY_OFFICER' } as const;
 const HOUR_MS = 3_600_000;
 
 function build() {
@@ -193,7 +194,7 @@ describe('ReportReviewService.verify', () => {
     const ctx = build();
     await seed(ctx);
     ctx.clock.advance(5 * 60_000);
-    const { report, cluster } = await ctx.service.verify('c1-r1', OFFICER);
+    const { report, cluster } = await ctx.service.verify('c1-r1', ACTOR);
     expect(report.snapshot()).toMatchObject({
       status: 'VERIFIED',
       reviewedBy: OFFICER,
@@ -206,14 +207,14 @@ describe('ReportReviewService.verify', () => {
   it('refuses a report that was already reviewed', async () => {
     const ctx = build();
     await seed(ctx);
-    await ctx.service.verify('c1-r1', OFFICER);
-    const attempt = ctx.service.verify('c1-r1', OFFICER);
+    await ctx.service.verify('c1-r1', ACTOR);
+    const attempt = ctx.service.verify('c1-r1', ACTOR);
     await expect(attempt).rejects.toBeInstanceOf(ConflictError);
     await expect(attempt).rejects.toMatchObject({ code: 'REPORT_ALREADY_REVIEWED' });
   });
 
   it('an unknown report is not found', async () => {
-    await expect(build().service.verify('nope', OFFICER)).rejects.toMatchObject({
+    await expect(build().service.verify('nope', ACTOR)).rejects.toMatchObject({
       code: 'REPORT_NOT_FOUND',
     });
   });
@@ -221,11 +222,11 @@ describe('ReportReviewService.verify', () => {
   it('UC-3 step 15: the third verification in a High cluster recommends escalation', async () => {
     const ctx = build();
     await seed(ctx, { count: 10 });
-    await ctx.service.verify('c1-r1', OFFICER);
-    const second = await ctx.service.verify('c1-r2', OFFICER);
+    await ctx.service.verify('c1-r1', ACTOR);
+    const second = await ctx.service.verify('c1-r2', ACTOR);
     expect(second.cluster.cluster.status).toBe('OPEN');
     expect(second.cluster.escalation.unmet).toEqual(['VERIFIED_REPORTS']);
-    const third = await ctx.service.verify('c1-r3', OFFICER);
+    const third = await ctx.service.verify('c1-r3', ACTOR);
     expect(third.cluster.cluster.status).toBe('ESCALATION_RECOMMENDED');
     expect(third.cluster.escalation.unmet).toEqual([]);
   });
@@ -235,9 +236,7 @@ describe('ReportReviewService.reject', () => {
   it('UC-3 A2/H8: a reason is mandatory and the report stays Pending without one', async () => {
     const ctx = build();
     await seed(ctx);
-    await expect(ctx.service.reject('c1-r1', OFFICER, '  ')).rejects.toBeInstanceOf(
-      ValidationError,
-    );
+    await expect(ctx.service.reject('c1-r1', ACTOR, '  ')).rejects.toBeInstanceOf(ValidationError);
     expect((await ctx.reports.findById('c1-r1'))?.status).toBe('PENDING');
   });
 
@@ -248,7 +247,7 @@ describe('ReportReviewService.reject', () => {
     expect(before).toMatchObject({ priorityScore: 79, band: 'HIGH' });
     const { report, cluster } = await ctx.service.reject(
       'c1-r1',
-      OFFICER,
+      ACTOR,
       ' Photo of another place ',
     );
     expect(report.snapshot()).toMatchObject({
@@ -262,7 +261,7 @@ describe('ReportReviewService.reject', () => {
   it('UC-3 A2/H8: rejecting the last active report closes the cluster', async () => {
     const ctx = build();
     await seed(ctx, { count: 1 });
-    const { cluster } = await ctx.service.reject('c1-r1', OFFICER, 'Spam');
+    const { cluster } = await ctx.service.reject('c1-r1', ACTOR, 'Spam');
     expect(cluster.cluster.status).toBe('CLOSED');
   });
 });
@@ -285,7 +284,7 @@ describe('ReportReviewService.escalate', () => {
   it('UC-3 step 16: publishes ClusterEscalationRequested with the exact contract payload and marks the cluster Escalated', async () => {
     const ctx = build();
     await seed(ctx, { count: 10, verified: 3 });
-    const { cluster } = await ctx.service.escalate('c1', OFFICER);
+    const { cluster } = await ctx.service.escalate('c1', ACTOR);
     expect(ctx.events.ofType('ClusterEscalationRequested')).toEqual([expectedEvent(BASE_TIME)]);
     expect(cluster.status).toBe('ESCALATED');
     expect((await ctx.clusters.findById('c1'))?.status).toBe('ESCALATED');
@@ -295,7 +294,7 @@ describe('ReportReviewService.escalate', () => {
   it('H4: a cluster that is not recommended cannot be escalated and no event is published', async () => {
     const ctx = build();
     await seed(ctx, { count: 10, verified: 2 });
-    await expect(ctx.service.escalate('c1', OFFICER)).rejects.toMatchObject({
+    await expect(ctx.service.escalate('c1', ACTOR)).rejects.toMatchObject({
       code: 'ESCALATION_NOT_ALLOWED',
     });
     expect(ctx.events.published).toEqual([]);
@@ -304,8 +303,8 @@ describe('ReportReviewService.escalate', () => {
   it('escalating twice is a conflict and only one event is published', async () => {
     const ctx = build();
     await seed(ctx, { count: 10, verified: 3 });
-    await ctx.service.escalate('c1', OFFICER);
-    await expect(ctx.service.escalate('c1', OFFICER)).rejects.toBeInstanceOf(ConflictError);
+    await ctx.service.escalate('c1', ACTOR);
+    await expect(ctx.service.escalate('c1', ACTOR)).rejects.toBeInstanceOf(ConflictError);
     expect(ctx.events.ofType('ClusterEscalationRequested')).toHaveLength(1);
   });
 
@@ -313,7 +312,7 @@ describe('ReportReviewService.escalate', () => {
     const ctx = build();
     await seed(ctx, { count: 10, verified: 3 });
     ctx.clock.advance(6 * HOUR_MS);
-    await expect(ctx.service.escalate('c1', OFFICER)).rejects.toMatchObject({
+    await expect(ctx.service.escalate('c1', ACTOR)).rejects.toMatchObject({
       code: 'ESCALATION_NOT_ALLOWED',
     });
     expect(ctx.events.published).toEqual([]);
@@ -321,7 +320,7 @@ describe('ReportReviewService.escalate', () => {
   });
 
   it('an unknown cluster is not found', async () => {
-    await expect(build().service.escalate('nope', OFFICER)).rejects.toMatchObject({
+    await expect(build().service.escalate('nope', ACTOR)).rejects.toMatchObject({
       code: 'CLUSTER_NOT_FOUND',
     });
   });
@@ -343,7 +342,7 @@ describe('ReportReviewService.escalate', () => {
       }),
     };
     const service = new ReportReviewService({ ...ctx, clustering: inconsistent });
-    await expect(service.escalate('c9', OFFICER)).rejects.toMatchObject({
+    await expect(service.escalate('c9', ACTOR)).rejects.toMatchObject({
       code: 'ESCALATION_NOT_ALLOWED',
     });
     expect(ctx.events.published).toEqual([]);

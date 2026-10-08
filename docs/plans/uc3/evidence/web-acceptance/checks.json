@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-09",
+  "database": "safezone_uc3_web_audit_20261009",
+  "api": "http://127.0.0.1:4191",
+  "frontend": "http://127.0.0.1:5190",
+  "apiRouting": "Private browser requests forwarded unchanged to isolated API; real MongoDB responses.",
+  "checks": [
+    {
+      "name": "dashboard queue and priority order",
+      "scores": [87, 64, 48, 39, 22]
+    },
+    {
+      "name": "automatic dashboard refresh sees new cluster"
+    },
+    {
+      "name": "reject persisted",
+      "id": "seed-report-kalutara-04",
+      "status": "REJECTED",
+      "reviewedBy": "usr-duty-1"
+    },
+    {
+      "name": "verify persisted",
+      "id": "seed-report-kalutara-01",
+      "status": "VERIFIED",
+      "reviewedBy": "usr-duty-1"
+    },
+    {
+      "name": "verify persisted",
+      "id": "seed-report-kalutara-02",
+      "status": "VERIFIED",
+      "reviewedBy": "usr-duty-1"
+    },
+    {
+      "name": "verify persisted",
+      "id": "seed-report-kalutara-03",
+      "status": "VERIFIED",
+      "reviewedBy": "usr-duty-1"
+    },
+    {
+      "name": "confirmed Duty escalation persisted",
+      "clusterId": "seed-cluster-kalutara"
+    },
+    {
+      "name": "verify persisted",
+      "id": "8de03dd4-6827-44e1-850b-97312dac1777",
+      "status": "VERIFIED",
+      "reviewedBy": "usr-dmc-1"
+    },
+    {
+      "name": "verify persisted",
+      "id": "67867626-a5b9-4c7a-be92-36ce887597c4",
+      "status": "VERIFIED",
+      "reviewedBy": "usr-dmc-1"
+    },
+    {
+      "name": "verify persisted",
+      "id": "b7af28a7-168e-4c74-b47c-54fc132f78e7",
+      "status": "VERIFIED",
+      "reviewedBy": "usr-dmc-1"
+    },
+    {
+      "name": "reject persisted",
+      "id": "00eb6224-d114-4efd-9c97-ba2a3503cc98",
+      "status": "REJECTED",
+      "reviewedBy": "usr-dmc-1"
+    },
+    {
+      "name": "confirmed escalation persisted",
+      "clusterId": "130350f2-9a23-429d-ae15-ce036ff66707"
+    },
+    {
+      "name": "UC1 pending draft received",
+      "clusterId": "seed-cluster-kalutara",
+      "warningId": "bd0ab86d-81f9-417d-9133-396824bbcca2"
+    },
+    {
+      "name": "UC1 pending draft received",
+      "clusterId": "130350f2-9a23-429d-ae15-ce036ff66707",
+      "warningId": "c41e397d-537c-465b-bb31-e517c4c3a315"
+    },
+    {
+      "name": "real concurrent review conflict remains visible and refreshes"
+    },
+    {
+      "name": "history status, rejection reasons, trimmed submitted search and empty state"
+    },
+    {
+      "name": "reject persisted",
+      "id": "82d98e8a-d2d4-4f85-a871-1f84a68fbda3",
+      "status": "REJECTED",
+      "reviewedBy": "usr-dmc-1"
+    },
+    {
+      "name": "last rejection closes cluster and manual/offline evidence persists"
+    },
+    {
+      "name": "photo served, cached report stays visible offline, writes disabled, reconnect recovers"
+    },
+    {
+      "name": "transport failure and unknown report error provide retry"
+    },
+    {
+      "name": "citizen and volunteer read-only views; citizen review denied"
+    },
+    {
+      "name": "unrelated role denied in UI and API"
+    }
+  ],
+  "errors": []
+}

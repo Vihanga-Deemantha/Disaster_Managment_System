@@ -1,7 +1,12 @@
 import type { NavGroup, NavItem } from '@/shared/layout/navigation';
 import type { IconName } from '@/shared/ui/Icon';
 import { analyticsNav } from '@/features/analytics/nav';
-import { hazardReportsNav } from '@/features/hazard-reports/nav';
+import {
+  hazardDashboardNav,
+  hazardReviewNav,
+  hazardHistoryNav,
+  hazardReporterNav,
+} from '@/features/hazard-reports/nav';
 import { resourcesNav } from '@/features/resources/nav';
 import { warningsIssuedNav, warningsNav, warningsRejectedNav } from '@/features/warnings/nav';
 
@@ -21,7 +26,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     id: 'coordination',
     labelKey: 'nav.group.coordination',
-    items: [withIcon(hazardReportsNav, 'clipboardList'), withIcon(resourcesNav, 'package')],
+    items: [
+      hazardDashboardNav,
+      hazardReviewNav,
+      hazardHistoryNav,
+      hazardReporterNav,
+      withIcon(resourcesNav, 'package'),
+    ],
   },
   { id: 'analysis', labelKey: 'nav.group.analysis', items: [withIcon(analyticsNav, 'barChart')] },
 ];

@@ -1,0 +1,11 @@
+{
+  "errors": [],
+  "overflow": [],
+  "reportPath": "/hazard-reports/reports/seed-report-kalutara-01",
+  "clusterPath": "/hazard-reports/clusters/seed-cluster-kalutara",
+  "viewport": [1440, 1000],
+  "phone": [390, 844],
+  "languages": ["EN", "SI", "TA"],
+  "offlineActionsDisabled": true,
+  "mutationsSubmitted": false
+}

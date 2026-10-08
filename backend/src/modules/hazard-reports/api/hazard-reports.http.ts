@@ -2,9 +2,9 @@ import { getAuth } from '@shared/auth';
 import { NotFoundError } from '@shared/errors/DomainError';
 import { parseOrThrow } from '@shared/errors/zod';
 import type { ModuleContext } from '@shared/module';
-import { Router, type RequestHandler } from 'express';
+import { Router, type Request, type RequestHandler } from 'express';
 import type { ReportSearch } from '../application/ports';
-import type { ReportReviewService } from '../application/ReportReviewService';
+import type { ReportReviewService, ReviewOfficer } from '../application/ReportReviewService';
 import type {
   ReportSubmissionService,
   SubmitReportCommand,
@@ -35,6 +35,14 @@ const toSearch = ({ status, q }: { status?: ReportStatus; q?: string }): ReportS
   text: q,
 });
 
+const isOfficer = (role: string): boolean => role === 'DUTY_OFFICER' || role === 'DMC_OFFICER';
+
+/** Role is validated by officersOnly before any review handler executes. */
+function reviewOfficer(req: Request): ReviewOfficer {
+  const { userId, role } = getAuth(req);
+  return { userId, role: role as ReviewOfficer['role'] };
+}
+
 function submissionHandlers({ submission }: HazardReportsApi) {
   return {
     /** UC-3 steps 7–10; A1; A3; E2; E3. */
@@ -63,16 +71,15 @@ function readingHandlers({ review, resolvePhoto }: HazardReportsApi) {
     /** Officers read the history; reporters read "My reports". */
     list: async (req, res) => {
       const auth = getAuth(req);
-      const reports =
-        auth.role === 'DUTY_OFFICER'
-          ? await review.history(toSearch(parseOrThrow(historyQuerySchema, req.query)))
-          : await review.mine(auth.userId);
+      const reports = isOfficer(auth.role)
+        ? await review.history(toSearch(parseOrThrow(historyQuerySchema, req.query)))
+        : await review.mine(auth.userId);
       res.json(reports.map(toReportDto));
     },
     /** UC-3 step 12. */
     detail: async (req, res) => {
       const auth = getAuth(req);
-      const reader = { userId: auth.userId, isOfficer: auth.role === 'DUTY_OFFICER' };
+      const reader = { userId: auth.userId, isOfficer: isOfficer(auth.role) };
       res.json(toReportDto(await review.report(param(req.params.id), reader)));
     },
     /** UC-3 step 12: the photo itself. Only names this module stored are ever served. */
@@ -104,13 +111,11 @@ function officerHandlers({ review }: HazardReportsApi) {
     },
     /** UC-3 step 16. */
     escalate: async (req, res) => {
-      res.json(
-        toClusterDetailDto(await review.escalate(param(req.params.id), getAuth(req).userId)),
-      );
+      res.json(toClusterDetailDto(await review.escalate(param(req.params.id), reviewOfficer(req))));
     },
     /** UC-3 steps 13–15. */
     verify: async (req, res) => {
-      const result = await review.verify(param(req.params.id), getAuth(req).userId);
+      const result = await review.verify(param(req.params.id), reviewOfficer(req));
       res.json({
         report: toReportDto(result.report),
         cluster: toClusterSummaryDto(result.cluster),
@@ -119,7 +124,7 @@ function officerHandlers({ review }: HazardReportsApi) {
     /** UC-3 A2. */
     reject: async (req, res) => {
       const { reason } = parseOrThrow(rejectSchema, req.body ?? {});
-      const result = await review.reject(param(req.params.id), getAuth(req).userId, reason);
+      const result = await review.reject(param(req.params.id), reviewOfficer(req), reason);
       res.json({
         report: toReportDto(result.report),
         cluster: toClusterSummaryDto(result.cluster),
@@ -137,8 +142,13 @@ export function createHazardReportsRouter(
   const reading = readingHandlers(api);
   const officer = officerHandlers(api);
   const reportersOnly = guards.requireRole('CITIZEN', 'COMMUNITY_VOLUNTEER');
-  const officersOnly = guards.requireRole('DUTY_OFFICER');
-  const anyUc3Role = guards.requireRole('CITIZEN', 'COMMUNITY_VOLUNTEER', 'DUTY_OFFICER');
+  const officersOnly = guards.requireRole('DUTY_OFFICER', 'DMC_OFFICER');
+  const anyUc3Role = guards.requireRole(
+    'CITIZEN',
+    'COMMUNITY_VOLUNTEER',
+    'DUTY_OFFICER',
+    'DMC_OFFICER',
+  );
   const router = Router();
   router.use(guards.requireAuth);
 

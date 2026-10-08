@@ -1,0 +1,28 @@
+{
+  "database": "safezone_uc3_w5",
+  "screenshots": [
+    "01-officer-dashboard.png",
+    "02-cluster-87.png",
+    "03-reject-dialog.png",
+    "04-rejected-report.png",
+    "05-verify-dialog.png",
+    "06-verification-recommended.png",
+    "07-recommended-cluster.png",
+    "08-escalation-confirmation.png",
+    "09-escalated-cluster.png",
+    "10-history-all.png",
+    "11-history-rejected.png",
+    "12-history-search.png",
+    "13-history-empty.png",
+    "14-history-offline-uncached.png",
+    "15-history-offline-saved.png",
+    "16-dmc-pending-approvals.png",
+    "17-citizen-reports.png",
+    "18-citizen-phone.png",
+    "19-citizen-empty-fixture.png",
+    "20-citizen-error-fixture.png",
+    "21-citizen-offline-saved.png"
+  ],
+  "result": "PASS",
+  "fixtureScreenshots": ["19-citizen-empty-fixture.png", "20-citizen-error-fixture.png"]
+}
