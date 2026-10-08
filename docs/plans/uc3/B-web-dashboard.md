@@ -377,7 +377,7 @@ attribution="© OpenStreetMap contributors"/>` + one `<Marker>` with a `<Popup>{
 **Tests:** card with photo / without photo; offline note only when flagged; rejection reason only when rejected; link
 target.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): cluster map and report card`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): cluster map and report card`.
 
 ### Task W3.2: `ClusterDetail` with escalation confirmation
 
