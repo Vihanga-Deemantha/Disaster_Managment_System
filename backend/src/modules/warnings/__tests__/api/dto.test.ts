@@ -89,6 +89,15 @@ describe('UC-1 step 2: toWarningDto', () => {
     });
   });
 
+  it('shows who submitted it by name when the warning carries one, next to the id', () => {
+    const dto = toWarningDto(aWarning({ submittedByName: 'Duty Officer (demo)' }));
+
+    expect(dto).toMatchObject({
+      submittedBy: 'usr-duty-1',
+      submittedByName: 'Duty Officer (demo)',
+    });
+  });
+
   it('shows who approved and issued it, and when', () => {
     const warning = aWarning({ sourceClusterId: 'cluster-7' });
     warning.approve('usr-dmc-1', new Date(NOW.getTime() + HOUR));

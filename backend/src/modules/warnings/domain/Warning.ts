@@ -14,6 +14,8 @@ export interface WarningProps {
   validTo: Date;
   status: WarningStatus;
   submittedBy: string;
+  /** Who submitted it, as a name to show. A snapshot: an id alone says nothing to the officer reading it. */
+  submittedByName?: string;
   submittedAt: Date;
   approvedBy?: string;
   approvedAt?: Date;
@@ -38,6 +40,7 @@ export type NewWarning = Pick<
   | 'validFrom'
   | 'validTo'
   | 'submittedBy'
+  | 'submittedByName'
   | 'sourceClusterId'
 >;
 

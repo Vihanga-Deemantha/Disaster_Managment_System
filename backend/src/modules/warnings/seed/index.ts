@@ -3,7 +3,8 @@ import type { SeedContext, SeedFunction } from '@shared/module';
 import { TargetArea } from '../domain/TargetArea';
 import { Warning } from '../domain/Warning';
 import { MongoWarningRepository } from '../infrastructure/MongoWarningRepository';
-import { DEMO_VALIDITY_DAYS, DEMO_WARNINGS, demoCitizens } from './demoData';
+import { WarningModel } from '../infrastructure/models';
+import { DEMO_VALIDITY_DAYS, DEMO_WARNINGS, demoCitizens, type DemoWarning } from './demoData';
 
 const DAY_MS = 24 * 3_600_000;
 const MINUTE_MS = 60_000;
@@ -25,13 +26,23 @@ async function seedCitizens(ctx: SeedContext): Promise<number> {
   return created;
 }
 
+/** A warning seeded before the list showed names gets its name now; nothing else about it is touched. */
+const addMissingName = (demo: DemoWarning) =>
+  WarningModel.updateOne(
+    { _id: demo.warningId, submittedByName: { $exists: false } },
+    { $set: { submittedByName: demo.submittedByName } },
+  );
+
 /** Newest first in the list, as in the wireframe: each one was submitted a few minutes before the last. */
 async function seedPendingWarnings(ctx: SeedContext): Promise<number> {
   const warnings = new MongoWarningRepository();
   const now = ctx.clock.now();
   let created = 0;
   for (const [position, demo] of DEMO_WARNINGS.entries()) {
-    if (await warnings.findById(demo.warningId)) continue;
+    if (await warnings.findById(demo.warningId)) {
+      await addMissingName(demo);
+      continue;
+    }
     const submittedAt = new Date(now.getTime() - position * 7 * MINUTE_MS);
     await warnings.insert(
       Warning.create(
@@ -44,6 +55,7 @@ async function seedPendingWarnings(ctx: SeedContext): Promise<number> {
           validFrom: submittedAt,
           validTo: new Date(submittedAt.getTime() + DEMO_VALIDITY_DAYS * DAY_MS),
           submittedBy: demo.submittedBy,
+          submittedByName: demo.submittedByName,
         },
         submittedAt,
       ),
