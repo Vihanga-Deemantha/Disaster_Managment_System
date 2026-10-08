@@ -28,7 +28,7 @@ class ReportLayout {
     value: string,
     x: number,
     top: number,
-    size = 9,
+    size: number,
     style: { bold?: boolean; color?: string } = {},
   ) {
     this.commands.push(

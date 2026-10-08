@@ -7,3 +7,5 @@ playwright-report
 test-results
 package-lock.json
 frontend/public
+# Generated mutation-test report; preserve the tool's output.
+backend/src/modules/analytics/evidence/mutation/index.html
