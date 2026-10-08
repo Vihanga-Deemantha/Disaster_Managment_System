@@ -90,6 +90,7 @@ frontend/src/
 ├─ shared/                 AppShell, landing page, auth pages, API client, i18n (Si/Ta/En), offline layer, UI kit (frozen)
 ├─ features/<use case>/    index.tsx (your screens)  nav.ts (your sidebar entry)
 └─ routes.tsx  navigation.ts
+mobile/src/                the citizens' phone app (Expo), not an npm workspace: see "Mobile app" below
 ```
 
 - **Layers**: `domain` (rules) → `application` (use-case control class, ports) → `infrastructure` (Mongo, gateways) and
@@ -162,6 +163,40 @@ production. Push, SMS, WhatsApp and e-mail are simulated behind ports; real gate
 Failed sends are retried automatically by a timer (every 15 s, 3 retries per channel, back-off 30 s doubling to 10 min);
 a gateway that was down never uses up the retries. The Sinhala and Tamil texts of the demo data are drafts: have a
 native speaker read them before the demonstration.
+
+## Mobile app (Expo): sign in and the Alerts tab
+
+`mobile/` is the citizens' phone app (Expo SDK 57, React Native, Expo Router). It is **not** one of the npm workspaces: it
+has its own `package.json` and lockfile, so install it on its own. It has sign-in and a three-step registration (the
+same rules as the web), and UC-1's side of the phone: the **Alerts tab** (every warning sent to the citizen, a severity
+chip, the time, an unread dot, pull to refresh, a poll every 15 s while the app is open) and **Alert detail**. When the
+poll finds a new valid alert the phone shows a banner (a local notification; remote push does not work in Expo Go). The
+screens, the rules, the decisions and what was left out are in
+[`docs/design/uc1-mobile-alerts.md`](docs/design/uc1-mobile-alerts.md).
+
+```bash
+cd mobile
+npm ci                                  # first time only
+npm run start                           # development build; `npx expo start --go` for Expo Go
+npm test                                # Jest, with the coverage gate
+npm run typecheck                       # tsc --noEmit (lint runs from the repository root: `npm run lint`)
+```
+
+Start the API (`npm run dev -w backend`) and seed it first (`npm run seed`). While developing, the app finds the API by
+itself: it uses the machine it was loaded from, on port 4000 (your laptop's address on the Wi-Fi for Expo Go on a phone,
+`localhost` in a browser), so there is no address to type and a change of network cannot leave a stale one behind. Set
+`EXPO_PUBLIC_API_URL` (see `mobile/.env.example`) only when the API is somewhere else, such as behind a tunnel. A phone must
+be on the same Wi-Fi as the laptop, and Windows must let Node through its firewall on that network. Sign in with a demo
+citizen's phone number (`0771500001` to `0771500200`, the demo password above). On the web, as `dmc.officer2@safezone.lk`,
+issue the Gampaha warning: within 15 seconds the phone shows a banner, a row with an unread dot and a number on the Alerts
+tab. Staff accounts cannot sign in on the phone ("Officer accounts use the web dashboard"). No phone?
+`npx expo start --web --port 8081` shows the same screens in a browser; first set
+`CORS_ORIGINS=http://localhost:5173,http://localhost:8081` in `backend/.env` and restart the API (a phone needs no CORS
+setting). Banners are not available in a browser.
+
+| Method and path      | Purpose                                                                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/me/alerts` | The signed-in citizen's delivered warnings, newest first (at most 100), and the server's time. Citizens and volunteers only. |
 
 ## The public pages
 
