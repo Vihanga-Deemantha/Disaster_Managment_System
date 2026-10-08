@@ -13,7 +13,7 @@ beforeEach(() =>
     http.get('/api/hazard-reports', () => HttpResponse.json([])),
     http.get('/api/hazard-reports/clusters', () => HttpResponse.json([])),
     http.get('/api/hazard-reports/clusters/cluster-1', () =>
-      HttpResponse.json(cluster({ id: 'cluster-1', reports: [] })),
+      HttpResponse.json(cluster({ id: 'cluster-1' })),
     ),
   ),
 );

@@ -67,6 +67,10 @@ it('UC-3 step 15: disables escalation and visibly lists every unmet requirement'
   answer(
     cluster({
       status: 'OPEN',
+      priorityScore: 48,
+      band: 'MODERATE',
+      dominantHazardType: 'OTHER',
+      reports: cluster().reports.map((entry) => ({ ...entry, hazardType: 'OTHER' })),
       escalation: {
         recommended: false,
         unmet: ['HIGH_BAND', 'VERIFIED_REPORTS', 'WARNABLE_HAZARD'],
@@ -120,7 +124,7 @@ it('UC-3 A2: refused escalation stays in dialog and refreshes server requirement
     http.post('/api/hazard-reports/clusters/c1/escalate', () => {
       answer(
         cluster({
-          priorityScore: 48,
+          priorityScore: 80,
           status: 'OPEN',
           escalation: { recommended: false, unmet: ['VERIFIED_REPORTS'], requiredVerified: 4 },
         }),
@@ -133,7 +137,7 @@ it('UC-3 A2: refused escalation stays in dialog and refreshes server requirement
   await userEvent.click(screen.getByRole('button', { name: 'Escalate to warning' }));
   await userEvent.click(screen.getByRole('button', { name: 'Send for approval' }));
   expect(await within(screen.getByRole('dialog')).findByRole('alert')).toBeVisible();
-  await waitFor(() => expect(screen.getByRole('meter')).toHaveAttribute('aria-valuenow', '48'));
+  await waitFor(() => expect(screen.getByRole('meter')).toHaveAttribute('aria-valuenow', '80'));
   expect(within(screen.getByRole('dialog')).getByText('1 of 4 reports verified.')).toBeVisible();
   expect(screen.getByRole('dialog')).toBeVisible();
 });
@@ -275,4 +279,19 @@ it('UC-3 A2: offline reload retains saved cluster and sync information', async (
   await ready();
   expect(screen.getByText(/Last synced/)).toBeVisible();
   expect(screen.getByRole('button', { name: 'Escalate to warning' })).toBeDisabled();
+});
+it('UC-3 step 15: a verified-report requirement alone exposes the exact current threshold', async () => {
+  answer(
+    cluster({
+      status: 'OPEN',
+      escalation: { recommended: false, unmet: ['VERIFIED_REPORTS'], requiredVerified: 3 },
+    }),
+  );
+  open();
+  await ready();
+  expect(screen.getByRole('button', { name: 'Escalate to warning' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Escalate to warning' })).toHaveAccessibleDescription(
+    '1 of 3 reports verified.',
+  );
+  expect(screen.queryByText('The cluster must be High priority.')).not.toBeInTheDocument();
 });

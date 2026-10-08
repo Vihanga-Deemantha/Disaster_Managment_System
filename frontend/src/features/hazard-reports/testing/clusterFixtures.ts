@@ -21,7 +21,7 @@ export const cluster = (overrides: Partial<Detail> = {}): Detail => ({
   band: 'HIGH',
   status: 'ESCALATION_RECOMMENDED',
   counts: { total: 3, pending: 1, verified: 1, rejected: 1 },
-  escalation: { recommended: true, unmet: [], requiredVerified: 3 },
+  escalation: { recommended: true, unmet: [], requiredVerified: 1 },
   firstReportedAt: '2026-10-07T09:00:00Z',
   lastReportAt: '2026-10-07T09:00:00Z',
   reports: [report('REJECTED', 'r3'), report('VERIFIED', 'r2'), report('PENDING', 'r1')],
