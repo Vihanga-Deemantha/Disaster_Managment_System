@@ -5,6 +5,7 @@
  * Add your feature's strings with a prefix (`warnings.…`) at the bottom of each language file.
  */
 export const en = {
+  'analytics.people_lower': 'people',
   'app.name': 'Safe Zone',
   'app.tagline': 'Disaster alerts and coordination for Sri Lanka',
 
