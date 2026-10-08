@@ -38,6 +38,9 @@ jobs:
       - run: npm run typecheck
       # Jest and Vitest enforce the coverage gates (100% per use case, 90% for shared code).
       - run: npm test
+        env:
+          # Node16 preserves dynamic imports; Jest needs VM modules to load optional argon2.
+          NODE_OPTIONS: --experimental-vm-modules
       - run: npm run build
 
   e2e:
