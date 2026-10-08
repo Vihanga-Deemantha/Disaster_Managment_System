@@ -10,7 +10,7 @@ test.describe('authentication', () => {
 
     await signInAsDmcOfficer(page);
     await expect(page).toHaveURL(/\/warnings$/);
-    await expect(page.getByText('DMC Officer (demo)')).toBeVisible();
+    await expect(page.locator('#sidebar').getByText('DMC Officer (demo)')).toBeVisible();
 
     await page.reload();
     await expect(dmcHeading(page)).toBeVisible(); // the cookie session survives

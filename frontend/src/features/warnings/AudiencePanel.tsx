@@ -24,7 +24,7 @@ export function AudiencePanel({
   const t = useT();
   return (
     <section aria-labelledby="audience-heading" className="space-y-3">
-      <h2 id="audience-heading" className="text-lg font-bold text-navy-900">
+      <h2 id="audience-heading" className="text-[15px] font-bold text-navy-900">
         {t('warnings.review.audience')}
       </h2>
       <p>{t('warnings.review.audienceTotal', { count: recipients.total })}</p>

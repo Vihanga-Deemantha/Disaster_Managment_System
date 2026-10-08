@@ -10,10 +10,12 @@ import { DEMO_PASSWORD, dmcHeading, signInAs } from './support';
  */
 const OUT = 'reports/uc1-screenshots';
 test.skip(!process.env.UC1_SCREENSHOTS, 'only when UC1_SCREENSHOTS=1');
-test.use({ viewport: { width: 1280, height: 900 } });
+test.use({ viewport: { width: 1440, height: 1180 } });
 
-const shot = (page: Page, name: string, fullPage = true) =>
-  page.screenshot({ path: `${OUT}/${name}.png`, fullPage });
+async function shot(page: Page, name: string, fullPage = false) {
+  await page.waitForTimeout(400); // the sidebar fades between entries: let that finish
+  await page.screenshot({ path: `${OUT}/${name}.png`, fullPage });
+}
 
 const reviewLink = (page: Page, hazard: string, area: string) =>
   page.getByRole('link', { name: `Review the ${hazard} warning for ${area}` });
@@ -43,7 +45,8 @@ test('UC-1 screenshots', async ({ page }) => {
   await shot(page, '1-pending-approvals');
 
   await reviewLink(page, 'Flood', 'Gampaha').click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Review warning' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Review Warning' })).toBeVisible();
+  await expect(page.getByText('Warning Information')).toBeVisible();
   await expect(page.getByTestId('map').or(page.locator('.leaflet-container'))).toBeVisible();
   await page.waitForTimeout(1500); // let the map tiles arrive
   await shot(page, '2-review-warning');
@@ -89,8 +92,35 @@ test('UC-1 screenshots', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Back to Pending Approvals' }).click();
   await shot(page, '9-pending-approvals-after');
+
+  await page.getByRole('link', { name: 'Issued Warnings', exact: true }).click();
+  await expect(page.getByRole('link', { name: /^Delivery summary of the/ }).first()).toBeVisible();
+  await shot(page, '13-issued-warnings');
+
+  await page.getByRole('link', { name: 'Pending Approvals', exact: true }).click();
+  await reviewLink(page, 'Flood', 'Kelani Ganga basin').click();
+  await page.getByRole('button', { name: 'Reject' }).click();
+  const rejecting = page.getByRole('dialog', { name: 'Reject this warning?' });
+  await rejecting.getByLabel('Reason for rejecting').fill('Duplicate of the Gampaha warning');
+  await rejecting.getByRole('button', { name: 'Reject warning' }).click();
+  await expect(page.getByText(/This warning was rejected/)).toBeVisible();
+  await page.getByRole('link', { name: 'Rejected Warnings', exact: true }).click();
+  await expect(page.getByRole('row', { name: /Kelani Ganga basin/ })).toBeVisible();
+  await shot(page, '14-rejected-warnings');
+
+  await page.getByRole('link', { name: 'Pending Approvals', exact: true }).click();
+  await expect(dmcHeading(page)).toBeVisible();
+  await page.getByRole('combobox', { name: 'Language' }).selectOption('TA');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'ஒப்புதலுக்காகக் காத்திருப்பவை' }),
+  ).toBeVisible();
+  await shot(page, '15-pending-approvals-tamil');
+  // the label is in Tamil now; the language switcher is the first drop-down on the page
+  await page.getByRole('combobox').first().selectOption('EN');
+  await expect(dmcHeading(page)).toBeVisible();
   await reviewLink(page, 'Flood', 'Kalu Ganga basin').click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Review warning' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Review Warning' })).toBeVisible();
+  await expect(page.getByText('Warning Information')).toBeVisible();
   await page.waitForTimeout(1000);
   await page.context().setOffline(true);
   await expect(page.getByText('You are offline. Showing saved data.')).toBeVisible();
@@ -98,7 +128,9 @@ test('UC-1 screenshots', async ({ page }) => {
   await page.context().setOffline(false);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('link', { name: 'Back to Pending Approvals' }).click();
+  await page.getByRole('link', { name: 'Back to pending list' }).click();
   await expect(dmcHeading(page)).toBeVisible();
-  await shot(page, '11-pending-approvals-phone');
+  await shot(page, '11-pending-approvals-phone', true);
+  await page.getByRole('button', { name: 'Open menu' }).click();
+  await shot(page, '12-menu-phone', false);
 });

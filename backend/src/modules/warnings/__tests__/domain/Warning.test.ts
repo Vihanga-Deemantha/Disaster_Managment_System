@@ -405,6 +405,16 @@ describe('Warning: reading and persistence', () => {
     expect(warning.smsText('SI')).toBe(MESSAGES.SI);
   });
 
+  it('keeps the name of whoever submitted it next to their id', () => {
+    const warning = aWarning({ submittedByName: 'Duty Officer (demo)' });
+
+    expect(warning.snapshot()).toMatchObject({
+      submittedBy: 'usr-duty-1',
+      submittedByName: 'Duty Officer (demo)',
+    });
+    expect('submittedByName' in aWarning().snapshot()).toBe(false);
+  });
+
   it('exposes what the application needs to read', () => {
     const area = aTargetArea();
     const warning = aWarning({ sourceClusterId: 'cluster-7', targetAreas: [area] });

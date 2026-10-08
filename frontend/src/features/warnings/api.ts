@@ -8,13 +8,18 @@ import type {
   OptionalChannel,
   ReviewDto,
   WarningDto,
+  WarningStatus,
 } from './types';
 
 const BASE = '/api/warnings';
 
-/** UC-1 step 1: what is waiting for a DMC Officer, newest first. */
+/** The warnings with one status, newest first: waiting for approval (step 1), issued, or rejected. */
+export const listByStatus = (api: ApiClient, status: WarningStatus): Promise<WarningDto[]> =>
+  api.get<WarningDto[]>(`${BASE}?status=${status}`);
+
+/** UC-1 step 1: what is waiting for a DMC Officer. */
 export const listPending = (api: ApiClient): Promise<WarningDto[]> =>
-  api.get<WarningDto[]>(`${BASE}?status=PENDING_APPROVAL`);
+  listByStatus(api, 'PENDING_APPROVAL');
 
 /** UC-1 step 2. */
 export const getReview = (api: ApiClient, warningId: string): Promise<ReviewDto> =>

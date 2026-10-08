@@ -45,7 +45,7 @@ async function openConfirmation(review = aReview()) {
   serveWarnings({ review });
   const user = userEvent.setup();
   const view = renderWarnings('/warnings/W-102');
-  await screen.findByRole('heading', { level: 1, name: 'Review warning' });
+  await screen.findByText('Warning Information');
   return { user, view, review };
 }
 
@@ -128,7 +128,7 @@ describe('UC-1 steps 5 to 7: the confirmation (screen 5)', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(order).toEqual([]);
-    expect(screen.getByRole('heading', { level: 1, name: 'Review warning' })).toBeInTheDocument();
+    expect(screen.getByText('Warning Information')).toBeInTheDocument();
   });
 
   it('A4: Escape closes it too, and focus goes back to the button that opened it', async () => {

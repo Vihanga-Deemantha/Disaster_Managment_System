@@ -54,6 +54,16 @@ describe('UC-1 persistence: the warning and its document', () => {
     });
   });
 
+  it('keeps the name of whoever submitted it, and leaves the field out when there is none', () => {
+    const named = aWarning({ submittedByName: 'Duty Officer (demo)' });
+
+    expect(warningToDoc(named).submittedByName).toBe('Duty Officer (demo)');
+    expect(docToWarning(warningToDoc(named)).snapshot().submittedByName).toBe(
+      'Duty Officer (demo)',
+    );
+    expect('submittedByName' in warningToDoc(aWarning())).toBe(false);
+  });
+
   it('round-trips a rejected warning with its reason', () => {
     const warning = aWarning();
     warning.reject('usr-dmc-1', 'Duplicate of W-9', NOW);

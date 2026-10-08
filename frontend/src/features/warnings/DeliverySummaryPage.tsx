@@ -10,9 +10,13 @@ import { useCachedResource } from '@/shared/offline/useCachedResource';
 import { useOnlineStatus } from '@/shared/offline/useOnlineStatus';
 import { Alert } from '@/shared/ui/Alert';
 import { Button, buttonClasses } from '@/shared/ui/Button';
-import { SeverityBadge } from '@/shared/ui/SeverityBadge';
+import { Icon } from '@/shared/ui/Icon';
+import { PageHeader } from '@/shared/ui/PageHeader';
+import { SeverityPill } from '@/shared/ui/SeverityPill';
 import { Spinner } from '@/shared/ui/Spinner';
+import { StatCard } from '@/shared/ui/StatCard';
 import { DemoTools } from './DemoGatewayPanel';
+import { HazardIcon } from './HazardIcon';
 import { getDelivery, retryFailed, reviewPath, unreachedCsvUrl } from './api';
 import { areaNames, hasRetryableDelivery, reachedPercent } from './format';
 import type { DeliveryDto, IssueResult } from './types';
@@ -28,27 +32,38 @@ export function useAutoRefresh(enabled: boolean, reload: () => void): void {
   }, [enabled, reload]);
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-line bg-card p-4">
-      <dt className="text-sm text-ink-soft">{label}</dt>
-      <dd className="mt-1 text-2xl font-bold text-navy-900">{value}</dd>
-    </div>
-  );
-}
-
 /** The four numbers of step 14. "Reached" is rounded down: 100% only ever means everyone. */
 function Figures({ result }: { result: IssueResult }) {
   const t = useT();
   return (
     <>
-      <dl className="grid gap-3 sm:grid-cols-4">
-        <Figure label={t('warnings.delivery.targeted')} value={String(result.targeted)} />
-        <Figure label={t('warnings.delivery.reached')} value={String(result.reached)} />
-        <Figure label={t('warnings.delivery.pending')} value={String(result.pendingRetry)} />
-        <Figure label={t('warnings.delivery.failed')} value={String(result.failed)} />
-      </dl>
-      <p className="text-lg font-semibold text-navy-900">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          icon="users"
+          tone="blue"
+          value={String(result.targeted)}
+          label={t('warnings.delivery.targeted')}
+        />
+        <StatCard
+          icon="checkCircle"
+          tone="green"
+          value={String(result.reached)}
+          label={t('warnings.delivery.reached')}
+        />
+        <StatCard
+          icon="clock"
+          tone="amber"
+          value={String(result.pendingRetry)}
+          label={t('warnings.delivery.pending')}
+        />
+        <StatCard
+          icon="alertTriangle"
+          tone="red"
+          value={String(result.failed)}
+          label={t('warnings.delivery.failed')}
+        />
+      </div>
+      <p className="text-lg font-bold text-navy-900">
         {t('warnings.delivery.percent', { percent: reachedPercent(result) })}
       </p>
     </>
@@ -58,16 +73,16 @@ function Figures({ result }: { result: IssueResult }) {
 function ChannelTable({ result }: { result: IssueResult }) {
   const t = useT();
   return (
-    <section aria-labelledby="channels-heading" className="space-y-2">
-      <h2 id="channels-heading" className="text-lg font-bold text-navy-900">
+    <section aria-labelledby="channels-heading" className="space-y-3">
+      <h2 id="channels-heading" className="text-[15px] font-bold text-navy-900">
         {t('warnings.delivery.channelsHeading')}
       </h2>
-      <div className="overflow-x-auto rounded-lg border border-line bg-card">
+      <div className="overflow-x-auto rounded-2xl border border-line-soft bg-card shadow-[0_1px_2px_rgba(20,40,72,0.05)]">
         <table className="w-full text-left text-sm">
-          <thead className="bg-paper text-ink-soft">
-            <tr>
+          <thead>
+            <tr className="text-[13px] text-navy-900">
               {(['channel', 'sent', 'delivered', 'failed'] as const).map((column) => (
-                <th key={column} scope="col" className="px-4 py-3 font-semibold">
+                <th key={column} scope="col" className="px-5 py-4 font-bold">
                   {t(`warnings.delivery.col.${column}`)}
                 </th>
               ))}
@@ -75,13 +90,13 @@ function ChannelTable({ result }: { result: IssueResult }) {
           </thead>
           <tbody>
             {CHANNELS.map((channel) => (
-              <tr key={channel} className="border-t border-line">
-                <th scope="row" className="px-4 py-3 font-semibold">
+              <tr key={channel} className="border-t border-line-soft">
+                <th scope="row" className="px-5 py-4 font-bold text-navy-900">
                   {t(`warnings.review.channel.${channel}`)}
                 </th>
-                <td className="px-4 py-3">{result.byChannel[channel].sent}</td>
-                <td className="px-4 py-3">{result.byChannel[channel].delivered}</td>
-                <td className="px-4 py-3">{result.byChannel[channel].failed}</td>
+                <td className="px-5 py-4">{result.byChannel[channel].sent}</td>
+                <td className="px-5 py-4">{result.byChannel[channel].delivered}</td>
+                <td className="px-5 py-4">{result.byChannel[channel].failed}</td>
               </tr>
             ))}
           </tbody>
@@ -173,8 +188,11 @@ function DeliveryBody({
   return (
     <>
       <p className="flex flex-wrap items-center gap-3 text-ink">
-        <SeverityBadge severity={warning.severity} />
-        <span className="font-semibold">{t(`warnings.hazard.${warning.hazardType}`)}</span>
+        <SeverityPill severity={warning.severity} />
+        <span className="flex items-center gap-2 font-bold text-navy-900">
+          <HazardIcon hazard={warning.hazardType} />
+          {t(`warnings.hazard.${warning.hazardType}`)}
+        </span>
         <span>{areaNames(warning)}</span>
       </p>
       {delivery.allChannelsUnavailable ? (
@@ -211,16 +229,18 @@ export function DeliverySummaryPage() {
   );
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="space-y-2">
-          <Link to="/warnings" className="text-sm font-semibold text-accent-700 underline">
-            {t('warnings.delivery.back')}
-          </Link>
-          <h1 className="text-2xl font-bold text-navy-900">{t('warnings.delivery.title')}</h1>
-        </div>
+    <section className="space-y-5">
+      <PageHeader title={t('warnings.delivery.title')} subtitle={t('warnings.delivery.subtitle')} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/warnings"
+          className="flex items-center gap-2 text-sm font-semibold text-navy-900 hover:underline"
+        >
+          <Icon name="arrowLeft" size={16} />
+          {t('warnings.delivery.back')}
+        </Link>
         <LastSynced syncedAt={delivery.syncedAt} />
-      </header>
+      </div>
       {delivery.error ? (
         <Alert tone="danger">
           <span>{translateError(t, delivery.error)}</span>{' '}

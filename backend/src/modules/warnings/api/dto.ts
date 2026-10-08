@@ -30,6 +30,7 @@ export interface WarningDto {
   validTo: string;
   status: WarningStatus;
   submittedBy: string;
+  submittedByName?: string;
   submittedAt: string;
   approvedBy?: string;
   approvedAt?: string;
@@ -81,6 +82,7 @@ export function toWarningDto(warning: Warning): WarningDto {
     validTo: state.validTo.toISOString(),
     status: state.status,
     submittedBy: state.submittedBy,
+    submittedByName: state.submittedByName,
     submittedAt: state.submittedAt.toISOString(),
     approvedBy: state.approvedBy,
     approvedAt: iso(state.approvedAt),

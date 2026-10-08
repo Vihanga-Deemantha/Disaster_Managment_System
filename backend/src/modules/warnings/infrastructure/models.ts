@@ -38,6 +38,7 @@ export interface WarningDoc {
   validTo: Date;
   status: WarningStatus;
   submittedBy: string;
+  submittedByName?: string;
   submittedAt: Date;
   approvedBy?: string;
   approvedAt?: Date;
@@ -109,6 +110,7 @@ const warningSchema = new Schema<WarningDoc>(
       required: true,
     },
     submittedBy: { type: String, required: true },
+    submittedByName: String,
     submittedAt: { type: Date, required: true },
     approvedBy: String,
     approvedAt: Date,

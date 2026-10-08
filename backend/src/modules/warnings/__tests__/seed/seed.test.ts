@@ -130,6 +130,15 @@ describe('UC-1 demo data: the five pending warnings', () => {
     expect(new Set(DEMO_WARNINGS.map((demo) => demo.warningId)).size).toBe(5);
   });
 
+  it('names who submitted each one, with the display name of that very account', () => {
+    const names = new Map(DEMO_WARNINGS.map((demo) => [demo.submittedBy, demo.submittedByName]));
+
+    expect(Object.fromEntries(names)).toEqual({
+      'usr-duty-1': 'Duty Officer (demo)',
+      'usr-dmc-1': 'DMC Officer (demo)',
+    });
+  });
+
   it('writes every text in all three languages, and keeps each within one SMS', () => {
     for (const demo of DEMO_WARNINGS) {
       for (const language of LANGUAGES) {
@@ -223,6 +232,48 @@ describe('UC-1 demo data: npm run seed', () => {
     );
 
     expect(submitted).toEqual([0, 1, 2, 3, 4].map((n) => clock.now().getTime() - n * 7 * 60_000));
+  });
+
+  it('stores who submitted each warning by name', async () => {
+    await seedEverything();
+
+    const names = (await warnings.findByStatus()).map(
+      (warning) => warning.snapshot().submittedByName,
+    );
+
+    expect(names.sort()).toEqual([
+      'DMC Officer (demo)',
+      'Duty Officer (demo)',
+      'Duty Officer (demo)',
+      'Duty Officer (demo)',
+      'Duty Officer (demo)',
+    ]);
+  });
+
+  it('gives a warning seeded before names existed its name, and changes nothing else about it', async () => {
+    await seedEverything();
+    await WarningModel.updateOne(
+      { _id: 'warning-demo-gampaha' },
+      { $unset: { submittedByName: 1 } },
+    );
+    const before = (await warnings.findById('warning-demo-gampaha'))!.snapshot();
+    expect(before.submittedByName).toBeUndefined();
+
+    await seedWarnings(context());
+
+    const after = (await warnings.findById('warning-demo-gampaha'))!.snapshot();
+    expect(after).toEqual({ ...before, submittedByName: 'Duty Officer (demo)' });
+  });
+
+  it('does not overwrite a name that is already there', async () => {
+    await seedEverything();
+    await WarningModel.updateOne({ _id: 'warning-demo-gampaha' }, { submittedByName: 'Renamed' });
+
+    await seedWarnings(context());
+
+    expect((await warnings.findById('warning-demo-gampaha'))?.snapshot().submittedByName).toBe(
+      'Renamed',
+    );
   });
 
   it('keeps every demo warning valid for a month, so a database seeded days before the viva still works', async () => {
