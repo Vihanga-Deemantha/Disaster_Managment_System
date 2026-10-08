@@ -1,0 +1,24 @@
+{
+  "role": "DMC_OFFICER",
+  "statuses": [
+    {
+      "path": "/api/hazard-reports?status=PENDING",
+      "status": 200
+    },
+    {
+      "path": "/api/hazard-reports/clusters",
+      "status": 200
+    },
+    {
+      "path": "/api/hazard-reports/clusters/seed-cluster-kalutara",
+      "status": 200
+    },
+    {
+      "path": "/api/hazard-reports/seed-report-kalutara-01",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "offlineDisabled": true,
+  "mutationsSubmitted": false
+}

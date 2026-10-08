@@ -1,0 +1,112 @@
+
+ RUN  v3.2.7 D:/GitHub/Disaster_Managment_System/.claude/worktrees/uc3-hazard-report-plan-83b3cd/frontend
+      Coverage enabled with v8
+
+stderr | src/features/hazard-reports/__tests__/ReportDetail.test.tsx > UC-3 A2/H8: 'DUTY_OFFICER' rejects with trimmed reason and shows new cluster result ('OPEN')
+[MSW] Error: intercepted a request without a matching request handler:
+
+  • GET /api/hazard-reports/r1
+
+If you still wish to intercept this unhandled request, please create a request handler for it.
+Read more: https://mswjs.io/docs/http/intercepting-requests
+
+stderr | src/features/hazard-reports/__tests__/ReportDetail.test.tsx > UC-3 A2/H8: 'DMC_OFFICER' rejects with trimmed reason and shows new cluster result ('OPEN')
+[MSW] Error: intercepted a request without a matching request handler:
+
+  • GET /api/hazard-reports/r1
+
+If you still wish to intercept this unhandled request, please create a request handler for it.
+Read more: https://mswjs.io/docs/http/intercepting-requests
+
+stderr | src/features/hazard-reports/__tests__/ReportDetail.test.tsx > UC-3 A2/H8: 'DUTY_OFFICER' rejects with trimmed reason and shows new cluster result ('CLOSED')
+[MSW] Error: intercepted a request without a matching request handler:
+
+  • GET /api/hazard-reports/r1
+
+If you still wish to intercept this unhandled request, please create a request handler for it.
+Read more: https://mswjs.io/docs/http/intercepting-requests
+
+stderr | src/features/hazard-reports/__tests__/ReportDetail.test.tsx > UC-3 A2/H8: 'DMC_OFFICER' rejects with trimmed reason and shows new cluster result ('CLOSED')
+[MSW] Error: intercepted a request without a matching request handler:
+
+  • GET /api/hazard-reports/r1
+
+If you still wish to intercept this unhandled request, please create a request handler for it.
+Read more: https://mswjs.io/docs/http/intercepting-requests
+
+ ✓ src/features/hazard-reports/__tests__/ReportDetail.test.tsx (27 tests) 12825ms
+   ✓ UC-3 step 12: shows photo, description, map, reporter and GPS capture details  1013ms
+   ✓ UC-3 steps 13–15: 'DUTY_OFFICER' verifies and keeps new score and recommendation ('OPEN')  537ms
+   ✓ UC-3 steps 13–15: 'DMC_OFFICER' verifies and keeps new score and recommendation ('OPEN')  400ms
+   ✓ UC-3 steps 13–15: 'DUTY_OFFICER' verifies and keeps new score and recommendation ('ESCALATION_RECOMMENDED')  392ms
+   ✓ UC-3 steps 13–15: 'DMC_OFFICER' verifies and keeps new score and recommendation ('ESCALATION_RECOMMENDED')  468ms
+   ✓ UC-3 A2/H8: 'DUTY_OFFICER' rejects with trimmed reason and shows new cluster result ('OPEN')  1087ms
+   ✓ UC-3 A2/H8: 'DMC_OFFICER' rejects with trimmed reason and shows new cluster result ('OPEN')  977ms
+   ✓ UC-3 A2/H8: 'DUTY_OFFICER' rejects with trimmed reason and shows new cluster result ('CLOSED')  953ms
+   ✓ UC-3 A2/H8: 'DMC_OFFICER' rejects with trimmed reason and shows new cluster result ('CLOSED')  930ms
+   ✓ UC-3 A2: already reviewed conflict stays in verify dialog and refreshes  585ms
+   ✓ UC-3 A2: already reviewed conflict stays in reject dialog and refreshes  1101ms
+   ✓ UC-3 A2: other review failure remains retryable (500)  335ms
+   ✓ UC-3 A2: other review failure remains retryable (409)  308ms
+   ✓ UC-3 A2: other review failure remains retryable (400)  308ms
+   ✓ UC-3 A2: connectivity loss after opening verify disables confirmation  328ms
+   ✓ UC-3 A2: connectivity loss after opening reject disables confirmation  551ms
+   ✓ UC-3 A2: route change clears previous report and confirmation  318ms
+   ✓ UC-3 A2: review network failure retains the pending report and dialog  334ms
+   ✓ UC-3 steps 13–14: successful review result survives failed refresh  431ms
+ ✓ src/features/hazard-reports/__tests__/OfficerDashboard.test.tsx (12 tests) 902ms
+ ✓ src/features/hazard-reports/__tests__/ReviewReports.test.tsx (5 tests) 5255ms
+   ✓ UC-3 A2: DUTY_OFFICER navigates from a pending report to dashboard, history and review without Back  2577ms
+   ✓ UC-3 A2: DMC_OFFICER navigates from a pending report to dashboard, history and review without Back  1489ms
+   ✓ UC-3 A2: failed review queue retries the pending query  385ms
+   ✓ UC-3 A2: cached review queue stays available offline  548ms
+ ✓ src/features/hazard-reports/__tests__/ClusterDetail.test.tsx (19 tests) 5603ms
+   ✓ UC-3 steps 11–12: shows score, band, counts, map pins and ordered report cards  582ms
+   ✓ UC-3 A2: refused escalation stays in dialog and refreshes server requirements  522ms
+   ✓ UC-3 A2: offline before and after opening prevents writes with visible reasons  629ms
+   ✓ UC-3 A2: automatic refresh updates centroid and reports  348ms
+   ✓ UC-3 A2: native connectivity loss immediately before confirming does not post  352ms
+   ✓ UC-3 A2: other API failures (500 INTERNAL_ERROR) stay in dialog without reloading  356ms
+   ✓ UC-3 A2: other API failures (409 CLUSTER_NOT_FOUND) stay in dialog without reloading  336ms
+   ✓ UC-3 A2: network failure stays in dialog without refreshing  346ms
+   ✓ UC-3 A2: offline reload retains saved cluster and sync information  447ms
+ ✓ src/features/hazard-reports/__tests__/RejectDialog.test.tsx (9 tests) 4066ms
+   ✓ UC-3 A2/H8: reason is required, whitespace cannot submit and length is bounded  559ms
+   ✓ UC-3 A2: busy blocks repeated submit, cancellation and Escape  562ms
+   ✓ UC-3 A2: failure stays open and translated (ApiError: Invalid)  412ms
+   ✓ UC-3 A2: failure stays open and translated (ApiError: Invalid)  398ms
+   ✓ UC-3 A2: failure stays open and translated (ApiError: Invalid)  401ms
+   ✓ UC-3 A2: failure stays open and translated (ApiError: Reviewed)  398ms
+   ✓ UC-3 A2: failure stays open and translated (Error: Unexpected)  405ms
+   ✓ UC-3 A2: cancellation and reopening clears the reason and error  542ms
+   ✓ UC-3 A2: unavailable action gives a reason and cannot submit  380ms
+ ✓ src/features/hazard-reports/__tests__/ReportsHistory.test.tsx (8 tests) 2058ms
+   ✓ UC-3 A2: history lists newest capture first with evidence, status and report links  367ms
+   ✓ UC-3 A2: search applies trimmed text only on submission, preserves status, and can clear both  831ms
+ ✓ src/features/hazard-reports/__tests__/routes.test.tsx (17 tests) 1328ms
+ ✓ src/features/hazard-reports/__tests__/components.test.tsx (14 tests) 285ms
+ ✓ src/features/hazard-reports/__tests__/CitizenReports.test.tsx (5 tests) 2289ms
+   ✓ UC-3 D13: reporter sees mobile app notice and a read-only list ({ userId: 'citizen-1', role: 'CITIZEN', displayName: 'Test Citizen', email: undefined, authenticatedAt: '2026-10-07T09:00:00.000Z', phone: '+94771234567', district: 'GAMPAHA', preferredLanguage: 'SI', nicMasked: '*********567' })  1058ms
+   ✓ UC-3 D13: reporter sees mobile app notice and a read-only list ({ userId: 'user-1', role: 'COMMUNITY_VOLUNTEER', displayName: 'DMC Officer (demo)', email: 'dmc.officer@safezone.lk', authenticatedAt: '2026-10-07T09:00:00.000Z' })  402ms
+   ✓ UC-3 D13: error can retry without enabling report submission  383ms
+ ✓ src/features/hazard-reports/__tests__/ReportCard.test.tsx (7 tests) 1012ms
+   ✓ UC-3 A2: a photographed report shows its hazard, capture time, reporter and status  528ms
+ ✓ src/features/hazard-reports/__tests__/ConfirmActionDialog.test.tsx (3 tests) 600ms
+ ✓ src/features/hazard-reports/__tests__/hazardReportsApi.test.ts (14 tests) 48ms
+ ✓ src/features/hazard-reports/__tests__/ReportsMap.test.tsx (5 tests) 118ms
+ ✓ src/features/hazard-reports/__tests__/model.test.ts (22 tests) 41ms
+ ✓ src/features/hazard-reports/__tests__/useAutoRefresh.test.ts (3 tests) 53ms
+
+ Test Files  15 passed (15)
+      Tests  170 passed (170)
+   Start at  01:44:16
+   Duration  83.35s (transform 3.60s, setup 12.78s, collect 10.99s, tests 36.48s, environment 11.93s, prepare 2.57s)
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 100% ( 1433/1433 )
+Branches     : 100% ( 252/252 )
+Functions    : 100% ( 98/98 )
+Lines        : 100% ( 1433/1433 )
+================================================================================
