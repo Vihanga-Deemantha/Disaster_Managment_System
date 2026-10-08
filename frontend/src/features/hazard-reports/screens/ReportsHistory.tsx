@@ -21,7 +21,7 @@ export function ReportsHistory() {
       <PageHeader title={t('hazardReports.history.title')} />
       <form
         role="search"
-        className="flex flex-wrap items-end gap-4"
+        className="grid items-end gap-4 rounded-2xl border border-line-soft bg-card p-5 shadow-[0_1px_2px_rgba(20,40,70,0.05)] sm:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto]"
         onSubmit={(event) => {
           event.preventDefault();
           setFilter((previous) => ({ ...previous, q: query.trim() || undefined }));

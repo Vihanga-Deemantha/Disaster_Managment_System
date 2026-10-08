@@ -1,4 +1,5 @@
 import { useI18n, useT } from '@/shared/i18n/I18nProvider';
+import { Icon } from '@/shared/ui/Icon';
 import type { Report } from '../api/types';
 import { formatTime } from '../model/formatTime';
 
@@ -10,16 +11,19 @@ export function ReportPhoto({ report }: { report: Report }) {
       alt={t('hazardReports.report.photoAlt', {
         hazard: t(`hazardReports.hazard.${report.hazardType}`),
       })}
-      className="h-32 w-40 rounded object-cover"
+      className="h-48 w-full rounded-xl border border-line-soft bg-paper object-contain"
     />
   ) : (
-    <p className="text-ink-soft">{t('hazardReports.report.noPhoto')}</p>
+    <p className="flex min-h-48 items-center justify-center gap-3 rounded-xl border border-dashed border-line bg-paper px-4 py-5 text-sm text-ink-soft">
+      <Icon name="fileText" size={22} />
+      {t('hazardReports.report.noPhoto')}
+    </p>
   );
 }
 export function ReportDelay({ report }: { report: Report }) {
   const { t, language } = useI18n();
   return report.syncedFromOffline ? (
-    <p>
+    <p className="rounded-xl bg-info-100 p-3 text-sm leading-6 text-info-600">
       {t('hazardReports.report.syncedFromOffline', {
         captured: formatTime(report.capturedAt, language),
         received: formatTime(report.receivedAt, language),
@@ -30,7 +34,9 @@ export function ReportDelay({ report }: { report: Report }) {
 export function RejectionReason({ report }: { report: Report }) {
   const t = useT();
   return report.status === 'REJECTED' && report.rejectionReason ? (
-    <p>{t('hazardReports.history.rejectedBecause', { reason: report.rejectionReason })}</p>
+    <p className="mt-2 rounded-lg bg-danger-100 px-3 py-2 text-sm leading-6 text-danger-600">
+      {t('hazardReports.history.rejectedBecause', { reason: report.rejectionReason })}
+    </p>
   ) : null;
 }
 export function LocationLabel({ report }: { report: Report }) {

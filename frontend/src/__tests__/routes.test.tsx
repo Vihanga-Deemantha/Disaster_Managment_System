@@ -25,8 +25,16 @@ const heading = (name: string) => screen.findByRole('heading', { level: 1, name 
 const NAV_BY_ROLE: Record<Role, string[]> = {
   CITIZEN: ['Hazard Reports'],
   COMMUNITY_VOLUNTEER: ['Hazard Reports'],
-  DUTY_OFFICER: ['Hazard Reports'],
-  DMC_OFFICER: ['Pending Approvals', 'Issued Warnings', 'Rejected Warnings', 'Impact Analytics'],
+  DUTY_OFFICER: ['Dashboard', 'Review reports', 'Report history'],
+  DMC_OFFICER: [
+    'Pending Approvals',
+    'Issued Warnings',
+    'Rejected Warnings',
+    'Dashboard',
+    'Review reports',
+    'Report history',
+    'Impact Analytics',
+  ],
   DISTRICT_OFFICER: ['Resource Allocation'],
   NGO_MANAGER: ['Resource Allocation', 'Impact Analytics'],
   ARMED_FORCES_LIAISON: ['Resource Allocation'],

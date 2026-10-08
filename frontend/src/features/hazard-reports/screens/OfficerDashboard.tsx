@@ -6,6 +6,7 @@ import { useCachedResource } from '@/shared/offline/useCachedResource';
 import { useOnlineStatus } from '@/shared/offline/useOnlineStatus';
 import { Button } from '@/shared/ui/Button';
 import { PageHeader } from '@/shared/ui/PageHeader';
+import { Icon } from '@/shared/ui/Icon';
 import { hazardReportsApi } from '../api/hazardReportsApi';
 import { AsyncState } from '../components/AsyncState';
 import { DashboardStats } from '../components/DashboardStats';
@@ -29,7 +30,13 @@ export function OfficerDashboard() {
         title={t('hazardReports.dashboard.title')}
         subtitle={t('hazardReports.dashboard.caption')}
       >
-        <Link to="history">{t('hazardReports.history.title')}</Link>
+        <Link
+          to="history"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line bg-card px-4 text-sm font-semibold text-navy-900 transition-colors hover:bg-accent-50"
+        >
+          <Icon name="fileText" />
+          {t('hazardReports.history.title')}
+        </Link>
         <Button variant="secondary" onClick={resource.reload}>
           {t('hazardReports.dashboard.refresh')}
         </Button>

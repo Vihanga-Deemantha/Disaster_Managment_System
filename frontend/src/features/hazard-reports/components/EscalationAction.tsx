@@ -34,8 +34,8 @@ export function EscalationAction({ cluster, client, online, reload }: Props) {
           >
             {t('hazardReports.escalate.button')}
           </Button>
-          <div id={reasonId}>
-            <ul>
+          <div id={reasonId} className="text-sm leading-6 text-ink-soft">
+            <ul className="list-inside list-disc space-y-1">
               {reasons.map((reason) => (
                 <li key={reason}>{reason}</li>
               ))}

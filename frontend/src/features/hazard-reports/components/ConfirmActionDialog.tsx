@@ -58,7 +58,7 @@ function OpenConfirmation({
         </>
       }
     >
-      <p>{body}</p>
+      <p className="text-sm leading-6 text-ink-soft">{body}</p>
       {disabledReason && <p>{disabledReason}</p>}
       {error !== undefined && <Alert tone="danger">{translateError(t, error)}</Alert>}
     </Dialog>

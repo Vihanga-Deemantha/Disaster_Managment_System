@@ -86,24 +86,28 @@ it('UC-3 step 15: disables escalation and visibly lists every unmet requirement'
   expect(screen.getByText('The cluster must be High priority.')).toBeVisible();
   expect(screen.getByText('The cluster needs a flood or landslide report.')).toBeVisible();
 });
-it('UC-3 step 16: confirming sends once, reloads, and shows sent for approval', async () => {
-  let posts = 0;
-  server.use(
-    http.post('/api/hazard-reports/clusters/c1/escalate', () => {
-      posts++;
-      answer(cluster({ status: 'ESCALATED' }));
-      return HttpResponse.json(cluster({ status: 'ESCALATED' }));
-    }),
-  );
-  open();
-  await ready();
-  await userEvent.click(screen.getByRole('button', { name: 'Escalate to warning' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Send for approval' }));
-  expect(await screen.findByText(/Sent to the DMC Officer for approval/)).toBeVisible();
-  expect(posts).toBe(1);
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Escalate to warning' })).not.toBeInTheDocument();
-});
+it.each(['DUTY_OFFICER', 'DMC_OFFICER'] as const)(
+  'UC-3 step 16: %s confirms once, reloads, and sees sent for approval',
+  async (role) => {
+    signIn(makeMe({ role }));
+    let posts = 0;
+    server.use(
+      http.post('/api/hazard-reports/clusters/c1/escalate', () => {
+        posts++;
+        answer(cluster({ status: 'ESCALATED' }));
+        return HttpResponse.json(cluster({ status: 'ESCALATED' }));
+      }),
+    );
+    open();
+    await ready();
+    await userEvent.click(screen.getByRole('button', { name: 'Escalate to warning' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send for approval' }));
+    expect(await screen.findByText(/Sent to the DMC Officer for approval/)).toBeVisible();
+    expect(posts).toBe(1);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Escalate to warning' })).not.toBeInTheDocument();
+  },
+);
 it('UC-3 H4: cancelling sends nothing', async () => {
   let posts = 0;
   server.use(

@@ -1,9 +1,9 @@
 import type { Band, ClusterStatus, ReportStatus } from '../api/types';
 const BANDS: Record<Band, string> = {
-  HIGH: 'bg-sev-critical text-white',
-  ELEVATED: 'bg-sev-high text-white',
-  MODERATE: 'bg-sev-medium text-white',
-  LOW: 'bg-sev-low text-white',
+  HIGH: 'bg-danger-100 text-danger-600',
+  ELEVATED: 'bg-warning-100 text-warning-600',
+  MODERATE: 'bg-info-100 text-info-600',
+  LOW: 'bg-success-100 text-success-600',
 };
 const REPORTS: Record<ReportStatus, string> = {
   PENDING: 'bg-warning-100 text-warning-600',

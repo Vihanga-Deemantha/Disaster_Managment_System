@@ -58,10 +58,10 @@ describe('UC-3 A2: cluster presentation decisions', () => {
     expect(escalationState(cluster({ status }), online)).toEqual(expected);
   });
   it.each([
-    ['HIGH', 'bg-sev-critical text-white'],
-    ['ELEVATED', 'bg-sev-high text-white'],
-    ['MODERATE', 'bg-sev-medium text-white'],
-    ['LOW', 'bg-sev-low text-white'],
+    ['HIGH', 'bg-danger-100 text-danger-600'],
+    ['ELEVATED', 'bg-warning-100 text-warning-600'],
+    ['MODERATE', 'bg-info-100 text-info-600'],
+    ['LOW', 'bg-success-100 text-success-600'],
   ] as const)('UC-3 A2: %s band uses a severity token', (band, tone) =>
     expect(bandTone(band)).toBe(tone),
   );

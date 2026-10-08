@@ -37,21 +37,26 @@ function open(route: string) {
   );
 }
 describe('UC-3 A2: web role and route shell', () => {
-  it.each([
-    ['/hazard-reports', 'Hazard report clusters'],
-    ['/hazard-reports/clusters/cluster-1', 'Kalutara cluster'],
-    ['/hazard-reports/reports/report-1', 'Hazard report'],
-    ['/hazard-reports/history', 'Report history'],
-  ])('UC-3 A2: duty officer opens %s', async (route, heading) => {
-    signIn(makeMe({ role: 'DUTY_OFFICER' }));
+  it.each(
+    [
+      ['/hazard-reports', 'Hazard report clusters'],
+      ['/hazard-reports/clusters/cluster-1', 'Kalutara cluster'],
+      ['/hazard-reports/reports', 'Review reports'],
+      ['/hazard-reports/reports/report-1', 'Hazard report'],
+      ['/hazard-reports/history', 'Report history'],
+    ].flatMap(([route, heading]) =>
+      (['DUTY_OFFICER', 'DMC_OFFICER'] as const).map((role) => ({ route, heading, role })),
+    ),
+  )('UC-3 A2: $role opens $route', async ({ route, heading, role }) => {
+    signIn(makeMe({ role }));
     open(route);
     await screen.findByText('DMC Officer (demo)');
     expect(await screen.findByRole('heading', { name: heading })).toBeVisible();
     if (heading === 'Hazard report clusters')
       await screen.findByText('No open clusters. New reports appear here automatically.');
   });
-  it.each([makeCitizen(), makeMe({ role: 'COMMUNITY_VOLUNTEER' }), makeMe()])(
-    'UC-3 A2: non-duty role sees its reports',
+  it.each([makeCitizen(), makeMe({ role: 'COMMUNITY_VOLUNTEER' })])(
+    'UC-3 A2: reporter role sees its reports',
     async (user) => {
       signIn(user);
       open('/hazard-reports');
@@ -68,6 +73,7 @@ describe('UC-3 A2: web role and route shell', () => {
   });
   it.each([
     ['/hazard-reports', 'DUTY_OFFICER', 'Hazard report clusters'],
+    ['/hazard-reports', 'DMC_OFFICER', 'Hazard report clusters'],
     ['/hazard-reports', 'CITIZEN', 'My reports'],
     ['/hazard-reports/nope', 'DUTY_OFFICER', 'Hazard report clusters'],
   ] as const)('UC-3 A2: the mounted app serves %s for %s', async (route, role, heading) => {

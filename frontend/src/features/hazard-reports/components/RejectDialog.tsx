@@ -33,7 +33,9 @@ function OpenRejection({ onReject, onClose, disabledReason }: RejectDialogProps)
         }}
         className="space-y-4"
       >
-        <label htmlFor={id}>{t('hazardReports.reject.reasonLabel')}</label>
+        <label htmlFor={id} className="block text-sm font-semibold text-navy-900">
+          {t('hazardReports.reject.reasonLabel')}
+        </label>
         <textarea
           id={id}
           aria-describedby={`${id}-hint`}
@@ -42,9 +44,11 @@ function OpenRejection({ onReject, onClose, disabledReason }: RejectDialogProps)
           disabled={state.busy}
           value={state.reason}
           onChange={(event) => state.setReason(event.target.value)}
-          className="w-full rounded border border-paper p-3"
+          className="min-h-36 w-full resize-y rounded-xl border border-line bg-card p-3 text-sm leading-6 text-ink focus:border-accent-600 focus:ring-3 focus:ring-accent-600/15 focus-visible:outline-none disabled:bg-paper"
         />
-        <p id={`${id}-hint`}>{t('hazardReports.reject.reasonHint')}</p>
+        <p id={`${id}-hint`} className="text-xs leading-5 text-ink-soft">
+          {t('hazardReports.reject.reasonHint')}
+        </p>
         {disabledReason && <p>{disabledReason}</p>}
         {state.error !== undefined && <Alert tone="danger">{rejectionError(t, state.error)}</Alert>}
         <div className="flex justify-end gap-3">

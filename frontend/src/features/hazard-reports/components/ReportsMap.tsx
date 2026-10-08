@@ -16,7 +16,10 @@ interface ReportsMapProps {
 
 export function ReportsMap({ centre, pins, ariaLabel }: ReportsMapProps) {
   return (
-    <section aria-label={ariaLabel}>
+    <section
+      aria-label={ariaLabel}
+      className="relative z-0 isolate overflow-hidden rounded-2xl border border-line-soft bg-paper"
+    >
       <MapContainer center={[centre.lat, centre.lng]} zoom={14} className="h-80 w-full">
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

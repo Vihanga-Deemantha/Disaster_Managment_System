@@ -76,7 +76,8 @@ it('UC-3 step 12: shows photo, description, map, reporter and GPS capture detail
   );
   expect(screen.getByText('Citizen')).toBeVisible();
   expect(screen.getByText('GPS, accurate to about 15 m')).toBeVisible();
-  expect(screen.getByText('Oct 7, 14:30')).toBeVisible();
+  expect(screen.getByText('Captured').nextElementSibling).toHaveTextContent('Oct 7, 14:30');
+  expect(screen.getByText('Received').nextElementSibling).toHaveTextContent('Oct 7, 14:30');
   const map = within(screen.getByRole('region', { name: "Map of this report's location" }));
   expect(map.getAllByTestId('pin')).toHaveLength(1);
   expect(map.getByTestId('pin')).toHaveAttribute('data-position', '6.58,79.96');
@@ -116,9 +117,14 @@ it('UC-3 step 12: absent GPS accuracy and absent cluster association are honest'
   expect(screen.getByText('GPS; accuracy was not recorded.')).toBeVisible();
   expect(screen.queryByRole('link', { name: 'Back to the cluster' })).not.toBeInTheDocument();
 });
-it.each(['OPEN', 'ESCALATION_RECOMMENDED'] as const)(
-  'UC-3 steps 13–15: verify keeps new score and recommendation (%s)',
-  async (status) => {
+it.each(
+  (['OPEN', 'ESCALATION_RECOMMENDED'] as const).flatMap((status) =>
+    (['DUTY_OFFICER', 'DMC_OFFICER'] as const).map((role) => ({ status, role })),
+  ),
+)(
+  'UC-3 steps 13–15: $role verifies and keeps new score and recommendation ($status)',
+  async ({ status, role }) => {
+    signIn(makeMe({ role }));
     let calls = 0;
     const reviewed = { ...pending(), status: 'VERIFIED' as const };
     server.use(
@@ -162,9 +168,14 @@ it.each(['OPEN', 'ESCALATION_RECOMMENDED'] as const)(
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   },
 );
-it.each(['OPEN', 'CLOSED'] as const)(
-  'UC-3 A2/H8: reject sends trimmed reason and shows new cluster result (%s)',
-  async (status) => {
+it.each(
+  (['OPEN', 'CLOSED'] as const).flatMap((status) =>
+    (['DUTY_OFFICER', 'DMC_OFFICER'] as const).map((role) => ({ status, role })),
+  ),
+)(
+  'UC-3 A2/H8: $role rejects with trimmed reason and shows new cluster result ($status)',
+  async ({ status, role }) => {
+    signIn(makeMe({ role }));
     let body: unknown;
     server.use(
       http.post('/api/hazard-reports/:id/reject', async ({ request }) => {

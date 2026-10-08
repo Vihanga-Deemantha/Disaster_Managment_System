@@ -30,13 +30,14 @@ function ClusterResource({ clusterId }: { clusterId: string }) {
       <AsyncState resource={resource} emptyMessage={t('hazardReports.cluster.empty')}>
         {(cluster) => (
           <>
-            <ClusterContent cluster={cluster} />
-            <EscalationAction
-              cluster={cluster}
-              client={client}
-              online={online}
-              reload={resource.reload}
-            />
+            <ClusterContent cluster={cluster}>
+              <EscalationAction
+                cluster={cluster}
+                client={client}
+                online={online}
+                reload={resource.reload}
+              />
+            </ClusterContent>
           </>
         )}
       </AsyncState>

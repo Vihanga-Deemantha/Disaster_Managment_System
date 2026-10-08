@@ -4,6 +4,7 @@ import { useApi } from '@/shared/api/ApiProvider';
 import { useT } from '@/shared/i18n/I18nProvider';
 import { useCachedResource } from '@/shared/offline/useCachedResource';
 import { useOnlineStatus } from '@/shared/offline/useOnlineStatus';
+import { PageHeader } from '@/shared/ui/PageHeader';
 import { hazardReportsApi } from '../api/hazardReportsApi';
 import { AsyncState } from '../components/AsyncState';
 import { ReportEvidence } from '../components/ReportEvidence';
@@ -29,15 +30,20 @@ function ReportResource({ reportId }: { reportId: string }) {
   const shown = receipt?.value.report ?? resource.data;
   return (
     <section className="space-y-6">
+      <PageHeader
+        title={t('hazardReports.report.title')}
+        subtitle={t('hazardReports.design.reviewSubtitle')}
+      >
+        <ReportReviewActions
+          report={resource.error ? undefined : shown}
+          online={online}
+          onReview={review}
+        />
+      </PageHeader>
       <ReviewFeedback receipt={receipt} />
       <AsyncState resource={resource} emptyMessage={t('error.REPORT_NOT_FOUND')}>
         {(loaded) => <ReportEvidence report={receipt?.value.report ?? loaded} />}
       </AsyncState>
-      <ReportReviewActions
-        report={resource.error ? undefined : shown}
-        online={online}
-        onReview={review}
-      />
     </section>
   );
 }

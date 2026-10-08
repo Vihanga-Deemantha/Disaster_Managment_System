@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { useT } from '@/shared/i18n/I18nProvider';
 import { Button } from '@/shared/ui/Button';
+import { Icon } from '@/shared/ui/Icon';
 import type { Report } from '../api/types';
 import type { ReviewAction } from '../hooks/useReportReview';
 import { ConfirmActionDialog } from './ConfirmActionDialog';
@@ -26,21 +27,27 @@ export function ReportReviewActions({ report, online, onReview }: Props) {
     <>
       {pending && (
         <div className="space-y-3">
-          {!online && <p id={reasonId}>{t('hazardReports.review.offline')}</p>}
-          <div className="flex gap-3">
+          {!online && (
+            <p id={reasonId} className="text-sm text-ink-soft">
+              {t('hazardReports.review.offline')}
+            </p>
+          )}
+          <div className="flex flex-wrap justify-end gap-3">
             <Button
               disabled={!online}
               aria-describedby={!online ? reasonId : undefined}
               onClick={() => setVerifying(true)}
             >
+              <Icon name="check" size={16} />
               {t('hazardReports.verify.button')}
             </Button>
             <Button
-              variant="danger"
+              variant="secondary"
               disabled={!online}
               aria-describedby={!online ? reasonId : undefined}
               onClick={() => setRejecting(true)}
             >
+              <Icon name="x" size={16} className="text-danger-600" />
               {t('hazardReports.reject.button')}
             </Button>
           </div>
