@@ -1,12 +1,12 @@
-# UC-1 redesign: Pending Approvals, Review Warning and the sidebar
+# UC-1 redesign: Pending Approvals, Review Warning, Warning Issued and the sidebar
 
-|              |                                                                                      |
-| ------------ | ------------------------------------------------------------------------------------ |
-| **Owner**    | G.V.D. Perera (UC-1 Issue Warning and the shared shell)                              |
-| **Date**     | 8 October 2026                                                                       |
-| **Asked by** | the owner, with two mock-ups attached (shown in section 2)                           |
-| **Scope**    | Pending Approvals list, Review Warning screen, the sidebar and top bar of every role |
-| **Status**   | Implemented and tested. Not yet committed or merged.                                 |
+|              |                                                                                                                                                                |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**    | G.V.D. Perera (UC-1 Issue Warning and the shared shell)                                                                                                        |
+| **Date**     | 8 October 2026                                                                                                                                                 |
+| **Asked by** | the owner, with three mock-ups attached (shown in section 2)                                                                                                   |
+| **Scope**    | Pending Approvals list, Review Warning and Warning Issued screens, the sidebar and top bar of every role                                                       |
+| **Status**   | Pending Approvals, Review Warning and the sidebar are committed. Warning Issued (sections 2, 3 and 6.6) was added later the same day and is not yet committed. |
 
 This document does three things the owner asked for: it shows the design we were given, it lists every
 place where what we built differs from it, and it says why. Section 4 says why the old screens were
@@ -24,6 +24,13 @@ So the work has three parts: (a) the Pending Approvals list and the Review Warni
 (and the bar above the page) for every signed-in role, because they share one frame, and (c) this
 document.
 
+A second request followed, with a third image, again with the wording tidied:
+
+> Redesign the Warning Issued screen to look like this. If changes are made, they need a justification.
+
+It is handled the same way: the image is in section 2, the new screen in section 3, and every change with
+its reason in section 6.6.
+
 ## 2. The design we were given
 
 **Pending Approvals** (a navy sidebar, four summary cards, hazard tabs, a numbered table):
@@ -34,6 +41,11 @@ document.
 supporting information on the right):
 
 ![The given Review Warning design](images/given-review-warning.webp)
+
+**Warning Issued** (a green banner with an ACTIVE pill, a Warning Details card on the left and a
+Notification Summary on the right):
+
+![The given Warning Issued design](images/given-warning-issued.png)
 
 What the design shows, in short:
 
@@ -50,6 +62,11 @@ What the design shows, in short:
 - **Review Warning:** Reject and Approve & Issue, "← Back to pending list" and a pink "Pending Approval"
   pill, a card with the hazard tile and "Warning Information" rows (each with an icon), a cream "Warning
   Message" box, "Location & Map" with the area in red, and "Supporting Information" thumbnails.
+- **Warning Issued:** a "View All Warnings" button; a green banner "Warning Issued Successfully" with an
+  ACTIVE pill; a "Warning Details" card (hazard tile, "Flood Warning" with a line under it, and rows for
+  Hazard Type, Severity, Target Area, Validity Period, Issued At and Issued By); a "Notification Summary"
+  card (Push ✓ Sent, SMS ✓ Sent, WhatsApp and Email "Not used", then "Citizens Reached 12,458 / 12,458" with
+  a full green bar and a green box "All notifications have been delivered successfully").
 
 ## 3. What we built
 
@@ -67,9 +84,17 @@ The two sister lists that the sidebar entries open (they did not exist before):
 | -------------------------------------------------------- | ------------------------------------------------------------ |
 | ![Our Issued Warnings](images/after-issued-warnings.png) | ![Our Rejected Warnings](images/after-rejected-warnings.png) |
 
-The delivery summary (step 14) was moved to the same look, so the whole use case reads as one product:
+**Warning Issued** (step 14, the screen after Approve & Issue). When everyone was reached it looks like the
+design:
 
-![Our delivery summary](images/after-delivery-summary.png)
+![Our Warning Issued](images/after-warning-issued.png)
+
+The real result is not always "everyone", so the same screen also tells the truth when some sends failed
+(everyone was reached by SMS, but 6 pushes failed) and when every gateway was down:
+
+| Some sends failed (A1)                                                        | Every channel unavailable (E2)                                    |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| ![Warning Issued, some sends failed](images/after-warning-issued-partial.png) | ![Warning Issued, outage](images/after-warning-issued-outage.png) |
 
 On a phone the sidebar becomes a menu, and the layout holds in Tamil, the language with the longest words:
 
@@ -84,6 +109,10 @@ This is what the screens looked like before (the same demo data):
 | Before: Pending Approvals                                     | Before: Review Warning                                  |
 | ------------------------------------------------------------- | ------------------------------------------------------- |
 | ![Old Pending Approvals](images/before-pending-approvals.png) | ![Old Review Warning](images/before-review-warning.png) |
+
+The delivery screen as it stood before the third mock-up (it already had the new frame, but its own layout):
+
+![Old Warning Issued](images/before-warning-issued.png)
 
 The old screens worked and were fully tested, but they had real problems, beyond taste:
 
@@ -103,8 +132,14 @@ The old screens worked and were fully tested, but they had real problems, beyond
    old screens did not follow it, and the other use cases will reuse the shell, so fixing it once here
    fixes it for everyone.
 
+7. **A summary that spoke in tables.** The delivery screen showed four plain number cards and a
+   Sent / Delivered / Failed table. It was correct, but an officer under pressure had to read a grid to learn
+   whether the warning had reached people. The supplied design leads with one sentence and one bar, and keeps
+   the detail beside them.
+
 The redesign answers each: one sidebar that carries identity, navigation and the count; a list with search,
-tabs, sort, period and pages; real Issued and Rejected lists; a phone menu; and the supplied look.
+tabs, sort, period and pages; real Issued and Rejected lists; a phone menu; a delivery summary that says the
+result first; and the supplied look.
 
 ## 5. The rules we used to decide where to differ
 
@@ -184,6 +219,24 @@ differ, one of these six rules is the reason. The tables below name the rule.
 | L2  | English only                                                            | English, Sinhala and Tamil are all written. The Sinhala and Tamil texts are drafts.                                               | **HCI-06a.** They still need a native speaker to read them before submission (open item 5).                                                             |
 | L3  | Only the full list is drawn                                             | A spinner while loading, a plain sentence when the list is empty, an error with Try again, a saved copy with its age when offline | **BR6** and basic honesty about state: the officer always knows whether they are looking at nothing, at failure or at old data.                         |
 
+### 6.6 Warning Issued (the delivery summary)
+
+| #   | Given design                                                                                                                         | What we built                                                                                                                                                                                                                                                                                                                                            | Why                                                                                                                                                                                                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W1  | Subtitle "The warning has been successfully issued to the affected citizens."                                                        | The subtitle says what the screen is for: "What was sent, to how many, and how it got there." The sentence about success moved into the banner, where it can change.                                                                                                                                                                                     | **R1, HCI-05a.** This screen is also what the officer sees when some citizens were not reached or nothing could be sent (E2). A fixed sentence of success would be false then.                                         |
+| W2  | A brown "View All Warnings →" button                                                                                                 | A brown "View Issued Warnings →" button that opens the Issued Warnings list. The "← Back to Pending Approvals" link stays.                                                                                                                                                                                                                               | **R2.** There is no "all warnings" page, and the Issued list is the real next place. The back link stays for phones, where the menu is hidden, and for the next waiting warning.                                       |
+| W3  | A green banner "Warning Issued Successfully: the warning is now active and has been sent to the citizens in the target area", always | The same banner, in green, when every citizen was reached: "…has reached all N citizens in the target area". Otherwise the colour and the words change: amber "delivery still in progress" with how many are reached so far; red "some citizens were not reached" with how many; red "Every delivery channel is unavailable" when nothing could be sent. | **R1, HCI-05a.** The report's critique found a flat "100% delivered" misleading. The warning IS issued in every case, but how far it got must be said in words and colour, not assumed.                                |
+| W4  | An "ACTIVE" pill, always                                                                                                             | "Active" while the warning's validity period has not ended, "Expired" after it                                                                                                                                                                                                                                                                           | **R1.** A warning that has ended must not go on saying it is active.                                                                                                                                                   |
+| W5  | "Warning Details": hazard tile, "Flood Warning" and the line "Heavy flooding expected in the area."                                  | The same tile and title, without the line                                                                                                                                                                                                                                                                                                                | **R1.** A warning has no summary field; its words are in the message the citizens received (same reason as V3).                                                                                                        |
+| W6  | Rows: Hazard Type, Severity, Target Area, Validity Period, Issued At, Issued By, each with an icon                                   | The same six rows and icons. The first four are the very component the Review screen uses, so the two screens cannot drift apart. Dates are written as in the design: day first, 24-hour clock.                                                                                                                                                          | One source of truth for how a warning is described.                                                                                                                                                                    |
+| W7  | "Issued By: Dr. Nimal Fernando (DMC Official)"                                                                                       | The name of the signed-in officer with "DMC Officer" under it when they issued the warning; otherwise just "DMC Officer"                                                                                                                                                                                                                                 | **R1.** The warning keeps only the approver's id, and neither the sign-in token nor the module context carries a display name (open item 7). Only a DMC Officer can issue a warning (BR1), so the role is always true. |
+| W8  | Notification Summary: Push ✓ Sent, SMS ✓ Sent, WhatsApp "Not used", Email "Not used"                                                 | Four rows with the same names and an icon each, but each says what really happened: "✓ 43 delivered", "6 failed", or "Not sent"                                                                                                                                                                                                                          | **HCI-05a, R1.** "Sent" does not say whether it arrived, and failures must be visible (A1). "Not used" would be false when a gateway was down, so a channel that sent nothing says "Not sent".                         |
+| W9  | "Citizens Reached 12,458 / 12,458" and a bar labelled 100%                                                                           | The same figure with thousands separators, and the same bar. The percentage is rounded down, so 100% only ever means everyone, and the bar has a text label for screen readers.                                                                                                                                                                          | Same look. **HCI-05a:** 99.9% must not be shown as 100%. **R6:** a bar needs a label.                                                                                                                                  |
+| W10 | A green box "All notifications have been delivered successfully. Citizens in the target area have been notified.", always            | The same green box, shown only when every send worked. Otherwise an amber box: what did not get through, the two numbers that matter (waiting to retry, not reached), when the page updates by itself, and the two ways forward: **Retry failed**, and the list of citizens not reached to download.                                                     | **R4.** Flows A1, E2 and E3 and the follow-up list are requirements, and the mock has no place for them.                                                                                                               |
+| W11 | (not shown)                                                                                                                          | The page refreshes itself every 10 seconds while retries are due, shows when it was last synced, turns Retry off when offline, and carries the demo-only gateway controls                                                                                                                                                                                | **R4, BR6.**                                                                                                                                                                                                           |
+| W12 | Sidebar "Pending Approvals" with a "0" badge                                                                                         | The same entry stays highlighted; the count is hidden at zero                                                                                                                                                                                                                                                                                            | As S5: a badge with nothing to count says nothing.                                                                                                                                                                     |
+| W13 | Search box, bell and "All systems operational" in the top bar                                                                        | As on every other screen (T0 to T4)                                                                                                                                                                                                                                                                                                                      | **R1, R2.**                                                                                                                                                                                                            |
+
 ## 7. Kept exactly as designed
 
 Navy sidebar with icons and an orange active entry; round initials badge with name, role and log-out at the
@@ -191,6 +244,9 @@ bottom; large title with a one-line help text; four summary cards with coloured 
 with counts; the two drop-downs; the numbered table with hazard icons and soft severity pills; the brown
 Review button; the "Showing … of …" footer with a pager; Reject, Approve & Issue, the back link and the
 status pill on the review screen; the warning card with icon rows; the map card with a red area and a key.
+On Warning Issued: the banner with its round icon and ACTIVE pill; the two-card layout; the six icon rows;
+four channel rows with an icon each; "Citizens Reached" with a large figure and a green bar; the green
+confirmation box for the case where everything worked.
 
 ## 8. Added, because the use case needs it
 
@@ -200,7 +256,8 @@ status pill on the review screen; the warning card with icon rows; the map card 
 - **Who will receive it** (SD1-03).
 - **Last synced / Reload** and the offline behaviour (BR6).
 - The **phone menu**.
-- The **delivery summary** in the same look (it was not in the supplied design).
+- **Retry failed**, the **follow-up list** and the **self-refreshing summary** on Warning Issued (A1, E2, E3).
+- **Amber and red states** for Warning Issued when delivery is in progress, partly failed or impossible.
 
 ## 9. Not done: open items for the team
 
@@ -212,6 +269,9 @@ status pill on the review screen; the warning card with icon rows; the map card 
 4. **Dashboard, Settings, notifications, global search.** No use case defines them (R2).
 5. **Sinhala and Tamil proofreading.** All new texts are drafts.
 6. **Names on old data.** Warnings saved before `submittedByName` existed show the id until their name is set. The demo seed fills it in.
+7. **"Issued By" names only the officer looking.** The warning keeps the approver's id; the sign-in token (shared
+   auth) and the module context carry no display name. Naming another officer needs the token or a user
+   directory to supply it, after which an `approvedByName` snapshot, like `submittedByName`, would follow.
 
 ## 10. Where the code changed
 
@@ -231,17 +291,21 @@ UC-1 files:
   `WarningsTable.tsx`, `ListToolbar.tsx`, `listView.ts`, `HazardIcon.tsx`, `ReviewWarningPage.tsx`,
   `MessageTabs.tsx`, `WarningMap.tsx`, `AudiencePanel.tsx`, `DeliverySummaryPage.tsx`,
   `ConfirmIssueDialog.tsx`, `EditWarningForm.tsx`, `nav.ts`, `api.ts`, `format.ts`, `types.ts`, `index.tsx`
+- Warning Issued: `DeliverySummaryPage.tsx` (rewritten), new `DeliveryBanner.tsx`,
+  `NotificationSummary.tsx` and `WarningFacts.tsx` (the facts list the Review screen now shares), and three
+  helpers in `format.ts` (`deliveryOutcome`, `validityState`, `formatCount`). In shared code: four icons in
+  `Icon.tsx` and 25 texts in each message catalog (7 old ones removed).
 - Backend: one optional field, `submittedByName`, in `Warning.ts`, `models.ts`, `dto.ts` and the demo seed
 
 ## 11. How it was checked
 
-| Check                                                                    | Result                                                                                                                      |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| Frontend component and unit tests (Vitest, Testing Library, MSW)         | 717 tests in 34 files; `features/warnings` at 100% of statements, branches, functions and lines; shared code above its gate |
-| Backend (Jest)                                                           | 964 tests in 49 suites; `modules/warnings` still at 100%                                                                    |
-| End to end (Playwright: real browser, real API, freshly seeded database) | 41 pass, 1 skipped (the screenshot script, which only runs on request)                                                      |
-| ESLint, Prettier, TypeScript                                             | Clean in both workspaces                                                                                                    |
-| By eye                                                                   | The screenshots above, at 1440 px and 390 px wide and in Tamil                                                              |
+| Check                                                                    | Result                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend component and unit tests (Vitest, Testing Library, MSW)         | 793 tests in 38 files, including the UC-4 tests that came in from `develop`. `features/warnings` and the shared code are at 100% of statements, branches, functions and lines where the gate asks for it.       |
+| Backend (Jest)                                                           | Not changed by the Warning Issued work.                                                                                                                                                                         |
+| End to end (Playwright: real browser, real API, freshly seeded database) | 41 pass, 1 skipped (the screenshot script, which only runs on request). The three states of Warning Issued are exercised: everyone reached, some pushes failed then retried, every gateway down then recovered. |
+| ESLint, Prettier, TypeScript                                             | Clean for everything in this work.                                                                                                                                                                              |
+| By eye                                                                   | The screenshots above, in all three states of Warning Issued.                                                                                                                                                   |
 
 Two defects turned up while testing, and are fixed:
 
