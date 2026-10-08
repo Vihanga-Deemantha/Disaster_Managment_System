@@ -6,7 +6,7 @@ The `/analytics` screen provides event, district, hazard and date filters; four 
 
 ## Run and demonstrate
 
-From the repository root, use the existing setup and database instructions, then `npm.cmd run seed` and `npm.cmd run dev`. UC-4 contributes six months of relative demonstration history to the existing seed runner. Open `/analytics` after signing in with the existing demo accounts:
+From the repository root, use the existing setup and database instructions, then `npm.cmd run seed` and `npm.cmd run dev`. UC-4 contributes six months of relative demonstration history across 10 districts to the existing seed runner. To populate analytics only without resetting accounts or other modules, run `npm.cmd exec -w backend -- tsx src/modules/analytics/seed/run.ts`. Stable IDs prevent duplicate records on repeat runs. Open `/analytics` after signing in with the existing demo accounts:
 
 | Role        | Email                     | Scope                                        |
 | ----------- | ------------------------- | -------------------------------------------- |
@@ -14,7 +14,7 @@ From the repository root, use the existing setup and database instructions, then
 | NGO Manager | `ngo.manager@safezone.lk` | Red Cross Sri Lanka                          |
 | Donor       | `donor@safezone.lk`       | Relief Foundation                            |
 
-Use the demo password documented in the shared seed (`SafeZone#Demo2026`). Select Ratnapura Monsoon Flood or Kalutara Landslide for populated results. Clear the event and choose a district without seeded history for E2. For E3, an authenticated DMC Officer can PUT `{ "mode": "FAIL_ONCE" }` or `{ "mode": "FAIL_ALWAYS" }` to `/api/dev/pdf-exporter`, then export PDF. Restore `{ "mode": "OK" }`. This route is absent in production.
+Use the demo password documented in the shared seed (`SafeZone#Demo2026`). Select Ratnapura Monsoon Flood or Kalutara Landslide for populated results. Select All events, All districts and a populated date range to compare Ratnapura, Kalutara, Colombo, Gampaha, Galle, Matara, Kegalle, Kandy, Badulla and Nuwara Eliya. Quantities vary by district, organisation, month and day; units remain separate. Clear the event and choose an unseeded district such as Jaffna for E2. For E3, an authenticated DMC Officer can PUT `{ "mode": "FAIL_ONCE" }` or `{ "mode": "FAIL_ALWAYS" }` to `/api/dev/pdf-exporter`, then export PDF. Restore `{ "mode": "OK" }`. This route is absent in production.
 
 NGO/Donor relief queries and exports enforce the authenticated organisation; a conflicting organisation produces 403 and an audit record. Their alert/shelter figures are public aggregates, and private log/export fields remain redacted for either audience. For DMC, External removes personal and internal failure details; Internal retains authorised details.
 
