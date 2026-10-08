@@ -6,11 +6,15 @@ import { renderRoutes } from '@/shared/testing/render';
 import { server } from '@/shared/testing/server';
 import { routes } from '@/routes';
 import { HazardReportsPage } from '../index';
+import { cluster } from '../testing/clusterFixtures';
 
 beforeEach(() =>
   server.use(
     http.get('/api/hazard-reports', () => HttpResponse.json([])),
     http.get('/api/hazard-reports/clusters', () => HttpResponse.json([])),
+    http.get('/api/hazard-reports/clusters/cluster-1', () =>
+      HttpResponse.json(cluster({ id: 'cluster-1', reports: [] })),
+    ),
   ),
 );
 function open(route: string) {
@@ -32,7 +36,7 @@ function open(route: string) {
 describe('UC-3 A2: web role and route shell', () => {
   it.each([
     ['/hazard-reports', 'Hazard report clusters'],
-    ['/hazard-reports/clusters/cluster-1', 'Area cluster'],
+    ['/hazard-reports/clusters/cluster-1', 'Kalutara cluster'],
     ['/hazard-reports/reports/report-1', 'Hazard report'],
     ['/hazard-reports/history', 'Report history'],
   ])('UC-3 A2: duty officer opens %s', async (route, heading) => {
