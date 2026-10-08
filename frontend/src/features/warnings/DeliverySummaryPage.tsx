@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
-import { CHANNELS } from '@contracts/enums';
 import { useApi } from '@/shared/api/ApiProvider';
-import { useT } from '@/shared/i18n/I18nProvider';
+import { useAuth } from '@/shared/auth/AuthContext';
+import { useI18n, useT } from '@/shared/i18n/I18nProvider';
 import { translateError } from '@/shared/i18n/translateError';
 import { useDocumentTitle } from '@/shared/layout/useDocumentTitle';
 import { LastSynced } from '@/shared/offline/LastSynced';
@@ -10,16 +10,17 @@ import { useCachedResource } from '@/shared/offline/useCachedResource';
 import { useOnlineStatus } from '@/shared/offline/useOnlineStatus';
 import { Alert } from '@/shared/ui/Alert';
 import { Button, buttonClasses } from '@/shared/ui/Button';
+import { Card } from '@/shared/ui/Card';
 import { Icon } from '@/shared/ui/Icon';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import { SeverityPill } from '@/shared/ui/SeverityPill';
 import { Spinner } from '@/shared/ui/Spinner';
-import { StatCard } from '@/shared/ui/StatCard';
+import { DeliveryBanner } from './DeliveryBanner';
 import { DemoTools } from './DemoGatewayPanel';
-import { HazardIcon } from './HazardIcon';
-import { getDelivery, retryFailed, reviewPath, unreachedCsvUrl } from './api';
-import { areaNames, hasRetryableDelivery, reachedPercent } from './format';
-import type { DeliveryDto, IssueResult } from './types';
+import { NotificationSummary } from './NotificationSummary';
+import { InfoRow, WarningFacts, WarningTitle } from './WarningFacts';
+import { getDelivery, reviewPath } from './api';
+import { formatDateTime } from './format';
+import type { DeliveryDto, WarningDto } from './types';
 
 /** While retries are still due, the numbers move on their own. */
 export const REFRESH_MS = 10_000;
@@ -32,135 +33,44 @@ export function useAutoRefresh(enabled: boolean, reload: () => void): void {
   }, [enabled, reload]);
 }
 
-/** The four numbers of step 14. "Reached" is rounded down: 100% only ever means everyone. */
-function Figures({ result }: { result: IssueResult }) {
+/**
+ * Who issued it. Only a DMC Officer can (BR1), so the role is always true; the name is shown when it is
+ * the person looking, because the warning keeps the approver's id and nothing else.
+ */
+function IssuedBy({ warning }: { warning: WarningDto }) {
   const t = useT();
-  return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon="users"
-          tone="blue"
-          value={String(result.targeted)}
-          label={t('warnings.delivery.targeted')}
-        />
-        <StatCard
-          icon="checkCircle"
-          tone="green"
-          value={String(result.reached)}
-          label={t('warnings.delivery.reached')}
-        />
-        <StatCard
-          icon="clock"
-          tone="amber"
-          value={String(result.pendingRetry)}
-          label={t('warnings.delivery.pending')}
-        />
-        <StatCard
-          icon="alertTriangle"
-          tone="red"
-          value={String(result.failed)}
-          label={t('warnings.delivery.failed')}
-        />
-      </div>
-      <p className="text-lg font-bold text-navy-900">
-        {t('warnings.delivery.percent', { percent: reachedPercent(result) })}
-      </p>
-    </>
-  );
-}
-
-function ChannelTable({ result }: { result: IssueResult }) {
-  const t = useT();
-  return (
-    <section aria-labelledby="channels-heading" className="space-y-3">
-      <h2 id="channels-heading" className="text-[15px] font-bold text-navy-900">
-        {t('warnings.delivery.channelsHeading')}
-      </h2>
-      <div className="overflow-x-auto rounded-2xl border border-line-soft bg-card shadow-[0_1px_2px_rgba(20,40,72,0.05)]">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="text-[13px] text-navy-900">
-              {(['channel', 'sent', 'delivered', 'failed'] as const).map((column) => (
-                <th key={column} scope="col" className="px-5 py-4 font-bold">
-                  {t(`warnings.delivery.col.${column}`)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {CHANNELS.map((channel) => (
-              <tr key={channel} className="border-t border-line-soft">
-                <th scope="row" className="px-5 py-4 font-bold text-navy-900">
-                  {t(`warnings.review.channel.${channel}`)}
-                </th>
-                <td className="px-5 py-4">{result.byChannel[channel].sent}</td>
-                <td className="px-5 py-4">{result.byChannel[channel].delivered}</td>
-                <td className="px-5 py-4">{result.byChannel[channel].failed}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-/** A1, E2, E3: send again whatever did not get through; the follow-up list for the rest. */
-function Remedies({
-  delivery,
-  online,
-  reload,
-}: {
-  delivery: DeliveryDto;
-  online: boolean;
-  reload: () => void;
-}) {
-  const t = useT();
-  const api = useApi();
-  const [busy, setBusy] = useState(false);
-  const [failure, setFailure] = useState<unknown>();
-  const { warning, result } = delivery;
-
-  async function retry(): Promise<void> {
-    setBusy(true);
-    setFailure(undefined);
-    try {
-      await retryFailed(api, warning.warningId);
-      reload();
-    } catch (error) {
-      setFailure(error);
-    } finally {
-      setBusy(false);
-    }
+  const me = useAuth().user;
+  const role = t('role.DMC_OFFICER');
+  if (me && warning.approvedBy === me.userId) {
+    return (
+      <>
+        <span className="block">{me.displayName}</span>
+        <span className="block text-xs font-normal text-ink-soft">{role}</span>
+      </>
+    );
   }
+  return <>{role}</>;
+}
 
+/** The left card: which warning this was, and when it was issued and by whom. */
+function DetailsCard({ warning }: { warning: WarningDto }) {
+  const { t, language } = useI18n();
   return (
-    <div className="space-y-3">
-      {failure ? <Alert tone="danger">{translateError(t, failure)}</Alert> : null}
-      <div className="flex flex-wrap items-center gap-3">
-        {hasRetryableDelivery(result) ? (
-          <Button
-            variant="secondary"
-            disabled={!online}
-            loading={busy}
-            loadingLabel={t('warnings.delivery.retrying')}
-            onClick={() => void retry()}
-          >
-            {t('warnings.delivery.retry')}
-          </Button>
-        ) : null}
-        {result.unreached > 0 ? (
-          <a
-            href={unreachedCsvUrl(warning.warningId)}
-            download
-            className={buttonClasses('secondary')}
-          >
-            {t('warnings.delivery.download')}
-          </a>
-        ) : null}
-      </div>
-    </div>
+    <Card>
+      <h2 className="mb-4 text-xl font-extrabold text-navy-900">
+        {t('warnings.delivery.detailsTitle')}
+      </h2>
+      <WarningTitle warning={warning} as="h3" />
+      <hr className="my-5 border-line-soft" />
+      <WarningFacts warning={warning}>
+        <InfoRow label={t('warnings.delivery.issuedAt')} icon="clock">
+          {formatDateTime(warning.issuedAt as string, language)}
+        </InfoRow>
+        <InfoRow label={t('warnings.delivery.issuedBy')} icon="user">
+          <IssuedBy warning={warning} />
+        </InfoRow>
+      </WarningFacts>
+    </Card>
   );
 }
 
@@ -174,7 +84,7 @@ function DeliveryBody({
   reload: () => void;
 }) {
   const t = useT();
-  const { warning, result } = delivery;
+  const { warning } = delivery;
   if (warning.status !== 'ISSUED') {
     return (
       <Alert tone="info">
@@ -187,26 +97,11 @@ function DeliveryBody({
   }
   return (
     <>
-      <p className="flex flex-wrap items-center gap-3 text-ink">
-        <SeverityPill severity={warning.severity} />
-        <span className="flex items-center gap-2 font-bold text-navy-900">
-          <HazardIcon hazard={warning.hazardType} />
-          {t(`warnings.hazard.${warning.hazardType}`)}
-        </span>
-        <span>{areaNames(warning)}</span>
-      </p>
-      {delivery.allChannelsUnavailable ? (
-        <Alert tone="danger">
-          <p className="font-semibold">{t('warnings.delivery.outageTitle')}</p>
-          <p>{t('warnings.delivery.outageBody')}</p>
-        </Alert>
-      ) : null}
-      <Figures result={result} />
-      <ChannelTable result={result} />
-      {result.pendingRetry > 0 ? (
-        <p className="text-sm text-ink-soft">{t('warnings.delivery.autoRefresh')}</p>
-      ) : null}
-      <Remedies delivery={delivery} online={online} reload={reload} />
+      <DeliveryBanner delivery={delivery} />
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <DetailsCard warning={warning} />
+        <NotificationSummary delivery={delivery} online={online} reload={reload} />
+      </div>
     </>
   );
 }
@@ -230,7 +125,12 @@ export function DeliverySummaryPage() {
 
   return (
     <section className="space-y-5">
-      <PageHeader title={t('warnings.delivery.title')} subtitle={t('warnings.delivery.subtitle')} />
+      <PageHeader title={t('warnings.delivery.title')} subtitle={t('warnings.delivery.subtitle')}>
+        <Link to="/warnings/issued" className={buttonClasses('primary')}>
+          {t('warnings.delivery.viewIssued')}
+          <Icon name="arrowRight" size={16} />
+        </Link>
+      </PageHeader>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/warnings"

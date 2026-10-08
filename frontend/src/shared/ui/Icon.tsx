@@ -164,6 +164,10 @@ const ICONS = {
     { d: 'M16 16h-6' },
     { d: 'M11 20H9' },
   ],
+  messageSquare: [{ d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' }],
+  messageCircle: [{ d: 'M7.9 20A9 9 0 1 0 4 16.1L2 22Z' }],
+  mail: [{ rect: [2, 4, 20, 16, 2] }, { d: 'm22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7' }],
+  minus: [{ d: 'M5 12h14' }],
 } as const satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;

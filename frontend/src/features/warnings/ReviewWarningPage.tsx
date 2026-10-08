@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useApi } from '@/shared/api/ApiProvider';
 import { useAuth } from '@/shared/auth/AuthContext';
@@ -11,17 +11,16 @@ import { useOnlineStatus } from '@/shared/offline/useOnlineStatus';
 import { Alert } from '@/shared/ui/Alert';
 import { Button, buttonClasses } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
-import { Icon, type IconName } from '@/shared/ui/Icon';
+import { Icon } from '@/shared/ui/Icon';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import { SeverityPill } from '@/shared/ui/SeverityPill';
 import { Spinner } from '@/shared/ui/Spinner';
 import { AudiencePanel } from './AudiencePanel';
 import { ConfirmIssueDialog } from './ConfirmIssueDialog';
 import { DemoTools } from './DemoGatewayPanel';
 import { EditWarningForm } from './EditWarningForm';
-import { HazardIcon, HazardTile } from './HazardIcon';
 import { MessageTabs } from './MessageTabs';
 import { RejectDialog, type RejectOutcome } from './RejectDialog';
+import { InfoRow, WarningFacts, WarningTitle } from './WarningFacts';
 import { WarningMap } from './WarningMap';
 import { deliveryPath, getReview } from './api';
 import { areaNames, describeIssue, formatDateTime, submitterLabel } from './format';
@@ -36,62 +35,12 @@ import type {
 
 type Mode = 'view' | 'edit' | 'reject' | 'issue';
 
-/** One line of "Warning Information": a label, then an icon and the value. */
-function InfoRow({
-  label,
-  icon,
-  children,
-}: {
-  label: string;
-  icon?: IconName;
-  children: ReactNode;
-}) {
-  return (
-    <>
-      <dt className="text-ink-soft">{label}</dt>
-      <dd className="flex min-w-0 items-center gap-2.5 font-medium text-navy-900">
-        {icon ? <Icon name={icon} size={16} className="flex-none text-ink-soft" /> : null}
-        <span className="min-w-0">{children}</span>
-      </dd>
-    </>
-  );
-}
-
-/** What the warning is: its hazard, how severe, where, until when, who sent it and when. */
+/** What the warning is, then who submitted it and when. */
 function WarningInformation({ warning }: { warning: WarningDto }) {
   const { t, language } = useI18n();
-  const hazard = t(`warnings.hazard.${warning.hazardType}`);
   const submitted = Date.parse(warning.submittedAt);
   return (
-    <dl className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-4 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
-      <InfoRow label={t('warnings.review.label.hazard')}>
-        <span className="flex items-center gap-2.5">
-          <span className="text-ink-soft">
-            <HazardIcon hazard={warning.hazardType} size={16} />
-          </span>
-          {hazard}
-        </span>
-      </InfoRow>
-      <InfoRow label={t('warnings.review.label.severity')}>
-        <SeverityPill severity={warning.severity} />
-      </InfoRow>
-      <InfoRow label={t('warnings.review.label.area')} icon="mapPin">
-        {warning.targetAreas.map((area) => (
-          <span key={area.areaId} className="block">
-            {area.name}
-            <span className="ml-2 rounded bg-accent-100 px-1.5 py-0.5 text-xs font-semibold">
-              {t(`warnings.area.${area.type}`)}
-            </span>
-          </span>
-        ))}
-      </InfoRow>
-      <InfoRow label={t('warnings.review.label.validity')} icon="calendar">
-        {/* each end stays in one piece, so the line can only break at the dash */}
-        <span className="whitespace-nowrap">
-          {formatDateTime(warning.validFrom, language)}
-        </span> —{' '}
-        <span className="whitespace-nowrap">{formatDateTime(warning.validTo, language)}</span>
-      </InfoRow>
+    <WarningFacts warning={warning}>
       <InfoRow label={t('warnings.review.label.submittedBy')} icon="user">
         {submitterLabel(warning, t)}
       </InfoRow>
@@ -101,22 +50,16 @@ function WarningInformation({ warning }: { warning: WarningDto }) {
           {relativeTime(submitted, Date.now(), HTML_LANG[language])}
         </span>
       </InfoRow>
-    </dl>
+    </WarningFacts>
   );
 }
 
 /** The big card on the left: title with the hazard icon, the information, and the message in three languages. */
 function WarningCard({ warning }: { warning: WarningDto }) {
   const t = useT();
-  const hazard = t(`warnings.hazard.${warning.hazardType}`);
   return (
     <Card>
-      <div className="flex items-center gap-4">
-        <HazardTile hazard={warning.hazardType} severity={warning.severity} />
-        <h2 className="text-xl font-extrabold text-navy-900">
-          {t('warnings.review.cardTitle', { hazard })}
-        </h2>
-      </div>
+      <WarningTitle warning={warning} />
       <hr className="my-5 border-line-soft" />
       <h3 className="mb-4 text-[15px] font-bold text-navy-900">{t('warnings.review.info')}</h3>
       <WarningInformation warning={warning} />
