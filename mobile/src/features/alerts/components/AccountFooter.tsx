@@ -1,9 +1,11 @@
-import { Alert as NativeAlert, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useI18n } from '@/shared/i18n/I18nProvider';
 import { useSession } from '@/shared/session/SessionProvider';
 import { colors, radius, spacing } from '@/shared/theme/tokens';
 import { AppText } from '@/shared/ui/AppText';
 import { Button } from '@/shared/ui/Button';
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { LanguagePills } from '@/shared/ui/LanguagePills';
 
 /**
@@ -13,13 +15,13 @@ import { LanguagePills } from '@/shared/ui/LanguagePills';
 export function AccountFooter() {
   const { t, language, setLanguage } = useI18n();
   const { state, signOut } = useSession();
+  const [asking, setAsking] = useState(false);
   if (state.status !== 'signedIn') return null;
 
-  const confirmSignOut = (): void =>
-    NativeAlert.alert(t('auth.account.signOutTitle'), t('auth.account.signOutBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('auth.account.signOut'), style: 'destructive', onPress: () => void signOut() },
-    ]);
+  const confirm = (): void => {
+    setAsking(false);
+    void signOut();
+  };
 
   return (
     <View style={styles.card}>
@@ -30,7 +32,17 @@ export function AccountFooter() {
         <AppText variant="caption">{t('account.language')}</AppText>
         <LanguagePills value={language} onChange={setLanguage} />
       </View>
-      <Button title={t('auth.account.signOut')} variant="danger" onPress={confirmSignOut} />
+      <Button title={t('auth.account.signOut')} variant="danger" onPress={() => setAsking(true)} />
+      <ConfirmDialog
+        visible={asking}
+        title={t('auth.account.signOutTitle')}
+        body={t('auth.account.signOutBody')}
+        confirmLabel={t('auth.account.signOut')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        onConfirm={confirm}
+        onCancel={() => setAsking(false)}
+      />
     </View>
   );
 }

@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
-import { Alert as NativeAlert } from 'react-native';
 import { en } from '@/shared/i18n/messages.en';
 import { session } from '@/shared/runtime';
 import { aMe } from '@/shared/testing/renderWithApp';
@@ -151,16 +150,14 @@ describe('the gate', () => {
 
   it('sends the person back to sign-in when they sign out', async () => {
     await rememberSignedInPhone();
-    const confirm = jest.spyOn(NativeAlert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((button) => button.style === 'destructive')?.onPress?.();
-    });
     renderRouter('src/app', { initialUrl: '/alerts' });
     await inApp();
 
     fireEvent.press(await screen.findByRole('button', { name: en['auth.account.signOut'] }));
+    const asking = within(screen.getByLabelText(en['auth.account.signOutTitle']));
+    fireEvent.press(asking.getByRole('button', { name: en['auth.account.signOut'] }));
 
     expect(await onSignIn()).toBeTruthy();
-    expect(confirm).toHaveBeenCalledTimes(1);
     expect(server.requests).toContain('POST /api/auth/logout');
     tabBarGone();
   });
