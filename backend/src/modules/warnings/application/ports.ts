@@ -7,6 +7,8 @@ import type { Warning } from '../domain/Warning';
 
 export interface WarningRepository {
   findById(warningId: string): Promise<Warning | null>;
+  /** Those that exist, in no particular order: an id nobody stored is simply absent from the answer. */
+  findByIds(warningIds: readonly string[]): Promise<Warning[]>;
   /** Newest first. No status means every status. */
   findByStatus(status?: WarningStatus): Promise<Warning[]>;
   /** The draft a UC-3 cluster already produced, so a second escalation updates it. */
@@ -24,6 +26,11 @@ export interface AlertNotificationRepository {
   /** Stores the current state of each notification (insert or replace). */
   saveMany(notifications: readonly AlertNotification[]): Promise<void>;
   findByWarning(warningId: string): Promise<AlertNotification[]>;
+  /**
+   * A citizen's inbox: what got through to them on at least one channel, newest first, at most `limit`.
+   * Their own alerts only; the citizen is always the signed-in caller, never a request parameter.
+   */
+  findDeliveredByCitizen(citizenId: string, limit: number): Promise<AlertNotification[]>;
 }
 
 /** Who lives in an area: the report's `TargetArea.findCitizens` goes through this (SD1-03). */
