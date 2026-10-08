@@ -662,6 +662,8 @@ export const en = {
   'hazardReports.cluster.title': '{area} cluster',
   'hazardReports.cluster.score': 'Priority score {score} of 100',
   'hazardReports.cluster.empty': 'No reports in this cluster.',
+  'hazardReports.report.mapLabel': "Map of this report's location",
+  'hazardReports.report.location.GPSUnknown': 'GPS; accuracy was not recorded.',
   'hazardReports.cluster.openReport': 'Review report',
   'hazardReports.cluster.mapLabel': 'Map of the reports in this cluster',
   'hazardReports.escalate.button': 'Escalate to warning',

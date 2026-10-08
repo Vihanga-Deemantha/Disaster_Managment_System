@@ -671,6 +671,8 @@ export const si: Messages = {
   'hazardReports.cluster.title': '{area} පොකුර',
   'hazardReports.cluster.score': '100 න් ප්‍රමුඛතා ලකුණු {score}',
   'hazardReports.cluster.empty': 'මෙම වාර්තා සමූහයේ වාර්තා නොමැත.',
+  'hazardReports.report.mapLabel': 'මෙම වාර්තාවේ ස්ථානය දැක්වෙන සිතියම',
+  'hazardReports.report.location.GPSUnknown': 'GPS; නිරවද්‍යතාව සටහන් කර නැත.',
   'hazardReports.cluster.openReport': 'වාර්තාව සමාලෝචනය කරන්න',
   'hazardReports.cluster.mapLabel': 'මෙම පොකුරේ වාර්තා සිතියම',
   'hazardReports.escalate.button': 'අනතුරු ඇඟවීමකට යොමු කරන්න',
