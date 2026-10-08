@@ -40,7 +40,7 @@ describe('the warnings routes (mounted by the app at /warnings/*)', () => {
   it('opens the delivery summary at /warnings/:warningId/delivery', async () => {
     renderWarnings('/warnings/W-102/delivery');
 
-    expect(await heading('Warning issued')).toBeInTheDocument();
+    expect(await heading('Warning Issued')).toBeInTheDocument();
   });
 
   it('answers anything deeper with the not-found page', async () => {

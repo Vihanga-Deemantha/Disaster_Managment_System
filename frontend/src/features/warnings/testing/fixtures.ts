@@ -89,7 +89,12 @@ export const aResult = (overrides: Partial<IssueResult> = {}): IssueResult => ({
 });
 
 export const aDelivery = (overrides: Partial<DeliveryDto> = {}): DeliveryDto => ({
-  warning: aWarning({ status: 'ISSUED', approvedBy: 'user-1', approvedAt: hoursAgo(0.1) }),
+  warning: aWarning({
+    status: 'ISSUED',
+    approvedBy: 'user-1',
+    approvedAt: hoursAgo(0.1),
+    issuedAt: hoursAgo(0.1),
+  }),
   result: aResult(),
   allChannelsUnavailable: false,
   ...overrides,

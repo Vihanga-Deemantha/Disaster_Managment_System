@@ -3,8 +3,10 @@ import { interpolate, type Translate } from '@/shared/i18n/I18nProvider';
 import {
   SMS_MAX_LENGTH,
   areaNames,
+  deliveryOutcome,
   describeIssue,
   formatDateTime,
+  formatCount,
   fromLocalInput,
   hasRetryableDelivery,
   hazardCounts,
@@ -18,6 +20,7 @@ import {
   submitterLabel,
   toLocalInput,
   urgentCount,
+  validityState,
   waitingOverADay,
 } from '../format';
 import { aBasin, aDistrict, aResult, aWarning } from '../testing/fixtures';
@@ -198,6 +201,56 @@ describe('UC-1 step 1: who sent it, and what a search can find', () => {
 
   it('searchText has no stray text for a warning that was not rejected', () => {
     expect(searchText(aWarning({ warningId: 'W-1' }), t)).toBe('flood gampaha usr-duty-1 w-1 ');
+  });
+});
+
+describe('UC-1 step 14: how a delivery stands', () => {
+  const stands = (result: Parameters<typeof aResult>[0], allChannelsUnavailable = false) =>
+    deliveryOutcome({ result: aResult(result), allChannelsUnavailable });
+
+  it('is ALL when everyone was reached and nothing is waiting', () => {
+    expect(stands({})).toBe('ALL');
+  });
+
+  it('is PENDING while citizens are still being tried again, even if others were missed', () => {
+    expect(stands({ pendingRetry: 3 })).toBe('PENDING');
+    expect(stands({ pendingRetry: 3, failed: 2 })).toBe('PENDING');
+  });
+
+  it('is FAILED when nothing is waiting but some citizens were missed', () => {
+    expect(stands({ failed: 2 })).toBe('FAILED');
+  });
+
+  it('is OUTAGE whenever every gateway was down, whatever the counts say', () => {
+    expect(stands({ pendingRetry: 61 }, true)).toBe('OUTAGE');
+    expect(stands({}, true)).toBe('OUTAGE');
+  });
+});
+
+describe('UC-1 step 14: validityState (is the warning still in force)', () => {
+  const NOW = Date.parse('2026-10-08T12:00:00.000Z');
+
+  it('is ACTIVE until the validity ends', () => {
+    expect(validityState({ validTo: '2026-10-08T12:00:00.001Z' }, NOW)).toBe('ACTIVE');
+    expect(validityState({ validTo: '2026-10-09T12:00:00.000Z' }, NOW)).toBe('ACTIVE');
+  });
+
+  it('is EXPIRED from the very moment it ends', () => {
+    expect(validityState({ validTo: '2026-10-08T12:00:00.000Z' }, NOW)).toBe('EXPIRED');
+    expect(validityState({ validTo: '2026-10-07T12:00:00.000Z' }, NOW)).toBe('EXPIRED');
+  });
+});
+
+describe('UC-1 step 14: formatCount', () => {
+  it('writes thousands with a separator, in English', () => {
+    expect(formatCount(12458, 'EN')).toBe('12,458');
+    expect(formatCount(999, 'EN')).toBe('999');
+    expect(formatCount(0, 'EN')).toBe('0');
+  });
+
+  it('keeps every digit in Sinhala and Tamil', () => {
+    expect(formatCount(12458, 'SI')).toMatch(/^12\D458$/);
+    expect(formatCount(12458, 'TA')).toMatch(/^12\D458$/);
   });
 });
 
