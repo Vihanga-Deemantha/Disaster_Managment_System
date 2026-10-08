@@ -2,6 +2,7 @@ import type { Messages } from './messages.en';
 
 /** தமிழ். Draft translations: have a native speaker proofread before submission. */
 export const ta: Messages = {
+  'analytics.people_lower': 'மக்கள்',
   'app.name': 'Safe Zone',
   'app.tagline': 'இலங்கைக்கான பேரிடர் எச்சரிக்கைகள் மற்றும் ஒருங்கிணைப்பு',
 
@@ -275,4 +276,167 @@ export const ta: Messages = {
     'இந்த அடையாள அட்டை எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது. உள்நுழைய முயற்சிக்கவும்.',
   'error.PHONE_ALREADY_REGISTERED':
     'இந்தத் தொலைபேசி எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது. உள்நுழைய முயற்சிக்கவும்.',
+  'analytics.impact_analytics': 'தாக்க பகுப்பாய்வு',
+  'analytics.post_event_analysis_reporting':
+    'நிகழ்வுக்குப் பிந்தைய பகுப்பாய்வு மற்றும் அறிக்கையிடல்',
+  'analytics.analysis_criteria': 'பகுப்பாய்வு அளவுகோல்கள்',
+  'analytics.configure_your_post_event_view': 'நிகழ்வுக்குப் பிந்தைய காட்சியை அமைக்கவும்',
+  'analytics.disaster_event': 'பேரிடர் நிகழ்வு',
+  'analytics.district': 'மாவட்டம்',
+  'analytics.hazard_type': 'அபாய வகை',
+  'analytics.all_events': 'அனைத்து நிகழ்வுகளும்',
+  'analytics.all_districts': 'அனைத்து மாவட்டங்களும்',
+  'analytics.all_hazards': 'அனைத்து அபாயங்களும்',
+  'analytics.from': 'தொடக்கம்',
+  'analytics.to': 'முடிவு',
+  'analytics.event_selection_applies_its_district_hazard_and_date_window':
+    'நிகழ்வைத் தேர்ந்தெடுத்தால் அதன் மாவட்டம், அபாயம் மற்றும் தேதி வரம்பு பொருந்தும்.',
+  'analytics.generate_analytics': 'பகுப்பாய்வை உருவாக்கவும்',
+  'analytics.filters_changed_select_generate_analytics_to_apply_them_before_exporting':
+    'வடிகட்டிகள் மாறியுள்ளன. ஏற்றுமதிக்கு முன் பகுப்பாய்வை உருவாக்கவும்.',
+  'analytics.retry_analytics': 'பகுப்பாய்வை மீண்டும் முயற்சிக்கவும்',
+  'analytics.total_alerts_issued': 'வெளியிடப்பட்ட மொத்த எச்சரிக்கைகள்',
+  'analytics.issued_warnings_in_this_period': 'இந்தக் காலத்தில் வெளியிடப்பட்ட எச்சரிக்கைகள்',
+  'analytics.citizens_reached': 'சென்றடைந்த குடிமக்கள்',
+  'analytics.delivered_on_at_least_one_channel': 'குறைந்தது ஒரு வழியில் வழங்கப்பட்டது',
+  'analytics.peak_shelter_occupancy': 'தங்குமிடங்களின் அதிகபட்ச தங்கியோர்',
+  'analytics.people_daily_shelter_observations': 'மக்கள் · தினசரி தங்குமிட கண்காணிப்புகள்',
+  'analytics.relief_distributed': 'விநியோகிக்கப்பட்ட நிவாரணம்',
+  'analytics.scoped_dispatches_units_kept_separate':
+    'வரம்பிற்குட்பட்ட விநியோகங்கள் · அலகுகள் தனித்தனியாக',
+  'analytics.resource_allocation_breakdown_govt_ngo':
+    'வள ஒதுக்கீட்டு விவரம் (அரசு மற்றும் அரசு சாரா அமைப்புகள்)',
+  'analytics.read_only_dispatch_history': 'விநியோக வரலாறு',
+  'analytics.organisation': 'அமைப்பு',
+  'analytics.supply_category': 'விநியோக வகை',
+  'analytics.quantity': 'அளவு',
+  'analytics.status': 'நிலை',
+  'analytics.deployed': 'அனுப்பப்பட்டது',
+  'analytics.no_relief_dispatches_in_your_scope': 'உங்கள் வரம்பில் நிவாரண விநியோகங்கள் இல்லை.',
+  'analytics.shelter_occupancy_is_seeded_demonstration_history_warning_and_allocation_projections_update_from_module_events':
+    'தங்குமிடத் தரவு மாதிரி வரலாறாகும்; எச்சரிக்கைகள் மற்றும் ஒதுக்கீடுகள் தொகுதி நிகழ்வுகளிலிருந்து புதுப்பிக்கப்படும்.',
+  'analytics.no_organisation_assigned': 'அமைப்பு ஒதுக்கப்படவில்லை',
+  'analytics.analytics': 'பகுப்பாய்வு',
+  'analytics.export_audit_report': 'தணிக்கை அறிக்கையை ஏற்றுமதி செய்யவும்',
+  'analytics.offline': 'இணைப்பில்லை ·',
+  'analytics.no_saved_results_available': 'சேமித்த முடிவுகள் இல்லை.',
+  'analytics.generate_and_export_require_a_connection':
+    'உருவாக்கவும் ஏற்றுமதி செய்யவும் இணைப்பு தேவை.',
+  'analytics.relief_organisation': 'நிவாரண அமைப்பு',
+  'analytics.all_organisations': 'அனைத்து அமைப்புகளும்',
+  'analytics.loading_impact_analysis': 'தாக்க பகுப்பாய்வு ஏற்றப்படுகிறது…',
+  'analytics.no_data_for_these_filters': 'இந்த வடிகட்டிகளுக்குத் தரவு இல்லை',
+  'analytics.try_all_events_or_widen_your_district_and_date_range_export_is_disabled_until_records_are_available':
+    'அனைத்து நிகழ்வுகளையும் தேர்ந்தெடுக்கவும் அல்லது மாவட்டம் மற்றும் தேதி வரம்பை விரிவாக்கவும். பதிவுகள் கிடைக்கும் வரை ஏற்றுமதி முடக்கப்பட்டுள்ளது.',
+  'analytics.national_impact_summary': 'தேசிய தாக்கச் சுருக்கம்',
+  'analytics.view_detailed_event_log': 'விரிவான நிகழ்வுப் பதிவைக் காண்க',
+  'analytics.export_history': 'ஏற்றுமதி வரலாறு',
+  'analytics.timestamped_audited': 'நேரமுத்திரையிடப்பட்டு தணிக்கை செய்யப்பட்டது',
+  'analytics.generated': 'உருவாக்கிய நேரம்',
+  'analytics.format_audience': 'வடிவம் / பார்வையாளர்கள்',
+  'analytics.file_sha_256': 'கோப்பின் SHA-256',
+  'analytics.no_file_generated': 'கோப்பு உருவாக்கப்படவில்லை',
+  'analytics.no_exports_yet_generate_analytics_then_export_a_report':
+    'இன்னும் ஏற்றுமதிகள் இல்லை. பகுப்பாய்வை உருவாக்கி அறிக்கையை ஏற்றுமதி செய்யவும்.',
+  'analytics.relief_distribution_by_district_organisation':
+    'மாவட்டம் மற்றும் அமைப்பு வாரியாக நிவாரண விநியோகம்',
+  'analytics.view_dispatch_log': 'விநியோகப் பதிவைக் காண்க →',
+  'analytics.alert_delivery_timeline_vs_reach': 'எச்சரிக்கை வழங்கல் காலவரிசை மற்றும் சென்றடைதல்',
+  'analytics.reach': 'சென்றடைதல் %',
+  'analytics.citizens_reached_pct': 'சென்றடைந்த குடிமக்கள் (%)',
+  'analytics.view_daily_reach_and_event_logs':
+    'தினசரி சென்றடைதல் மற்றும் நிகழ்வுப் பதிவுகளைக் காண்க',
+  'analytics.no_alert_records_for_these_filters':
+    'இந்த வடிகட்டிகளுக்கு எச்சரிக்கைப் பதிவுகள் இல்லை.',
+  'analytics.shelter_occupancy_vs_capacity': 'தங்குமிடத் தங்கியோர் மற்றும் கொள்ளளவு',
+  'analytics.people': 'மக்கள்',
+  'analytics.capacity_people': 'கொள்ளளவு (மக்கள்)',
+  'analytics.occupancy_people': 'தங்கியோர் (மக்கள்)',
+  'analytics.view_daily_occupancy_and_event_logs':
+    'தினசரி தங்கியோர் மற்றும் நிகழ்வுப் பதிவுகளைக் காண்க',
+  'analytics.no_shelter_observations_for_these_filters':
+    'இந்த வடிகட்டிகளுக்குத் தங்குமிடக் கண்காணிப்புகள் இல்லை.',
+  'analytics.system_alerts_citizen_reach': 'அமைப்பு எச்சரிக்கைகள் மற்றும் குடிமக்கள் சென்றடைதல்',
+  'analytics.shelter_capacity_occupancy': 'தங்குமிட கொள்ளளவு மற்றும் தங்கியோர்',
+  'analytics.government_ngo_resource_allocations':
+    'அரசு மற்றும் அரசு சாரா அமைப்புகளின் வள ஒதுக்கீடுகள்',
+  'analytics.report_generation_failed': 'அறிக்கை உருவாக்கம் தோல்வியடைந்தது.',
+  'analytics.export_options_scope_configuration': 'ஏற்றுமதி விருப்பங்கள் மற்றும் வரம்பு அமைப்பு',
+  'analytics.cancel': 'ரத்து செய்',
+  'analytics.generating_automatically_retries_once':
+    'உருவாக்கப்படுகிறது · தானாக ஒருமுறை மீண்டும் முயற்சிக்கும்…',
+  'analytics.confirm_download': 'உறுதிப்படுத்தி பதிவிறக்கவும்',
+  'analytics.select_at_least_one_dataset': 'குறைந்தது ஒரு தரவுத் தொகுப்பைத் தேர்ந்தெடுக்கவும்.',
+  'analytics.export_is_disabled_offline_reconnect_to_generate_a_verified_report':
+    'இணைப்பில்லாமல் ஏற்றுமதி செய்ய முடியாது. சரிபார்க்கப்பட்ட அறிக்கையை உருவாக்க மீண்டும் இணைக்கவும்.',
+  'analytics.1_select_target_format': '1. வடிவத்தைத் தேர்ந்தெடுக்கவும்',
+  'analytics.executive_pdf_document_pdf': 'சுருக்க PDF ஆவணம் (.pdf)',
+  'analytics.raw_data_spreadsheet_csv': 'மூலத் தரவு விரிதாள் (.csv)',
+  'analytics.timestamped_report_with_filtered_records':
+    'வடிகட்டிய பதிவுகளுடன் நேரமுத்திரையிட்ட அறிக்கை',
+  'analytics.filtered_rows_for_statistical_analysis':
+    'புள்ளிவிவர பகுப்பாய்வுக்கான வடிகட்டிய வரிசைகள்',
+  'analytics.2_audience_authorisation_level': '2. பார்வையாளர்கள் மற்றும் அனுமதி நிலை',
+  'analytics.internal_full_audit_detail': 'உள் பயன்பாடு · முழு தணிக்கை விவரம்',
+  'analytics.external_donors_personal_data_removed':
+    'வெளி நன்கொடையாளர்கள் · தனிப்பட்ட தரவு நீக்கப்பட்டது',
+  'analytics.3_include_datasets': '3. தரவுத் தொகுப்புகளைச் சேர்க்கவும்',
+  'analytics.the_server_retries_generation_once_automatically':
+    'சேவையகம் தானாக ஒருமுறை மீண்டும் உருவாக்க முயற்சிக்கும்.',
+  'analytics.retry': 'மீண்டும் முயற்சி',
+  'analytics.export_csv_instead': 'CSV ஆக ஏற்றுமதி செய்',
+  'analytics.report_generated_downloaded': 'அறிக்கை உருவாக்கப்பட்டு பதிவிறக்கப்பட்டது',
+  'analytics.download_again': 'மீண்டும் பதிவிறக்கு',
+  'analytics.uses_current_filters': 'தற்போதைய வடிகட்டிகளைப் பயன்படுத்துகிறது',
+  'analytics.matching_records_across_all_datasets':
+    'அனைத்து தரவுத் தொகுப்புகளிலும் பொருந்தும் பதிவுகள்',
+  'analytics.organisation_scope_stays_enforced_for_both_audiences_ngo_donor_reports_contain_public_figures_and_their_own_relief_records':
+    'இரு பார்வையாளர் குழுக்களுக்கும் அமைப்பு வரம்பு பொருந்தும். அமைப்பு மற்றும் நன்கொடையாளர் அறிக்கைகளில் பொதுத் தரவுகளும் அவர்களது நிவாரணப் பதிவுகளும் உள்ளன.',
+  'analytics.unable_to_load_event_log': 'நிகழ்வுப் பதிவை ஏற்ற முடியவில்லை.',
+  'analytics.detailed_event_log': 'விரிவான நிகழ்வுப் பதிவு',
+  'analytics.previous': 'முந்தையது',
+  'analytics.page': 'பக்கம்',
+  'analytics.next': 'அடுத்தது',
+  'analytics.loading_event_log': 'நிகழ்வுப் பதிவு ஏற்றப்படுகிறது…',
+  'analytics.matching_records': 'பொருந்தும் பதிவுகள்',
+  'analytics.time_dataset': 'நேரம் / தரவுத் தொகுப்பு',
+  'analytics.details': 'விவரங்கள்',
+  'analytics.no_event_logs_for_this_period': 'இந்தக் காலத்திற்கு நிகழ்வுப் பதிவுகள் இல்லை.',
+  'analytics.choose_a_valid_start_date': 'செல்லுபடியான தொடக்கத் தேதியைத் தேர்ந்தெடுக்கவும்.',
+  'analytics.choose_a_valid_end_date': 'செல்லுபடியான முடிவுத் தேதியைத் தேர்ந்தெடுக்கவும்.',
+  'analytics.end_date_must_be_on_or_after_start_date':
+    'முடிவுத் தேதி தொடக்கத் தேதிக்கு சமமாகவோ பின்னராகவோ இருக்க வேண்டும்.',
+  'analytics.end_date_cannot_be_in_the_future': 'முடிவுத் தேதி எதிர்காலத்தில் இருக்க முடியாது.',
+  'analytics.date_range_cannot_exceed_12_months': 'தேதி வரம்பு 12 மாதங்களை மீற முடியாது.',
+  'analytics.unknown_district': 'தெரியாத மாவட்டம்.',
+  'analytics.unknown_hazard_type': 'தெரியாத அபாய வகை.',
+  'analytics.unknown_event': 'தெரியாத நிகழ்வு.',
+  'analytics.district_is_outside_this_event': 'மாவட்டம் இந்த நிகழ்வுக்கு உட்பட்டதல்ல.',
+  'analytics.hazard_does_not_match_this_event': 'அபாயம் இந்த நிகழ்வுடன் பொருந்தவில்லை.',
+  'analytics.dates_must_fall_within_the_selected_event':
+    'தேதிகள் தேர்ந்தெடுத்த நிகழ்வின் காலத்திற்குள் இருக்க வேண்டும்.',
+  'analytics.unable_to_load_analytics': 'பகுப்பாய்வை ஏற்ற முடியவில்லை.',
+  'analytics.no_cached_analytics_on_this_device_reconnect_to_generate_your_first_view':
+    'இந்தச் சாதனத்தில் சேமித்த பகுப்பாய்வு இல்லை. முதல் காட்சியை உருவாக்க மீண்டும் இணைக்கவும்.',
+  'analytics.alerts': 'எச்சரிக்கைகள்',
+  'analytics.occupancy': 'தங்கியோர்',
+  'analytics.distribution': 'விநியோகம்',
+  'analytics.attempt_s': 'முயற்சி',
+  'analytics.completed': 'முடிந்தது',
+  'analytics.failed': 'தோல்வி',
+  'analytics.internal': 'உள் பயன்பாடு',
+  'analytics.external': 'வெளி பயன்பாடு',
+  'analytics.showing': 'காட்டப்படுவது:',
+  'analytics.public_alert_and_shelter_totals_your_organisation_s_relief_only':
+    '· பொது எச்சரிக்கை மற்றும் தங்குமிட மொத்தங்கள்; உங்கள் அமைப்பின் நிவாரணம் மட்டும்.',
+  'analytics.view_evaluate_alert_reach_shelter_trends_and_relief_distribution':
+    'காட்சி · எச்சரிக்கை சென்றடைதல், தங்குமிடப் போக்குகள் மற்றும் நிவாரண விநியோகத்தை மதிப்பிடுக',
+  'analytics.records_as_of': 'பதிவுகள் · நிலவரம்',
+  'analytics.flood': 'வெள்ளம்',
+  'analytics.landslide': 'நிலச்சரிவு',
+  'analytics.cyclone': 'சூறாவளி',
+  'analytics.tsunami': 'சுனாமி',
+  'analytics.drought': 'வறட்சி',
+  'analytics.lightning': 'மின்னல்',
+  'analytics.cached_results': '{date} நிலவரப்படி சேமித்த முடிவுகள்.',
 };

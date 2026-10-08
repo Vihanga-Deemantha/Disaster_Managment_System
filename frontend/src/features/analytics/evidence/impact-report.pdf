@@ -1,0 +1,316 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 5 /Kids [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R] >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 4084 >>
+stream
+BT /F1 10 Tf 14 TL 40 800 Td
+(Post-Event Impact & Relief Report) Tj T*
+(Report: a8707e60-6c97-43b7-b39d-fef58a4b71ea) Tj T*
+(Generated: 2026-10-07T17:37:59.148Z) Tj T*
+(Audience: INTERNAL) Tj T*
+(Filters: {"eventId":"ratnapura-2026-10","district":"ALL","hazardType":"ALL","from":"2026-10-01") Tj T*
+(,"to":"2026-10-07"}) Tj T*
+(Content SHA-256: 7d332c46e74a7f30b9c2cb92036daa8a9af280304f9ee0ddbf827c90b7d70add) Tj T*
+(The final file SHA-256 is provided with the download and in export history.) Tj T*
+(ALERTS) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-01T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-alert-1","targeted":1290,"reached":951,"pendingRetry":169,") Tj T*
+(failed":170,"byChannel":{"PUSH":{"sent":1290,"delivered":951,"failed":339},"SMS":{"sent":1290,") Tj T*
+(delivered":951,"failed":339},"EMAIL":{"sent":0,"delivered":0,"failed":0},"WHATSAPP":{"sent":0,") Tj T*
+(delivered":0,"failed":0}},"officerName":"Demo DMC Officer","citizenIdentifiers":["synthetic-rec) Tj T*
+(ipient"]}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-02T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-alert-2","targeted":1380,"reached":1041,"pendingRetry":169,) Tj T*
+("failed":170,"byChannel":{"PUSH":{"sent":1380,"delivered":1041,"failed":339},"SMS":{"sent":1380) Tj T*
+(,"delivered":1041,"failed":339},"EMAIL":{"sent":0,"delivered":0,"failed":0},"WHATSAPP":{"sent":) Tj T*
+(0,"delivered":0,"failed":0}},"officerName":"Demo DMC Officer","citizenIdentifiers":["synthetic-) Tj T*
+(recipient"]}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-03T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-alert-3","targeted":1470,"reached":1133,"pendingRetry":168,) Tj T*
+("failed":169,"byChannel":{"PUSH":{"sent":1470,"delivered":1133,"failed":337},"SMS":{"sent":1470) Tj T*
+(,"delivered":1133,"failed":337},"EMAIL":{"sent":0,"delivered":0,"failed":0},"WHATSAPP":{"sent":) Tj T*
+(0,"delivered":0,"failed":0}},"officerName":"Demo DMC Officer","citizenIdentifiers":["synthetic-) Tj T*
+(recipient"]}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-04T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-alert-4","targeted":1560,"reached":1229,"pendingRetry":165,) Tj T*
+("failed":166,"byChannel":{"PUSH":{"sent":1560,"delivered":1229,"failed":331},"SMS":{"sent":1560) Tj T*
+(,"delivered":1229,"failed":331},"EMAIL":{"sent":0,"delivered":0,"failed":0},"WHATSAPP":{"sent":) Tj T*
+(0,"delivered":0,"failed":0}},"officerName":"Demo DMC Officer","citizenIdentifiers":["synthetic-) Tj T*
+(recipient"]}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-05T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-alert-5","targeted":1650,"reached":1328,"pendingRetry":161,) Tj T*
+("failed":161,"byChannel":{"PUSH":{"sent":1650,"delivered":1328,"failed":322},"SMS":{"sent":1650) Tj T*
+(,"delivered":1328,"failed":322},"EMAIL":{"sent":0,"delivered":0,"failed":0},"WHATSAPP":{"sent":) Tj T*
+(0,"delivered":0,"failed":0}},"officerName":"Demo DMC Officer","citizenIdentifiers":["synthetic-) Tj T*
+(recipient"]}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-06T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-alert-6","targeted":1740,"reached":1430,"pendingRetry":155,) Tj T*
+("failed":155,"byChannel":{"PUSH":{"sent":1740,"delivered":1430,"failed":310},"SMS":{"sent":1740) Tj T*
+(,"delivered":1430,"failed":310},"EMAIL":{"sent":0,"delivered":0,"failed":0},"WHATSAPP":{"sent":) Tj T*
+(0,"delivered":0,"failed":0}},"officerName":"Demo DMC Officer","citizenIdentifiers":["synthetic-) Tj T*
+(recipient"]}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-07T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-alert-7","targeted":1830,"reached":1535,"pendingRetry":147,) Tj T*
+("failed":148,"byChannel":{"PUSH":{"sent":1830,"delivered":1535,"failed":295},"SMS":{"sent":1830) Tj T*
+(1 / 5) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 4362 >>
+stream
+BT /F1 10 Tf 14 TL 40 800 Td
+(,"delivered":1535,"failed":295},"EMAIL":{"sent":0,"delivered":0,"failed":0},"WHATSAPP":{"sent":) Tj T*
+(0,"delivered":0,"failed":0}},"officerName":"Demo DMC Officer","citizenIdentifiers":["synthetic-) Tj T*
+(recipient"]}) Tj T*
+(OCCUPANCY) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-01T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-1-1","shelterId":"RATNAPURA-shelter-1","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 1","occupancy":163,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-01T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-2-1","shelterId":"RATNAPURA-shelter-2","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 2","occupancy":183,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-02T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-1-2","shelterId":"RATNAPURA-shelter-1","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 1","occupancy":206,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-02T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-2-2","shelterId":"RATNAPURA-shelter-2","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 2","occupancy":226,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-03T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-1-3","shelterId":"RATNAPURA-shelter-1","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 1","occupancy":249,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-03T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-2-3","shelterId":"RATNAPURA-shelter-2","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 2","occupancy":269,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-04T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-1-4","shelterId":"RATNAPURA-shelter-1","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 1","occupancy":292,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-04T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-2-4","shelterId":"RATNAPURA-shelter-2","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 2","occupancy":312,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-05T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-1-5","shelterId":"RATNAPURA-shelter-1","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 1","occupancy":335,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-05T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-2-5","shelterId":"RATNAPURA-shelter-2","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 2","occupancy":355,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-06T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-1-6","shelterId":"RATNAPURA-shelter-1","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 1","occupancy":378,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-06T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-2-6","shelterId":"RATNAPURA-shelter-2","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 2","occupancy":398,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-07T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-1-7","shelterId":"RATNAPURA-shelter-1","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 1","occupancy":121,"capacity":450}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-07T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-shelter-2-7","shelterId":"RATNAPURA-shelter-2","shelterName) Tj T*
+(":"RATNAPURA Community Shelter 2","occupancy":141,"capacity":450}) Tj T*
+(DISTRIBUTION) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-01T08:) Tj T*
+(2 / 5) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 4386 >>
+stream
+BT /F1 10 Tf 14 TL 40 800 Td
+(00:00.000Z","id":"ratnapura-2026-10-dmc-central-1","organizationId":"dmc-central","organization) Tj T*
+(Name":"DMC Central Fleet","supplyCategory":"Dry rations & water","quantity":125,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-01T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-red-cross-1","organizationId":"org-red-cross","organiza) Tj T*
+(tionName":"Red Cross Sri Lanka","supplyCategory":"Emergency medical kits","quantity":125,"unit") Tj T*
+(:"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-01T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-sl-army-1","organizationId":"org-sl-army","organization) Tj T*
+(Name":"Sri Lanka Army","supplyCategory":"Purified water packets","quantity":125,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-01T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-sarvodaya-1","organizationId":"sarvodaya","organizationName) Tj T*
+(":"Sarvodaya","supplyCategory":"Family hygiene kits","quantity":125,"unit":"kits","officerName") Tj T*
+(:"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-01T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-relief-foundation-1","organizationId":"org-relief-found) Tj T*
+(ation","organizationName":"Relief Foundation","supplyCategory":"Family hygiene kits","quantity") Tj T*
+(:125,"unit":"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-02T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-dmc-central-2","organizationId":"dmc-central","organization) Tj T*
+(Name":"DMC Central Fleet","supplyCategory":"Dry rations & water","quantity":150,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-02T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-red-cross-2","organizationId":"org-red-cross","organiza) Tj T*
+(tionName":"Red Cross Sri Lanka","supplyCategory":"Emergency medical kits","quantity":150,"unit") Tj T*
+(:"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-02T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-sl-army-2","organizationId":"org-sl-army","organization) Tj T*
+(Name":"Sri Lanka Army","supplyCategory":"Purified water packets","quantity":150,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-02T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-sarvodaya-2","organizationId":"sarvodaya","organizationName) Tj T*
+(":"Sarvodaya","supplyCategory":"Family hygiene kits","quantity":150,"unit":"kits","officerName") Tj T*
+(:"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-02T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-relief-foundation-2","organizationId":"org-relief-found) Tj T*
+(ation","organizationName":"Relief Foundation","supplyCategory":"Family hygiene kits","quantity") Tj T*
+(:150,"unit":"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-03T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-dmc-central-3","organizationId":"dmc-central","organization) Tj T*
+(Name":"DMC Central Fleet","supplyCategory":"Dry rations & water","quantity":175,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-03T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-red-cross-3","organizationId":"org-red-cross","organiza) Tj T*
+(tionName":"Red Cross Sri Lanka","supplyCategory":"Emergency medical kits","quantity":175,"unit") Tj T*
+(:"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-03T08:) Tj T*
+(3 / 5) Tj ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 11 0 R >>
+endobj
+11 0 obj
+<< /Length 4365 >>
+stream
+BT /F1 10 Tf 14 TL 40 800 Td
+(00:00.000Z","id":"ratnapura-2026-10-org-sl-army-3","organizationId":"org-sl-army","organization) Tj T*
+(Name":"Sri Lanka Army","supplyCategory":"Purified water packets","quantity":175,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-03T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-sarvodaya-3","organizationId":"sarvodaya","organizationName) Tj T*
+(":"Sarvodaya","supplyCategory":"Family hygiene kits","quantity":175,"unit":"kits","officerName") Tj T*
+(:"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-03T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-relief-foundation-3","organizationId":"org-relief-found) Tj T*
+(ation","organizationName":"Relief Foundation","supplyCategory":"Family hygiene kits","quantity") Tj T*
+(:175,"unit":"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-04T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-dmc-central-4","organizationId":"dmc-central","organization) Tj T*
+(Name":"DMC Central Fleet","supplyCategory":"Dry rations & water","quantity":200,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-04T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-red-cross-4","organizationId":"org-red-cross","organiza) Tj T*
+(tionName":"Red Cross Sri Lanka","supplyCategory":"Emergency medical kits","quantity":200,"unit") Tj T*
+(:"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-04T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-sl-army-4","organizationId":"org-sl-army","organization) Tj T*
+(Name":"Sri Lanka Army","supplyCategory":"Purified water packets","quantity":200,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-04T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-sarvodaya-4","organizationId":"sarvodaya","organizationName) Tj T*
+(":"Sarvodaya","supplyCategory":"Family hygiene kits","quantity":200,"unit":"kits","officerName") Tj T*
+(:"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-04T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-relief-foundation-4","organizationId":"org-relief-found) Tj T*
+(ation","organizationName":"Relief Foundation","supplyCategory":"Family hygiene kits","quantity") Tj T*
+(:200,"unit":"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-05T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-dmc-central-5","organizationId":"dmc-central","organization) Tj T*
+(Name":"DMC Central Fleet","supplyCategory":"Dry rations & water","quantity":225,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-05T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-red-cross-5","organizationId":"org-red-cross","organiza) Tj T*
+(tionName":"Red Cross Sri Lanka","supplyCategory":"Emergency medical kits","quantity":225,"unit") Tj T*
+(:"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-05T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-sl-army-5","organizationId":"org-sl-army","organization) Tj T*
+(Name":"Sri Lanka Army","supplyCategory":"Purified water packets","quantity":225,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-05T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-sarvodaya-5","organizationId":"sarvodaya","organizationName) Tj T*
+(":"Sarvodaya","supplyCategory":"Family hygiene kits","quantity":225,"unit":"kits","officerName") Tj T*
+(:"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-05T08:) Tj T*
+(4 / 5) Tj ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 13 0 R >>
+endobj
+13 0 obj
+<< /Length 3934 >>
+stream
+BT /F1 10 Tf 14 TL 40 800 Td
+(00:00.000Z","id":"ratnapura-2026-10-org-relief-foundation-5","organizationId":"org-relief-found) Tj T*
+(ation","organizationName":"Relief Foundation","supplyCategory":"Family hygiene kits","quantity") Tj T*
+(:225,"unit":"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-06T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-dmc-central-6","organizationId":"dmc-central","organization) Tj T*
+(Name":"DMC Central Fleet","supplyCategory":"Dry rations & water","quantity":250,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-06T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-red-cross-6","organizationId":"org-red-cross","organiza) Tj T*
+(tionName":"Red Cross Sri Lanka","supplyCategory":"Emergency medical kits","quantity":250,"unit") Tj T*
+(:"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-06T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-sl-army-6","organizationId":"org-sl-army","organization) Tj T*
+(Name":"Sri Lanka Army","supplyCategory":"Purified water packets","quantity":250,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-06T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-sarvodaya-6","organizationId":"sarvodaya","organizationName) Tj T*
+(":"Sarvodaya","supplyCategory":"Family hygiene kits","quantity":250,"unit":"kits","officerName") Tj T*
+(:"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-06T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-relief-foundation-6","organizationId":"org-relief-found) Tj T*
+(ation","organizationName":"Relief Foundation","supplyCategory":"Family hygiene kits","quantity") Tj T*
+(:250,"unit":"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-07T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-dmc-central-7","organizationId":"dmc-central","organization) Tj T*
+(Name":"DMC Central Fleet","supplyCategory":"Dry rations & water","quantity":275,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-07T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-red-cross-7","organizationId":"org-red-cross","organiza) Tj T*
+(tionName":"Red Cross Sri Lanka","supplyCategory":"Emergency medical kits","quantity":275,"unit") Tj T*
+(:"kits","officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-07T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-sl-army-7","organizationId":"org-sl-army","organization) Tj T*
+(Name":"Sri Lanka Army","supplyCategory":"Purified water packets","quantity":275,"unit":"packs",) Tj T*
+("officerName":"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-07T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-sarvodaya-7","organizationId":"sarvodaya","organizationName) Tj T*
+(":"Sarvodaya","supplyCategory":"Family hygiene kits","quantity":275,"unit":"kits","officerName") Tj T*
+(:"Demo District Officer"}) Tj T*
+({"eventId":"ratnapura-2026-10","district":"RATNAPURA","hazardType":"FLOOD","at":"2026-10-07T08:) Tj T*
+(00:00.000Z","id":"ratnapura-2026-10-org-relief-foundation-7","organizationId":"org-relief-found) Tj T*
+(ation","organizationName":"Relief Foundation","supplyCategory":"Family hygiene kits","quantity") Tj T*
+(:275,"unit":"kits","officerName":"Demo District Officer"}) Tj T*
+(5 / 5) Tj ET
+endstream
+endobj
+xref
+0 14
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000141 00000 n 
+0000000211 00000 n 
+0000000337 00000 n 
+0000004473 00000 n 
+0000004599 00000 n 
+0000009013 00000 n 
+0000009139 00000 n 
+0000013577 00000 n 
+0000013705 00000 n 
+0000018123 00000 n 
+0000018251 00000 n 
+trailer
+<< /Size 14 /Root 1 0 R >>
+startxref
+22238
+%%EOF
