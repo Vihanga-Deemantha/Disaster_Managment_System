@@ -501,7 +501,7 @@ reporter type, status chip, and for rejected rows `history.rejectedBecause`. Eac
 **Tests:** lists reports newest first · choosing _Rejected_ requests `?status=REJECTED` and shows reasons ·
 searching "bridge" requests `?q=bridge` · empty state · error + retry · row link target.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): reports history`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): reports history`.
 
 ### Task W5.2: `CitizenReports` (D13)
 
@@ -514,19 +514,29 @@ rejected. Empty state `mine.empty`. No actions.
 **Tests** (`signIn(makeCitizen())`): shows the mobile-app notice and the citizen's reports with statuses · a rejected
 report shows its reason · empty state · error + retry.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): read-only my reports for citizens`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): read-only my reports for citizens`.
 
 ### Task W5.3: Gates and manual check
 
 - [ ] From the repo root: `npm run lint && npm run typecheck && npm test` → green, with
       `src/features/hazard-reports/**` at 100%.
-- [ ] `npm run seed` then `npm run dev`; sign in as the duty officer and walk demo steps 6–7: open Kalutara (87),
+      W5: root lint passes (one existing UC4 warning); frontend typecheck/build and all 930 frontend tests pass.
+      Root typecheck and seven shared backend password-hashing tests remain blocked by the known missing optional
+      `argon2` dependency. UC3 web and backend coverage gates pass at 100%; shared code was not changed.
+- [x] `npm run seed` then `npm run dev`; sign in as the duty officer and walk demo steps 6–7: open Kalutara (87),
       reject one report with a reason (82), verify three (→ _Escalation recommended_), confirm escalation, then sign in as
       the DMC officer and check Pending Approvals (UC1's screen; if UC1 is not merged yet, check the API log line for the
       published event instead).
-- [ ] Sign in as a demo citizen → the read-only list.
-- [ ] Screenshot every screen and state for the report; compare against your final wireframes.
-- [ ] Update the status table in `IMPLEMENTATION_PLAN.md` (W1–W5 DONE).
+- [x] Sign in as a demo citizen → the read-only list.
+- [x] Capture screen/state evidence: 21 screenshots, including mobile, empty/error and offline views, in
+      `docs/plans/uc3/evidence/w5/`. The two citizen empty/error captures use explicitly marked browser fixtures.
+- [ ] Compare against the owner's final wireframes (not present in this checkout).
+- [x] Update the status table in `IMPLEMENTATION_PLAN.md` (W1–W5 DONE).
+
+The walkthrough used an isolated `safezone_uc3_w5` database and local ports 4190/5190, preserving existing dev data.
+Playwright drove the real UI because the in-app browser connection timed out. UC1's new draft was confirmed as
+`PENDING_APPROVAL`, submitted by `usr-duty-1`, with `sourceClusterId: seed-cluster-kalutara`.
+See [W5 verification evidence](evidence/w5/README.md) for results and limitations.
 
 ---
 
