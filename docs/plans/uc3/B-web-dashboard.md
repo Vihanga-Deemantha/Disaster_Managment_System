@@ -443,7 +443,7 @@ cleared when the dialog closes.
 **Tests:** confirm disabled while empty or whitespace · enabled with text; submits the trimmed reason · busy state
 blocks a double submit · failure stays open with the message · cancel calls `onClose` and clears the text.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): reject dialog with mandatory reason (H8, H10)`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): reject dialog with mandatory reason (H8, H10)`.
 
 ### Task W4.2: `ReportDetail`
 
@@ -482,7 +482,7 @@ blocks a double submit · failure stays open with the message · cancel calls `o
 | `a report without a photo says so`                                                           |                                                                                 |
 | `unknown report shows the error state`                                                       | 404                                                                             |
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): report verification screen (steps 12–14, A2)`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): report verification screen (steps 12–14, A2)`.
 
 ---
 
