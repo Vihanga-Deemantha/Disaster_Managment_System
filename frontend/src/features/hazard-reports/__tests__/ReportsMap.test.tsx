@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
+import { expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import L from 'leaflet';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import { ReportsMap } from '../components/ReportsMap';
 
 vi.mock('leaflet/dist/leaflet.css', () => ({}));
@@ -74,3 +78,33 @@ it('UC-3 A2: default Leaflet icons use Vite imported image URLs', () => {
     /leaflet\/dist\/images\/marker-shadow\.png/,
   );
 });
+
+it.each([1, 2])(
+  'UC-3 A2: real marker images keep imported URLs despite CSS detection at pixel ratio %s',
+  async (pixelRatio) => {
+    vi.resetModules();
+    const originalRetina = L.Browser.retina;
+    const style = document.createElement('style');
+    style.textContent =
+      '.leaflet-default-icon-path { background-image: url("/node_modules/leaflet/dist/images/marker-icon.png"); }';
+    document.head.append(style);
+    try {
+      const { default: leaflet } = await import('leaflet');
+      // Leaflet's CJS Browser flags are initialized once, even across resetModules.
+      Object.defineProperty(leaflet.Browser, 'retina', {
+        value: pixelRatio === 2,
+        configurable: true,
+      });
+      Reflect.deleteProperty(leaflet.Icon.Default, 'imagePath');
+      await import('../components/ReportsMap');
+      const icon = new leaflet.Icon.Default();
+      expect
+        .soft(icon.createIcon().getAttribute('src'))
+        .toBe(pixelRatio === 2 ? iconRetinaUrl : iconUrl);
+      expect.soft(icon.createShadow()?.getAttribute('src')).toBe(shadowUrl);
+    } finally {
+      style.remove();
+      Object.defineProperty(L.Browser, 'retina', { value: originalRetina, configurable: true });
+    }
+  },
+);
