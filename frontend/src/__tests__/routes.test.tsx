@@ -38,7 +38,7 @@ describe('the route table (master plan §5: all routes registered up front)', ()
   it.each([
     ['/warnings', 'DMC_OFFICER', 'Pending Approvals'],
     ['/resources', 'DISTRICT_OFFICER', 'Resource Allocation'],
-    ['/hazard-reports', 'DUTY_OFFICER', 'Hazard Reports'],
+    ['/hazard-reports', 'DUTY_OFFICER', 'Hazard report clusters'],
     ['/analytics', 'DONOR', 'Impact Analytics'],
   ] as const)('%s opens for a %s inside the shared shell', async (path, role, title) => {
     signIn(makeMe({ role }));

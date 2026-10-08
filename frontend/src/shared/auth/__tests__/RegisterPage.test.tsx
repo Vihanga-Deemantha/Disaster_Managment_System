@@ -240,7 +240,7 @@ describe('Registration page: submitting', () => {
 
     await submit(user);
 
-    expect(await screen.findByRole('heading', { name: 'Hazard Reports' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'My reports' })).toBeInTheDocument();
     expect(view.router.state.location.pathname).toBe('/hazard-reports');
     expect(bodies[0]).toMatchObject({
       nic: '199012345678',
@@ -263,7 +263,7 @@ describe('Registration page: submitting', () => {
 
     await submit(user);
 
-    await screen.findByRole('heading', { name: 'Hazard Reports' });
+    await screen.findByRole('heading', { name: 'My reports' });
     expect(bodies[0]).toMatchObject({ phone: '077 123 4567' });
   });
 
@@ -278,7 +278,7 @@ describe('Registration page: submitting', () => {
     await submit(user);
 
     expect(await screen.findByRole('button', { name: /Creating account…/ })).toBeDisabled();
-    await screen.findByRole('heading', { name: 'Hazard Reports' });
+    await screen.findByRole('heading', { name: 'My reports' });
   });
 
   it('puts a duplicate-NIC answer on the NIC field, takes the person back to step 1, and clears it when edited', async () => {
@@ -395,7 +395,7 @@ describe('Registration page: submitting', () => {
 
     await submit(user);
 
-    await screen.findByRole('heading', { name: 'Hazard Reports' });
+    await screen.findByRole('heading', { name: 'My reports' });
     expect(bodies[0]).toMatchObject({
       whatsappOptIn: true,
       emailOptIn: true,
@@ -477,7 +477,7 @@ describe('Registration: district confirmation (master plan §7.1.2)', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Use Colombo' }));
 
-    await screen.findByRole('heading', { name: 'Hazard Reports' });
+    await screen.findByRole('heading', { name: 'My reports' });
     expect(bodies.map((body) => [body.district, body.confirmDistrictMismatch])).toEqual([
       ['JAFFNA', false],
       ['COLOMBO', false],
@@ -498,7 +498,7 @@ describe('Registration: district confirmation (master plan §7.1.2)', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Keep Jaffna' }));
 
-    await screen.findByRole('heading', { name: 'Hazard Reports' });
+    await screen.findByRole('heading', { name: 'My reports' });
     expect(bodies.map((body) => [body.district, body.confirmDistrictMismatch])).toEqual([
       ['JAFFNA', false],
       ['JAFFNA', true],
@@ -739,7 +739,7 @@ describe('Registration: other languages and signed-in visitors', () => {
     );
     const view = renderRoutes(routes, { route: '/register' });
 
-    expect(await screen.findByRole('heading', { name: 'Hazard Reports' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'My reports' })).toBeInTheDocument();
     expect(view.router.state.location.pathname).toBe('/hazard-reports');
   });
 });
