@@ -46,11 +46,21 @@ describe('the assembled application', () => {
     const { app } = await startApplication();
 
     expect(MODULE_FACTORIES).toHaveLength(4);
+    // A placeholder module has no routes yet (404); one that is built answers 401 until you sign in.
     for (const path of ['warnings', 'resources', 'hazard-reports', 'analytics']) {
       const res = await request(app).get(`/api/${path}/anything`);
-      expect(res.body.error.code).toBe('ROUTE_NOT_FOUND');
+      expect(['ROUTE_NOT_FOUND', 'UNAUTHENTICATED']).toContain(res.body.error.code);
     }
     expect((await request(app).get('/api/health')).body).toEqual({ status: 'ok' });
+  });
+
+  it('UC-1: the warnings module is the real thing, and keeps everyone but a signed-in DMC Officer out', async () => {
+    const { app } = await startApplication();
+
+    const anonymous = await request(app).get('/api/warnings');
+
+    expect(anonymous.status).toBe(401);
+    expect(anonymous.body.error.code).toBe('UNAUTHENTICATED');
   });
 
   it('hands modules the shared ports but never the signing or encryption keys', async () => {

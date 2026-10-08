@@ -1,9 +1,64 @@
-import type { SeedFunction } from '@shared/module';
+import { normalizePhone } from '@shared/contracts/identity';
+import type { SeedContext, SeedFunction } from '@shared/module';
+import { TargetArea } from '../domain/TargetArea';
+import { Warning } from '../domain/Warning';
+import { MongoWarningRepository } from '../infrastructure/MongoWarningRepository';
+import { DEMO_VALIDITY_DAYS, DEMO_WARNINGS, demoCitizens } from './demoData';
+
+const DAY_MS = 24 * 3_600_000;
+const MINUTE_MS = 60_000;
+
+/** Citizens are created exactly like real registrations, and skipped when their phone already exists. */
+async function seedCitizens(ctx: SeedContext): Promise<number> {
+  let created = 0;
+  for (const citizen of demoCitizens()) {
+    const phone = normalizePhone(citizen.phone) as string;
+    if (await ctx.users.findByPhone(phone)) continue;
+    await ctx.accounts.createCitizen({
+      ...citizen,
+      phone,
+      role: 'CITIZEN',
+      passwordHash: ctx.demoPasswordHash,
+    });
+    created += 1;
+  }
+  return created;
+}
+
+/** Newest first in the list, as in the wireframe: each one was submitted a few minutes before the last. */
+async function seedPendingWarnings(ctx: SeedContext): Promise<number> {
+  const warnings = new MongoWarningRepository();
+  const now = ctx.clock.now();
+  let created = 0;
+  for (const [position, demo] of DEMO_WARNINGS.entries()) {
+    if (await warnings.findById(demo.warningId)) continue;
+    const submittedAt = new Date(now.getTime() - position * 7 * MINUTE_MS);
+    await warnings.insert(
+      Warning.create(
+        {
+          warningId: demo.warningId,
+          hazardType: demo.hazardType,
+          severity: demo.severity,
+          messages: demo.messages,
+          targetAreas: [new TargetArea(demo.area)],
+          validFrom: submittedAt,
+          validTo: new Date(submittedAt.getTime() + DEMO_VALIDITY_DAYS * DAY_MS),
+          submittedBy: demo.submittedBy,
+        },
+        submittedAt,
+      ),
+    );
+    created += 1;
+  }
+  return created;
+}
 
 /**
- * UC-1 demo data: 5 pending warnings matching the wireframe rows (Gampaha, Ratnapura, Kalutara,
- * Colombo, Kegalle) and about 200 citizens with a mix of device tokens, phones and opt-ins. Create
- * citizens with `ctx.accounts.createCitizen(...)` and `ctx.demoPasswordHash`; the two demo river
- * basins already exist (see shared/auth/seed).
+ * UC-1 demo data: the five pending warnings of the wireframe (Gampaha, Ratnapura, Kalutara, Colombo,
+ * Kegalle) and 200 citizens with a mix of device tokens, phones and opt-ins. Safe to run again.
  */
-export const seedWarnings: SeedFunction = async () => undefined;
+export const seedWarnings: SeedFunction = async (ctx) => {
+  const citizens = await seedCitizens(ctx);
+  const warnings = await seedPendingWarnings(ctx);
+  ctx.logger.info('Seeded UC-1 demo data', { newCitizens: citizens, newWarnings: warnings });
+};
