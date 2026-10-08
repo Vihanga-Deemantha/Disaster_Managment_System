@@ -696,6 +696,7 @@ export const ta: Messages = {
   'hazardReports.reporter.VOLUNTEER': 'தன்னார்வலர்',
   'hazardReports.cluster.title': '{area} குழு',
   'hazardReports.cluster.score': '100 இல் முன்னுரிமை மதிப்பெண் {score}',
+  'hazardReports.cluster.empty': 'இந்த அறிக்கைத் தொகுப்பில் அறிக்கைகள் இல்லை.',
   'hazardReports.cluster.openReport': 'அறிக்கையை மதிப்பாய்வு செய்யவும்',
   'hazardReports.cluster.mapLabel': 'இந்தக் குழுவின் அறிக்கைகளின் வரைபடம்',
   'hazardReports.escalate.button': 'எச்சரிக்கைக்காக மேல்நிலைக்கு அனுப்பவும்',

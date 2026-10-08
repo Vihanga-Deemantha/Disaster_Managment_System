@@ -661,6 +661,7 @@ export const en = {
   'hazardReports.reporter.VOLUNTEER': 'Volunteer',
   'hazardReports.cluster.title': '{area} cluster',
   'hazardReports.cluster.score': 'Priority score {score} of 100',
+  'hazardReports.cluster.empty': 'No reports in this cluster.',
   'hazardReports.cluster.openReport': 'Review report',
   'hazardReports.cluster.mapLabel': 'Map of the reports in this cluster',
   'hazardReports.escalate.button': 'Escalate to warning',
