@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
-import { Alert as NativeAlert, AppState } from 'react-native';
+import { AppState } from 'react-native';
 import { en } from '@/shared/i18n/messages.en';
 import { si } from '@/shared/i18n/messages.si';
 import { InboxUnavailable } from '../domain/types';
@@ -266,39 +266,37 @@ describe('AlertsScreen: the account area', () => {
     expect(screen.getByRole('radio', { name: en['lang.EN'], selected: true })).toBeTruthy();
   });
 
+  // The question is drawn by the app, not by `Alert.alert`: that does nothing in a browser, where the
+  // Sign out button used to look dead.
+  const question = () => screen.queryByLabelText(en['auth.account.signOutTitle']);
+
   it('asks before signing out, and signs out when confirmed', async () => {
-    const alert = jest.spyOn(NativeAlert, 'alert').mockImplementation(() => undefined);
     const { controller } = await open({ alerts: [] });
+    expect(question()).toBeNull();
 
     fireEvent.press(screen.getByRole('button', { name: en['auth.account.signOut'] }));
 
-    expect(alert).toHaveBeenCalledTimes(1);
-    const [title, body, buttons] = alert.mock.calls[0] as [
-      string,
-      string,
-      Array<{ text: string; onPress?: () => void; style?: string }>,
-    ];
-    expect([title, body]).toEqual([
-      en['auth.account.signOutTitle'],
-      en['auth.account.signOutBody'],
-    ]);
+    const asking = within(screen.getByLabelText(en['auth.account.signOutTitle']));
+    expect(asking.getByText(en['auth.account.signOutBody'])).toBeTruthy();
     expect(controller.getState().status).toBe('signedIn');
-    const confirm = buttons.find((button) => button.style === 'destructive');
-    await act(async () => confirm?.onPress?.());
+    await act(async () =>
+      fireEvent.press(asking.getByRole('button', { name: en['auth.account.signOut'] })),
+    );
     expect(controller.getState()).toEqual({ status: 'signedOut' });
-    alert.mockRestore();
   });
 
-  it('stays signed in when the person cancels', async () => {
-    const alert = jest.spyOn(NativeAlert, 'alert').mockImplementation(() => undefined);
+  it('stays signed in when the person cancels, and can ask again', async () => {
     const { controller } = await open({ alerts: [] });
+    const signOut = () => screen.getByRole('button', { name: en['auth.account.signOut'] });
 
-    fireEvent.press(screen.getByRole('button', { name: en['auth.account.signOut'] }));
-    const buttons = alert.mock.calls[0]?.[2] as Array<{ style?: string; onPress?: () => void }>;
-    expect(buttons.find((button) => button.style === 'cancel')?.onPress).toBeUndefined();
+    fireEvent.press(signOut());
+    const asking = within(screen.getByLabelText(en['auth.account.signOutTitle']));
+    fireEvent.press(asking.getByRole('button', { name: en['common.cancel'] }));
 
+    expect(question()).toBeNull();
     expect(controller.getState().status).toBe('signedIn');
-    alert.mockRestore();
+    fireEvent.press(signOut());
+    expect(question()).not.toBeNull();
   });
 
   it('shows nothing here once nobody is signed in', async () => {
