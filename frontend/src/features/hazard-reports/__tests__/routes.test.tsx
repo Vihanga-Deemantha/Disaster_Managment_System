@@ -40,6 +40,8 @@ describe('UC-3 A2: web role and route shell', () => {
     open(route);
     await screen.findByText('DMC Officer (demo)');
     expect(await screen.findByRole('heading', { name: heading })).toBeVisible();
+    if (heading === 'Hazard report clusters')
+      await screen.findByText('No open clusters. New reports appear here automatically.');
   });
   it.each([makeCitizen(), makeMe({ role: 'COMMUNITY_VOLUNTEER' }), makeMe()])(
     'UC-3 A2: non-duty role sees its reports',
@@ -55,6 +57,7 @@ describe('UC-3 A2: web role and route shell', () => {
     const { router } = open('/hazard-reports/nope');
     expect(await screen.findByRole('heading', { name: 'Hazard report clusters' })).toBeVisible();
     await waitFor(() => expect(router.state.location.pathname).toBe('/hazard-reports'));
+    await screen.findByText('No open clusters. New reports appear here automatically.');
   });
   it.each([
     ['/hazard-reports', 'DUTY_OFFICER', 'Hazard report clusters'],
@@ -72,5 +75,7 @@ describe('UC-3 A2: web role and route shell', () => {
         { timeout: 5_000 },
       );
     expect(await screen.findByRole('heading', { name: heading })).toBeVisible();
+    if (heading === 'Hazard report clusters')
+      await screen.findByText('No open clusters. New reports appear here automatically.');
   });
 });

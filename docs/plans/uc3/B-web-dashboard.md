@@ -349,7 +349,7 @@ handlers returning `[]`).
 | `reloads by itself every 15 seconds while online`                         | fake timers; third cluster appears                                                 |
 | `offline: shows the saved list and when it was synced`                    | load once, `setBrowserOnline(false)`, re-render → rows still there + "Last synced" |
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): officer dashboard (step 11)`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): officer dashboard (step 11)`.
 
 ---
 
