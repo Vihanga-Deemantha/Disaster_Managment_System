@@ -25,6 +25,13 @@ export class InMemoryWarningRepository implements WarningRepository {
     return row ? Warning.restore(row) : null;
   }
 
+  async findByIds(warningIds: readonly string[]): Promise<Warning[]> {
+    return warningIds.flatMap((warningId) => {
+      const row = this.rows.get(warningId);
+      return row ? [Warning.restore(row)] : [];
+    });
+  }
+
   async findByStatus(status?: WarningStatus): Promise<Warning[]> {
     return [...this.rows.values()]
       .filter((row) => status === undefined || row.status === status)
@@ -76,6 +83,18 @@ export class InMemoryAlertNotificationRepository implements AlertNotificationRep
           a.createdAt.getTime() - b.createdAt.getTime() ||
           a.notificationId.localeCompare(b.notificationId),
       )
+      .map((row) => AlertNotification.restore(row));
+  }
+
+  async findDeliveredByCitizen(citizenId: string, limit: number): Promise<AlertNotification[]> {
+    return [...this.rows.values()]
+      .filter((row) => row.citizenId === citizenId && row.overallStatus === 'DELIVERED')
+      .sort(
+        (a, b) =>
+          b.createdAt.getTime() - a.createdAt.getTime() ||
+          a.notificationId.localeCompare(b.notificationId),
+      )
+      .slice(0, limit)
       .map((row) => AlertNotification.restore(row));
   }
 }

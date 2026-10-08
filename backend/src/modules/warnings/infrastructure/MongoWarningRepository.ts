@@ -11,6 +11,11 @@ export class MongoWarningRepository implements WarningRepository {
     return doc ? docToWarning(doc) : null;
   }
 
+  async findByIds(warningIds: readonly string[]): Promise<Warning[]> {
+    const docs = await WarningModel.find({ _id: { $in: [...warningIds] } }).lean<WarningDoc[]>();
+    return docs.map(docToWarning);
+  }
+
   async findByStatus(status?: WarningStatus): Promise<Warning[]> {
     const docs = await WarningModel.find(status ? { status } : {})
       .sort({ submittedAt: -1, _id: 1 })

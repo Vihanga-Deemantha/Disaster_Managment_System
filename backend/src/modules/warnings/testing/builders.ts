@@ -42,6 +42,14 @@ export const aWarning = (overrides: Partial<NewWarning> = {}, now: Date = NOW): 
     now,
   );
 
+/** A warning an officer other than its submitter approved and that went out: what a citizen's inbox shows. */
+export const anIssuedWarning = (overrides: Partial<NewWarning> = {}, now: Date = NOW): Warning => {
+  const warning = aWarning(overrides, now);
+  warning.approve('usr-dmc-1', now);
+  warning.markIssued(now);
+  return warning;
+};
+
 export const aRecipient = (overrides: Partial<Recipient> = {}): Recipient => ({
   citizenId: 'citizen-1',
   fullName: 'Test Citizen',
