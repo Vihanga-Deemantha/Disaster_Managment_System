@@ -1,12 +1,25 @@
-import { useT } from '@/shared/i18n/I18nProvider';
-import { ModulePlaceholder } from '@/shared/layout/ModulePlaceholder';
+import { Route, Routes } from 'react-router';
+import { NotFoundPage } from '@/shared/layout/NotFoundPage';
+import { DeliverySummaryPage } from './DeliverySummaryPage';
+import { ReviewWarningPage } from './ReviewWarningPage';
+import { WarningsListPage } from './WarningsListPage';
 
 /**
- * UC-1 Issue Warning. Replace this placeholder with the Pending Approvals list, the review screen,
- * the confirm dialog and the delivery summary. Handle sub-routes (`/warnings/:id`) inside with
- * `<Routes>`: the app mounts this component at `/warnings/*`.
+ * UC-1 Issue Warning. The app mounts this at `/warnings/*`:
+ *   /warnings                         Pending Approvals (screen 1)
+ *   /warnings/issued, /rejected       the same list for warnings that were issued or rejected
+ *   /warnings/:warningId              Review, with edit, reject and the confirm dialog (screens 2 to 5)
+ *   /warnings/:warningId/delivery     Delivery summary (screen 6)
  */
 export function WarningsPage() {
-  const t = useT();
-  return <ModulePlaceholder title={t('nav.warnings')} />;
+  return (
+    <Routes>
+      <Route index element={<WarningsListPage kind="PENDING" />} />
+      <Route path="issued" element={<WarningsListPage kind="ISSUED" />} />
+      <Route path="rejected" element={<WarningsListPage kind="REJECTED" />} />
+      <Route path=":warningId" element={<ReviewWarningPage />} />
+      <Route path=":warningId/delivery" element={<DeliverySummaryPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
 }

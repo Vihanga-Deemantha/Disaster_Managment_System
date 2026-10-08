@@ -29,6 +29,9 @@ jobs:
           path: ~/.cache/mongodb-binaries
           key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
+      # A lockfile that only knows the Windows or macOS builds of Rollup, esbuild and friends makes
+      # `npm ci` here install none of the Linux ones. Say so in plain words before anything else fails.
+      - run: npm run verify:lockfile
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint

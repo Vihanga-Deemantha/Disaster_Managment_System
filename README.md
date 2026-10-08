@@ -87,7 +87,7 @@ backend/src/
 ├─ modules/<use case>/     domain/  application/  infrastructure/  api/  composition.ts  seed/  __tests__/
 ├─ app.ts  bootstrap.ts    assemble the HTTP app and wire the shared services (frozen)
 frontend/src/
-├─ shared/                 AppShell, API client, auth pages, i18n (Si/Ta/En), offline layer, UI kit (frozen)
+├─ shared/                 AppShell, landing page, auth pages, API client, i18n (Si/Ta/En), offline layer, UI kit (frozen)
 ├─ features/<use case>/    index.tsx (your screens)  nav.ts (your sidebar entry)
 └─ routes.tsx  navigation.ts
 ```
@@ -120,6 +120,62 @@ offline wait in an ordered outbox (`useOfflineWrite`) that replays when the conn
 session first, stopping at the first rejected change and showing it, retrying server errors with back-off, and applying each
 change once thanks to idempotency keys. Signing out (or a different person signing in) wipes the offline store.
 
+## UC-1 Issue Warning: try it
+
+`npm run seed` adds 200 demo citizens (phones `0771500001` to `0771500200`, same demo password) and the five pending
+warnings of the wireframe: Gampaha, Ratnapura, the Kalu Ganga basin, the Kelani Ganga basin and Kegalle. Sign in as
+`dmc.officer2@safezone.lk` and open **Pending Approvals**. The Kalu Ganga warning was submitted by
+`dmc.officer@safezone.lk`, so that account cannot approve it (BR2, four eyes). If you seeded before the redesign, run
+`npm run seed` again (without `--fresh`): it only fills in the submitters' names on the demo warnings.
+
+The screens follow the supplied design. [`docs/design/uc1-pending-approvals-redesign.md`](docs/design/uc1-pending-approvals-redesign.md)
+shows it next to ours, lists every change from it and says why. The sidebar also opens **Issued Warnings** and **Rejected
+Warnings**, and the number beside Pending Approvals is how many warnings are waiting.
+
+| Try this                                                              | What it shows                                                                         |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Pending Approvals → hazard tabs, search box, Sort by, All time        | Find a warning among many; the cards above always count everything that is waiting    |
+| Sidebar → Issued Warnings, then Rejected Warnings                     | What was sent (→ Delivery summary) and what was turned down, with the reason          |
+| Review → Approve & Issue → type the password → Issue                  | Main flow; the password is checked again first (`/api/auth/reauth`, BR3)              |
+| Review → Approve & Issue → Cancel                                     | A4: nothing is sent, nothing changes                                                  |
+| Review → Edit → clear the Tamil text → Save                           | A2 and E1: inline errors; saving the edit moves the version on                        |
+| Review → Reject (a reason is required)                                | A3                                                                                    |
+| Open _Demo controls_ → Push notification: **Some sends fail** → Issue | A1: SMS still reaches everyone; the summary shows the failed pushes → Retry failed    |
+| Demo controls → Push and SMS: **Down** → Issue                        | E2: still issued, "every channel unavailable", download the list of citizens to visit |
+| Demo controls → back to **Working** → Retry failed                    | E3: everything that was waiting is delivered                                          |
+| Go offline (browser DevTools → Network → Offline) on a review screen  | BR6: saved copy with "last synced"; Approve & Issue is off; edits are queued          |
+
+The **Demo controls** panel (and `PUT /api/dev/gateways/:channel` with `{ "mode": "OK" | "FAIL_SOME" | "DOWN" }`) exists only
+while developing (`npm run dev`) or in a build made with `VITE_DEMO_TOOLS=true`. The API mounts the routes only outside
+production. Push, SMS, WhatsApp and e-mail are simulated behind ports; real gateways would be new adapter classes.
+
+| Method and path                                          | Purpose                                                                              |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `GET /api/warnings?status=`                              | The list (step 1)                                                                    |
+| `GET /api/warnings/:id`                                  | The warning, who it would reach per channel, and what is still wrong                 |
+| `PATCH /api/warnings/:id`                                | Edit; the version travels in `expectedVersion` or `If-Match` (409 on a clash)        |
+| `POST /api/warnings/:id/reject`                          | Reject with a reason                                                                 |
+| `POST /api/warnings/:id/issue` (needs `Idempotency-Key`) | Approve and send; step-up guarded; 503 `ALL_CHANNELS_UNAVAILABLE` still means issued |
+| `GET /api/warnings/:id/delivery`, `POST …/retry-failed`  | The summary, and send again what did not get through                                 |
+| `GET /api/warnings/:id/unreached.csv`                    | The follow-up list for door-to-door visits                                           |
+
+Failed sends are retried automatically by a timer (every 15 s, 3 retries per channel, back-off 30 s doubling to 10 min);
+a gateway that was down never uses up the retries. The Sinhala and Tamil texts of the demo data are drafts: have a
+native speaker read them before the demonstration.
+
+## The public pages
+
+- `/` is the landing page. Someone who is already signed in is sent straight to their own screen instead.
+- `/login` and `/register` share one frame: a photo panel on wide screens, the form alone on phones. Registration is
+  three short steps (about you, where you live, how we alert you); "Continue" only checks the step you are on.
+- All three pages are written in Sinhala, Tamil and English, work without sideways scrolling from 320px wide, and open
+  offline after one visit (the service worker keeps the photos from `frontend/public/images` that the visitor has seen).
+- The palette and the Plus Jakarta Sans font (self-hosted, so it works offline) come from the design; the tokens are
+  in `frontend/src/index.css`.
+- They deliberately show **no live warnings** yet. When UC-1 exposes a public feed, add a "Live warnings" section to
+  `frontend/src/shared/landing/` that reads it, and never show a message such as "No active warnings" while the feed is
+  not connected: on a disaster site that would be a claim nobody has checked.
+
 ## Quality gates
 
 | What                         | Gate                                                                                        |
@@ -145,6 +201,14 @@ to their folders.
   MongoDB instead; each test file gets its own throwaway database.
 - **`argon2` fails to install**: the API falls back to bcrypt automatically and logs a warning; existing argon2 hashes
   cannot be checked on that machine, so seed it with its own database.
+- **CI fails with `Cannot find module '@rollup/rollup-linux-x64-gnu'`** (or `@esbuild/linux-x64`,
+  `lightningcss-linux-x64-gnu`, ...): `package-lock.json` has lost the Linux and macOS builds of the packages that ship one
+  native build per system (an npm bug, [npm/cli#4828](https://github.com/npm/cli/issues/4828)). It happens when a lockfile
+  is created next to an existing `node_modules` folder. `npm run verify:lockfile` lists what is missing (the pre-commit hook
+  and CI run it too). Do not add those packages as dependencies, and `npm ci --include=optional` changes nothing: optional
+  packages are installed by default. To repair it, delete `package-lock.json` **and** `node_modules`, run `npm install` in
+  the clean folder, then run `npm run verify:lockfile` and the whole test suite (a new lockfile re-resolves every package, so
+  expect some version changes).
 - **Repository inside OneDrive / Dropbox**: syncing `node_modules` is slow and can lock files during `npm install`.
   Prefer a folder outside the synced area (for example `C:\dev\safezone`), or exclude `node_modules` from sync.
 
@@ -152,6 +216,9 @@ to their folders.
 
 - `HazardType` and `Severity` values in `backend/src/shared/contracts/enums.ts` are **provisional**: align them with the
   report's class diagram (Section 2.6) before the modules depend on them.
+- The top strip of the landing page says "Official early warning service of the Disaster Management Centre", and its
+  footer carries the DMC's name. This is a coursework project, so reword both (or add "prototype") before it is hosted
+  anywhere public.
 - Sinhala and Tamil strings (`frontend/src/shared/i18n/messages.si.ts`, `messages.ta.ts`) are drafts: have a native speaker
   proofread them.
 - The home-district check uses approximate district centres, not boundaries (a citizen can always confirm their choice).

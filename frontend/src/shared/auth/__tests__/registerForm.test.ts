@@ -1,5 +1,6 @@
 import {
   emptyForm,
+  phoneForRequest,
   serverFieldCodes,
   toRequest,
   validate,
@@ -27,6 +28,36 @@ describe('emptyForm', () => {
       whatsappOptIn: false,
       emailOptIn: false,
     });
+  });
+});
+
+describe('phoneForRequest (the box already shows "+94")', () => {
+  it.each([
+    ['77 123 4567', '+94771234567'],
+    ['771234567', '+94771234567'],
+    ['77-123-4567', '+94771234567'],
+    ['(77) 123 4567', '+94771234567'],
+    ['  77 123 4567  ', '+94771234567'],
+  ])('completes %j to %s', (typed, expected) => {
+    expect(phoneForRequest(typed)).toBe(expected);
+  });
+
+  it.each([['077 123 4567'], ['+94 77 123 4567'], ['0771234567'], ['12345'], ['']])(
+    'sends %j as typed, and leaves the verdict to the same schema the server uses',
+    (typed) => {
+      expect(phoneForRequest(typed)).toBe(typed);
+    },
+  );
+
+  it('is what makes a number typed after the prefix valid', () => {
+    expect(validate(valid({ phone: '77 123 4567' })).phone).toBeUndefined();
+    expect(validate(valid({ phone: '66 123 4567' })).phone).toBe('PHONE_INVALID');
+  });
+
+  it('is applied to the request', () => {
+    const request = toRequest(valid({ phone: '77 123 4567' }), false) as { phone: string };
+
+    expect(request.phone).toBe('+94771234567');
   });
 });
 

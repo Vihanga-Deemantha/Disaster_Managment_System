@@ -5,10 +5,10 @@ import { analyticsNav } from '@/features/analytics/nav';
 import { hazardReportsNav } from '@/features/hazard-reports/nav';
 import { resourcesNav } from '@/features/resources/nav';
 import { warningsNav } from '@/features/warnings/nav';
-import { HomeRedirect } from '@/shared/auth/HomeRedirect';
 import { LoginPage } from '@/shared/auth/LoginPage';
 import { RegisterPage } from '@/shared/auth/RegisterPage';
 import { RequireAuth } from '@/shared/auth/RequireAuth';
+import { LandingPage } from '@/shared/landing/LandingPage';
 import { AppShell } from '@/shared/layout/AppShell';
 import { NotFoundPage } from '@/shared/layout/NotFoundPage';
 import { RouteFallback } from '@/shared/layout/RouteFallback';
@@ -45,6 +45,8 @@ function feature(
  * with `<Routes>` inside its page. Access is limited by the same `roles` its sidebar entry declares.
  */
 export const routes: RouteObject[] = [
+  // `/` is the public landing page; a signed-in visitor is sent on to their own screen from there.
+  { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   {
@@ -55,7 +57,6 @@ export const routes: RouteObject[] = [
     ),
     HydrateFallback: RouteFallback,
     children: [
-      { index: true, element: <HomeRedirect /> },
       feature('warnings', warningsNav.roles, () =>
         import('@/features/warnings').then((m) => ({ default: m.WarningsPage })),
       ),

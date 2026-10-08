@@ -175,6 +175,11 @@ export function WarningsPage() {
 
 Features may import `@/shared/*` and `@contracts/*` but **not other features** (ESLint enforces it).
 
+To look like the rest of the app, start each screen with `<PageHeader title subtitle>` and build it from `Card`, `StatCard`
+and `SeverityPill` in `@/shared/ui`. Your `nav.ts` entry may also name an `icon` (any name in `shared/ui/Icon.tsx`; a plain
+dot when you leave it out) and a `useBadge` hook that returns a number to show beside the label (UC-1 shows how many warnings
+are waiting). `docs/design/uc1-pending-approvals-redesign.md` shows the look and the reasons for it.
+
 ### 2. Talking to the API, online or offline
 
 ```tsx
