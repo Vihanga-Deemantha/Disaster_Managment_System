@@ -188,9 +188,9 @@ describe('UC-1 steps 5 to 7: the confirmation (screen 5)', () => {
     await user.click(issueButton(dialog));
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Warning issued' }),
+      await screen.findByRole('heading', { level: 1, name: 'Warning Issued' }),
     ).toBeInTheDocument();
-    await screen.findByText('Citizens alerted');
+    await screen.findByText('Citizens Reached');
     expect(view.router.state.location.pathname).toBe('/warnings/W-102/delivery');
     expect(order).toEqual(['reauth', 'issue']);
     expect(issued).toHaveLength(1);
@@ -216,7 +216,7 @@ describe('UC-1 steps 5 to 7: the confirmation (screen 5)', () => {
     await user.click(busy);
     release();
 
-    await screen.findByText('Citizens alerted');
+    await screen.findByText('Citizens Reached');
     expect(issued).toHaveLength(1);
   });
 
@@ -240,9 +240,9 @@ describe('UC-1 steps 5 to 7: the confirmation (screen 5)', () => {
     await user.click(issueButton(dialog));
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Warning issued' }),
+      await screen.findByRole('heading', { level: 1, name: 'Warning Issued' }),
     ).toBeInTheDocument();
-    await screen.findByText('Citizens alerted');
+    await screen.findByText('Citizens Reached');
     expect(view.router.state.location.pathname).toBe('/warnings/W-102/delivery');
   });
 
@@ -276,7 +276,7 @@ describe('UC-1 steps 5 to 7: the confirmation (screen 5)', () => {
     await user.type(passwordBox(), PASSWORD);
     await user.click(issueButton(dialog));
 
-    await screen.findByText('Citizens alerted');
+    await screen.findByText('Citizens Reached');
     expect(issued).toHaveLength(2);
     expect(issued[1]?.key).toBe(issued[0]?.key);
   });

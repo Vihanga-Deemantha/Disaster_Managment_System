@@ -50,8 +50,13 @@ async function setGateway(
   await panel.getByLabel(`${channel} gateway`).selectOption({ label: mode });
 }
 
-const channelCells = (page: Page, channel: string) =>
-  page.getByRole('row', { name: new RegExp(`^${channel}`) }).getByRole('cell');
+/** One channel's line in the Notification Summary: its name, then what it delivered and what failed. */
+const channelRow = (page: Page, channel: string) =>
+  page.getByRole('listitem').filter({ hasText: channel });
+
+/** The bar under "Citizens Reached". Its name carries the percentage, rounded down. */
+const reachedBar = (page: Page, percent: number) =>
+  page.getByRole('progressbar', { name: `${percent}% of citizens reached`, exact: true });
 
 test.afterEach(async ({ page }) => {
   // The API keeps the gateway modes in memory; leave them as the next test expects them.
@@ -96,9 +101,17 @@ test.describe('UC-1 Issue Warning', () => {
 
     await confirmIssue(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Warning issued' })).toBeVisible();
-    await expect(page.getByText('100% of citizens reached')).toBeVisible();
-    await expect(channelCells(page, 'SMS').nth(2)).toHaveText('0');
+    await expect(page.getByRole('heading', { level: 1, name: 'Warning Issued' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Warning Issued Successfully' }),
+    ).toBeVisible();
+    await expect(reachedBar(page, 100)).toBeVisible();
+    await expect(channelRow(page, 'SMS Notification')).toContainText('delivered');
+    await expect(channelRow(page, 'SMS Notification')).not.toContainText('failed');
+    await expect(channelRow(page, 'WhatsApp Notification')).toContainText('Not sent');
+    await expect(
+      page.getByText('All notifications have been delivered successfully.'),
+    ).toBeVisible();
     await expect(pendingLink(page)).toHaveAccessibleDescription('4 waiting');
     await page.getByRole('link', { name: 'Back to Pending Approvals' }).click();
     await expect(reviewLink(page, 'Flood', 'Gampaha')).toHaveCount(0);
@@ -130,14 +143,14 @@ test.describe('UC-1 Issue Warning', () => {
 
     await confirmIssue(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Warning issued' })).toBeVisible();
-    await expect(page.getByText('100% of citizens reached')).toBeVisible();
-    await expect(channelCells(page, 'Push notification').nth(2)).not.toHaveText('0');
-    await expect(channelCells(page, 'SMS').nth(2)).toHaveText('0');
+    await expect(page.getByRole('heading', { level: 1, name: 'Warning Issued' })).toBeVisible();
+    await expect(reachedBar(page, 100)).toBeVisible();
+    await expect(channelRow(page, 'Push Notification')).toContainText('failed');
+    await expect(channelRow(page, 'SMS Notification')).not.toContainText('failed');
 
     await page.getByRole('button', { name: 'Retry failed' }).click();
 
-    await expect(channelCells(page, 'Push notification').nth(2)).toHaveText('0');
+    await expect(channelRow(page, 'Push Notification')).not.toContainText('failed');
     await expect(page.getByRole('button', { name: 'Retry failed' })).toBeHidden();
   });
 
@@ -150,9 +163,10 @@ test.describe('UC-1 Issue Warning', () => {
 
     await confirmIssue(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Warning issued' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Warning Issued' })).toBeVisible();
     await expect(page.getByText('Every delivery channel is unavailable')).toBeVisible();
-    await expect(page.getByText('0% of citizens reached')).toBeVisible();
+    await expect(channelRow(page, 'Push Notification')).toContainText('Not sent');
+    await expect(reachedBar(page, 0)).toBeVisible();
     const download = page.getByRole('link', { name: /Download the list of citizens not reached/ });
     await expect(download).toBeVisible();
     const csv = await page.request.get((await download.getAttribute('href')) as string);
@@ -164,7 +178,7 @@ test.describe('UC-1 Issue Warning', () => {
     await setGateway(page, 'SMS', 'Working');
     await page.getByRole('button', { name: 'Retry failed' }).click();
 
-    await expect(page.getByText('100% of citizens reached')).toBeVisible();
+    await expect(reachedBar(page, 100)).toBeVisible();
     await expect(page.getByText('Every delivery channel is unavailable')).toBeHidden();
     await expect(download).toBeHidden();
   });

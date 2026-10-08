@@ -33,8 +33,8 @@ async function issue(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Issue this warning?' });
   await dialog.getByLabel('Your password').fill(DEMO_PASSWORD);
   await dialog.getByRole('button', { name: 'Issue warning now' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Warning issued' })).toBeVisible();
-  await expect(page.getByText('Citizens alerted')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Warning Issued' })).toBeVisible();
+  await expect(page.getByText('Citizens Reached')).toBeVisible();
 }
 
 test('UC-1 screenshots', async ({ page }) => {

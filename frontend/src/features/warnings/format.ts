@@ -7,7 +7,7 @@ import {
 } from '@contracts/enums';
 import { DATE_LOCALE, type Translate } from '@/shared/i18n/I18nProvider';
 import { translateCode } from '@/shared/i18n/translateError';
-import type { FieldIssue, IssueResult, Messages, WarningDto } from './types';
+import type { DeliveryDto, FieldIssue, IssueResult, Messages, WarningDto } from './types';
 
 /** One SMS holds 160 characters (SC1-05). Counted the way the server counts, in characters a person sees. */
 export const SMS_MAX_LENGTH = 160;
@@ -31,6 +31,31 @@ export const hasRetryableDelivery = (result: IssueResult): boolean =>
   result.pendingRetry > 0 ||
   result.failed > 0 ||
   CHANNELS.some((channel) => result.byChannel[channel].failed > 0);
+
+/**
+ * How a delivery stands, in the four ways the screen speaks about it (HCI-05a: never a flat "100%
+ * delivered"). An outage comes first, then citizens still being retried, then citizens no channel reached.
+ */
+export type DeliveryOutcome = 'OUTAGE' | 'PENDING' | 'FAILED' | 'ALL';
+
+export function deliveryOutcome({
+  result,
+  allChannelsUnavailable,
+}: Pick<DeliveryDto, 'result' | 'allChannelsUnavailable'>): DeliveryOutcome {
+  if (allChannelsUnavailable) return 'OUTAGE';
+  if (result.pendingRetry > 0) return 'PENDING';
+  return result.failed > 0 ? 'FAILED' : 'ALL';
+}
+
+/** A warning is active until its validity ends; after that the screen must not go on saying so. */
+export const validityState = (
+  warning: Pick<WarningDto, 'validTo'>,
+  now: number,
+): 'ACTIVE' | 'EXPIRED' => (Date.parse(warning.validTo) > now ? 'ACTIVE' : 'EXPIRED');
+
+/** 12458 as "12,458": a big number must be readable at a glance (written like the dates are). */
+export const formatCount = (value: number, language: Language): string =>
+  value.toLocaleString(DATE_LOCALE[language]);
 
 /** The hazards present in a list, in the app's usual order, each with how many warnings it has. */
 export const hazardCounts = (warnings: readonly WarningDto[]): [HazardType, number][] =>
