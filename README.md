@@ -125,10 +125,17 @@ change once thanks to idempotency keys. Signing out (or a different person signi
 `npm run seed` adds 200 demo citizens (phones `0771500001` to `0771500200`, same demo password) and the five pending
 warnings of the wireframe: Gampaha, Ratnapura, the Kalu Ganga basin, the Kelani Ganga basin and Kegalle. Sign in as
 `dmc.officer2@safezone.lk` and open **Pending Approvals**. The Kalu Ganga warning was submitted by
-`dmc.officer@safezone.lk`, so that account cannot approve it (BR2, four eyes).
+`dmc.officer@safezone.lk`, so that account cannot approve it (BR2, four eyes). If you seeded before the redesign, run
+`npm run seed` again (without `--fresh`): it only fills in the submitters' names on the demo warnings.
+
+The screens follow the supplied design. [`docs/design/uc1-pending-approvals-redesign.md`](docs/design/uc1-pending-approvals-redesign.md)
+shows it next to ours, lists every change from it and says why. The sidebar also opens **Issued Warnings** and **Rejected
+Warnings**, and the number beside Pending Approvals is how many warnings are waiting.
 
 | Try this                                                              | What it shows                                                                         |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Pending Approvals → hazard tabs, search box, Sort by, All time        | Find a warning among many; the cards above always count everything that is waiting    |
+| Sidebar → Issued Warnings, then Rejected Warnings                     | What was sent (→ Delivery summary) and what was turned down, with the reason          |
 | Review → Approve & Issue → type the password → Issue                  | Main flow; the password is checked again first (`/api/auth/reauth`, BR3)              |
 | Review → Approve & Issue → Cancel                                     | A4: nothing is sent, nothing changes                                                  |
 | Review → Edit → clear the Tamil text → Save                           | A2 and E1: inline errors; saving the edit moves the version on                        |
