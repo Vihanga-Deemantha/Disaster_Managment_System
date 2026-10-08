@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * The public pages must never scroll sideways: not on the smallest phone, and not in Sinhala or
@@ -46,4 +46,40 @@ test.describe('the public pages fit every screen', () => {
     await expect(page.getByRole('img', { name: /responding to a flood at dusk/ })).toBeHidden();
     await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
   });
+});
+
+async function centreOf(link: Locator): Promise<number> {
+  const box = await link.boundingBox();
+  if (!box) throw new Error('A link the header should show is not on the page');
+  return box.y + box.height / 2;
+}
+
+/**
+ * On a laptop screen the landing header is one row in every language. Tamil words are the longest,
+ * so Tamil wraps first; its section links wait until 1160px for that reason (the middle width here).
+ */
+test.describe('the landing header stays on one row', () => {
+  for (const language of LANGUAGES) {
+    for (const width of [1024, 1160, 1440] as const) {
+      test(`${language} at ${width}px wide`, async ({ page }) => {
+        await page.addInitScript(
+          (code) => localStorage.setItem('safezone.language', code),
+          language,
+        );
+        await page.setViewportSize({ width, height: 800 });
+        await page.goto('/');
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+
+        const header = page.locator('header');
+        const rows = await Promise.all(
+          ['a[href="/"]', 'a[href="/login"]', 'a[href="/register"]'].map((selector) =>
+            centreOf(header.locator(selector).first()),
+          ),
+        );
+
+        expect(Math.max(...rows) - Math.min(...rows), 'the header wrapped').toBeLessThanOrEqual(2);
+      });
+    }
+  }
 });

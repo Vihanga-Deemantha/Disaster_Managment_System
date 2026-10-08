@@ -1,6 +1,7 @@
 import type { RegisterInput } from '../../contracts/auth';
 import { TEST_PASSWORD } from '../../testing/constants';
 import { DuplicateError } from '../application/ports';
+import { DEFAULT_SESSION_POLICY } from '../domain/policies';
 import { createAuthHarness, type AuthHarness } from '../testing/authHarness';
 
 const HOUR = 3_600_000;
@@ -93,6 +94,26 @@ describe('Auth §7.1.2 register', () => {
     expect(h.sessions.sessions).toHaveLength(1);
   });
 
+  // Hashing a password is deliberately slow, so a request that is going to be refused anyway must
+  // not pay for it: here the call itself is the behaviour.
+  it.each([
+    ['phone number', { nic: '198512345678' }, 'PHONE_ALREADY_REGISTERED'],
+    ['NIC', { phone: '+94772222222' }, 'NIC_ALREADY_REGISTERED'],
+  ])(
+    'refuses a taken %s before spending a password hash on it',
+    async (_taken, overrides, code) => {
+      const h = createAuthHarness();
+      await h.service.register(registration(), h.client);
+      const hash = jest.spyOn(h.hasher, 'hash');
+
+      await expect(h.service.register(registration(overrides), h.client)).rejects.toMatchObject({
+        code,
+      });
+
+      expect(hash).not.toHaveBeenCalled();
+    },
+  );
+
   it('turns a phone clash found only at insert time (a race) into the same conflict error', async () => {
     const h = createAuthHarness();
     jest.spyOn(h.users, 'create').mockRejectedValueOnce(new DuplicateError('phone'));
@@ -137,7 +158,10 @@ describe('Auth §7.1.2 register', () => {
         registration({ homeLocation: { lat: 51.5, lng: -0.12 }, confirmDistrictMismatch: true }),
         h.client,
       ),
-    ).rejects.toMatchObject({ code: 'LOCATION_OUTSIDE_SRI_LANKA' });
+    ).rejects.toMatchObject({
+      code: 'LOCATION_OUTSIDE_SRI_LANKA',
+      message: 'The location is outside Sri Lanka.',
+    });
   });
 
   it('suggests the nearest district when the pin is far from the one claimed', async () => {
@@ -150,6 +174,7 @@ describe('Auth §7.1.2 register', () => {
       ),
     ).rejects.toMatchObject({
       code: 'DISTRICT_LOCATION_MISMATCH',
+      message: 'Your location looks closer to a different district.',
       details: { suggestedDistrict: 'COLOMBO' },
     });
   });
@@ -288,6 +313,19 @@ describe('Auth §7.1.3 login', () => {
     expect(JSON.stringify(entry)).not.toContain('wrong password');
     expect(JSON.stringify(entry)).not.toContain('officer@example.test');
   });
+
+  it.each([
+    ['an email address', 'officer@example.test', 'email'],
+    ['a phone number', '0771234567', 'phone'],
+  ])('records only whether a failed sign-in used %s, never the value', async (_how, who, kind) => {
+    const h = createAuthHarness();
+    await h.addStaff();
+    await h.addCitizen();
+
+    await loginAs(h, who, 'wrong password').catch(() => undefined);
+
+    expect(h.audit.find('auth.login.failure')?.details).toEqual({ kind });
+  });
 });
 
 describe('Auth §7.1.4 progressive delay instead of lockout', () => {
@@ -314,6 +352,7 @@ describe('Auth §7.1.4 progressive delay instead of lockout', () => {
 
     await expect(loginAs(h, 'officer@example.test')).rejects.toMatchObject({
       code: 'LOGIN_THROTTLED',
+      message: 'Too many attempts. Try again shortly.',
       retryAfterSeconds: 1,
     });
   });
@@ -430,12 +469,32 @@ describe('Auth §7.1.3 refresh rotation and reuse detection', () => {
 
     await expect(h.service.refresh(first.tokens.refreshToken, h.client)).rejects.toMatchObject({
       code: 'SESSION_REVOKED',
+      message: 'The session was signed out for your safety.',
     });
 
     await expect(h.service.refresh(second.tokens.refreshToken, h.client)).rejects.toMatchObject({
       code: 'SESSION_REVOKED',
+      message: 'The session was signed out.',
     });
     expect(h.audit.actions()).toContain('auth.refresh.reuse_detected');
+  });
+
+  // The grace window forgives two tabs refreshing at once; beyond it a replay means a copied token.
+  it.each([
+    ['exactly at the end of the grace window', 'TOKEN_ROTATED', 0, false],
+    ['one millisecond after the grace window', 'SESSION_REVOKED', 1, true],
+  ])('answers a replay %s with %s', async (_when, code, extraMs, theft) => {
+    const h = createAuthHarness();
+    await h.addStaff();
+    const first = await loginAs(h, 'officer@example.test');
+    await h.service.refresh(first.tokens.refreshToken, h.client);
+    h.clock.advance(DEFAULT_SESSION_POLICY.reuseGraceMs + extraMs);
+
+    await expect(h.service.refresh(first.tokens.refreshToken, h.client)).rejects.toMatchObject({
+      code,
+    });
+
+    expect(h.audit.actions().includes('auth.refresh.reuse_detected')).toBe(theft);
   });
 
   it('treats a replay inside the grace window as a harmless race and keeps the session alive', async () => {
@@ -447,6 +506,7 @@ describe('Auth §7.1.3 refresh rotation and reuse detection', () => {
 
     await expect(h.service.refresh(first.tokens.refreshToken, h.client)).rejects.toMatchObject({
       code: 'TOKEN_ROTATED',
+      message: 'The session was just refreshed; retry the request.',
     });
 
     await expect(h.service.refresh(second.tokens.refreshToken, h.client)).resolves.toBeDefined();
@@ -461,6 +521,7 @@ describe('Auth §7.1.3 refresh rotation and reuse detection', () => {
 
     await expect(h.service.refresh(first.tokens.refreshToken, h.client)).rejects.toMatchObject({
       code: 'TOKEN_ROTATED',
+      message: 'The session was just refreshed; retry the request.',
     });
     expect(h.sessions.sessions).toHaveLength(1);
   });
@@ -470,6 +531,7 @@ describe('Auth §7.1.3 refresh rotation and reuse detection', () => {
 
     await expect(h.service.refresh('made-up-token', h.client)).rejects.toMatchObject({
       code: 'SESSION_INVALID',
+      message: 'The session is not valid.',
     });
   });
 
@@ -481,6 +543,7 @@ describe('Auth §7.1.3 refresh rotation and reuse detection', () => {
 
     await expect(h.service.refresh(first.tokens.refreshToken, h.client)).rejects.toMatchObject({
       code: 'SESSION_REVOKED',
+      message: 'The session was signed out.',
     });
   });
 
@@ -492,6 +555,7 @@ describe('Auth §7.1.3 refresh rotation and reuse detection', () => {
 
     await expect(h.service.refresh(first.tokens.refreshToken, h.client)).rejects.toMatchObject({
       code: 'SESSION_EXPIRED',
+      message: 'The session expired. Please sign in again.',
     });
   });
 
@@ -538,6 +602,7 @@ describe('Auth §7.1.3 refresh rotation and reuse detection', () => {
 
     await expect(h.service.refresh(first.tokens.refreshToken, h.client)).rejects.toMatchObject({
       code: 'SESSION_REVOKED',
+      message: 'The account is no longer active.',
     });
     expect(h.sessions.sessions[0]?.revokedAt).toBeDefined();
   });
@@ -636,6 +701,24 @@ describe('Auth §7.1.5 step-up re-authentication (BR3)', () => {
       code: 'LOGIN_THROTTLED',
     });
   });
+
+  it('counts wrong passwords at the confirmation step per person, not for everyone at once', async () => {
+    const h = createAuthHarness();
+    await h.addStaff({ email: 'a@example.test' });
+    await h.addStaff({ email: 'b@example.test' });
+    const a = h.accessTokens.verify((await loginAs(h, 'a@example.test')).tokens.accessToken);
+    const b = h.accessTokens.verify((await loginAs(h, 'b@example.test')).tokens.accessToken);
+    for (let i = 0; i < 3; i += 1) {
+      await h.service.reauth(a, 'wrong', h.client).catch(() => undefined);
+    }
+
+    await expect(h.service.reauth(a, TEST_PASSWORD, h.client)).rejects.toMatchObject({
+      code: 'LOGIN_THROTTLED',
+    });
+    await expect(h.service.reauth(b, TEST_PASSWORD, h.client)).resolves.toBeDefined();
+    expect(h.throttle.states.get(`uid:${a.userId}`)?.failures).toBe(3);
+    expect(h.throttle.states.has(`uid:${b.userId}`)).toBe(false);
+  });
 });
 
 describe('Auth §7.1.3 password change', () => {
@@ -720,7 +803,10 @@ describe('Auth §7.1.10 me', () => {
 
     await expect(
       h.service.me(h.accessTokens.verify(login.tokens.accessToken)),
-    ).rejects.toMatchObject({ code: 'SESSION_INVALID' });
+    ).rejects.toMatchObject({
+      code: 'SESSION_INVALID',
+      message: 'The account is no longer active.',
+    });
   });
 
   it('refuses a token whose account no longer exists', async () => {
@@ -731,6 +817,9 @@ describe('Auth §7.1.10 me', () => {
 
     await expect(
       h.service.me(h.accessTokens.verify(login.tokens.accessToken)),
-    ).rejects.toMatchObject({ code: 'SESSION_INVALID' });
+    ).rejects.toMatchObject({
+      code: 'SESSION_INVALID',
+      message: 'The account is no longer active.',
+    });
   });
 });

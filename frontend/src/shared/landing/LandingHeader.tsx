@@ -74,7 +74,7 @@ export function LandingHeader() {
             />
           </Link>
           <SiteNav />
-          <div className="ml-auto flex flex-none items-center gap-1.5 lg:ml-0">
+          <div className="ml-auto flex flex-none items-center gap-1.5 lg:[&:not(:lang(ta))]:ml-0 min-[1160px]:ml-0">
             <Link to="/login" className={buttonClasses('ghost')}>
               {t('landing.nav.signIn')}
             </Link>
