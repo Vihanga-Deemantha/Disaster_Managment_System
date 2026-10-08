@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { ROLES, type Role } from '@contracts/enums';
+import { aReview } from '@/features/warnings/testing/fixtures';
 import { routes } from '@/routes';
 import { apiError, makeMe, okUser } from '@/shared/testing/fixtures';
 import { renderRoutes } from '@/shared/testing/render';
@@ -10,6 +11,11 @@ import { server } from '@/shared/testing/server';
 import { Outbox } from '@/shared/offline/outbox';
 import { visibleGroups } from '@/shared/layout/navigation';
 import { NAV_GROUPS } from '@/navigation';
+
+vi.mock(
+  'react-leaflet',
+  async () => (await import('@/features/warnings/testing/mockMap')).reactLeafletMock,
+);
 
 afterEach(() => resetBrowserOnline());
 
@@ -44,15 +50,25 @@ describe('the route table (master plan §5: all routes registered up front)', ()
     expect(screen.getByRole('main')).toBeInTheDocument();
   });
 
-  it.each([
-    ['/warnings/W-102/review', 'DMC_OFFICER', 'Pending Approvals'],
-    ['/resources/allocations/new', 'NGO_MANAGER', 'Resource Allocation'],
-  ] as const)('leaves everything below %s to its owner', async (path, role, title) => {
-    signIn(makeMe({ role }));
+  it.each([['/resources/allocations/new', 'NGO_MANAGER', 'Resource Allocation']] as const)(
+    'leaves everything below %s to its owner',
+    async (path, role, title) => {
+      signIn(makeMe({ role }));
 
-    renderRoutes(routes, { route: path });
+      renderRoutes(routes, { route: path });
 
-    expect(await heading(title)).toBeInTheDocument();
+      expect(await heading(title)).toBeInTheDocument();
+    },
+  );
+
+  it('hands everything below /warnings to the warnings screens, such as a warning’s review', async () => {
+    signIn(makeMe({ role: 'DMC_OFFICER' }));
+    server.use(http.get('/api/warnings/W-102', () => HttpResponse.json(aReview())));
+
+    renderRoutes(routes, { route: '/warnings/W-102' });
+
+    expect(await heading('Review warning')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
 
   it.each([

@@ -41,7 +41,8 @@ export default defineConfig({
       url: `http://localhost:${WEB_PORT}`,
       reuseExistingServer: !process.env.CI,
       timeout: 240_000,
-      env: { API_PROXY_TARGET: `http://localhost:${API_PORT}` },
+      // VITE_DEMO_TOOLS adds the simulated-gateway controls UC-1's tests flip (they never exist in production).
+      env: { API_PROXY_TARGET: `http://localhost:${API_PORT}`, VITE_DEMO_TOOLS: 'true' },
     },
   ],
 });
