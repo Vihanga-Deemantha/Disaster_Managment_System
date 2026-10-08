@@ -26,4 +26,12 @@ export class MongoAlertNotificationRepository implements AlertNotificationReposi
       .lean<AlertNotificationDoc[]>();
     return docs.map(docToNotification);
   }
+
+  async findDeliveredByCitizen(citizenId: string, limit: number): Promise<AlertNotification[]> {
+    const docs = await AlertNotificationModel.find({ citizenId, overallStatus: 'DELIVERED' })
+      .sort({ createdAt: -1, _id: 1 })
+      .limit(limit)
+      .lean<AlertNotificationDoc[]>();
+    return docs.map(docToNotification);
+  }
 }

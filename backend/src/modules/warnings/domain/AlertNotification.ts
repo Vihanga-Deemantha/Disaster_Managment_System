@@ -133,6 +133,14 @@ export class AlertNotification {
     return this.state.attempts.some((attempt) => attempt.status === 'DELIVERED');
   }
 
+  /** When this alert first got through, on any channel: the moment it reached the citizen's inbox. */
+  deliveredAt(): Date | undefined {
+    const times = this.state.attempts
+      .filter((attempt) => attempt.status === 'DELIVERED')
+      .map((attempt) => attempt.attemptedAt.getTime());
+    return times.length === 0 ? undefined : new Date(Math.min(...times));
+  }
+
   /**
    * Channels worth trying again automatically. A gateway that was down (UNAVAILABLE) is always worth
    * another go and does not use up the budget; a real failure may be retried `maxRetries` times.

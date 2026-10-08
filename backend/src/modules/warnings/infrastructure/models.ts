@@ -163,6 +163,8 @@ const alertNotificationSchema = new Schema<AlertNotificationDoc>(
 );
 // One notification per citizen per warning: a re-run can never alert the same person twice.
 alertNotificationSchema.index({ warningId: 1, citizenId: 1 }, { unique: true });
+// A citizen's inbox (the phone polls it every 15 seconds): their delivered alerts, newest first.
+alertNotificationSchema.index({ citizenId: 1, overallStatus: 1, createdAt: -1 });
 
 export const WarningModel = mongoose.model<WarningDoc>('Warning', warningSchema);
 export const AlertNotificationModel = mongoose.model<AlertNotificationDoc>(

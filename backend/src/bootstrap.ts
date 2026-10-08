@@ -3,7 +3,7 @@ import { createApp } from './app';
 import { createAnalyticsModule } from './modules/analytics/composition';
 import { createHazardReportsModule } from './modules/hazard-reports/composition';
 import { createResourcesModule } from './modules/resources/composition';
-import { createWarningsModule } from './modules/warnings/composition';
+import { createCitizenAlertsModule, createWarningsModule } from './modules/warnings/composition';
 import { MongoAuditLog } from './shared/audit/AuditLog';
 import { callerKey } from './shared/auth';
 import { composeAuth, type AuthModule } from './shared/auth/composition';
@@ -18,6 +18,7 @@ import { SystemClock } from './shared/time/Clock';
 /** Register a new use case here (one line) and it is mounted, seeded and tested like the others. */
 export const MODULE_FACTORIES: readonly ModuleFactory[] = [
   createWarningsModule,
+  createCitizenAlertsModule,
   createResourcesModule,
   createHazardReportsModule,
   createAnalyticsModule,

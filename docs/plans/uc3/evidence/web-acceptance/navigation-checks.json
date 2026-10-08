@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-09",
+  "checks": [
+    {
+      "name": "sidebar and actual cluster/report links navigate all five officer screens"
+    },
+    {
+      "name": "cached Dashboard navigable offline"
+    },
+    {
+      "name": "cached Review reports navigable offline"
+    },
+    {
+      "name": "cached Report history navigable offline"
+    },
+    {
+      "name": "cached cluster/report navigation offline, officer writes disabled, reconnect recovers"
+    },
+    {
+      "name": "390px phone sidebar closes on navigation; page fits with scrollable table"
+    },
+    {
+      "name": "SI translated phone history renders without page overflow",
+      "title": "වාර්තා ඉතිහාසය"
+    },
+    {
+      "name": "TA translated phone history renders without page overflow",
+      "title": "அறிக்கை வரலாறு"
+    }
+  ],
+  "errors": []
+}

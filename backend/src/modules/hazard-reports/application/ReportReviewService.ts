@@ -30,6 +30,11 @@ export interface ReportReader {
   isOfficer: boolean;
 }
 
+export interface ReviewOfficer {
+  userId: string;
+  role: 'DUTY_OFFICER' | 'DMC_OFFICER';
+}
+
 const reportNotFound = (): NotFoundError =>
   new NotFoundError('REPORT_NOT_FOUND', 'This report does not exist.');
 
@@ -106,36 +111,36 @@ export class ReportReviewService {
   }
 
   /** UC-3 steps 13–15. */
-  async verify(reportId: string, officerId: string): Promise<ReviewResult> {
+  async verify(reportId: string, officer: ReviewOfficer): Promise<ReviewResult> {
     const report = await this.loadReport(reportId);
-    report.verify(officerId, this.deps.clock.now());
-    return this.settle(report, officerId, 'hazard-report.verified');
+    report.verify(officer.userId, this.deps.clock.now());
+    return this.settle(report, officer, 'hazard-report.verified');
   }
 
   /** UC-3 A2: rejected reports stay for audit but leave the score; an emptied cluster closes. */
-  async reject(reportId: string, officerId: string, reason: string): Promise<ReviewResult> {
+  async reject(reportId: string, officer: ReviewOfficer, reason: string): Promise<ReviewResult> {
     const report = await this.loadReport(reportId);
-    report.reject(officerId, reason, this.deps.clock.now());
-    return this.settle(report, officerId, 'hazard-report.rejected', reason.trim());
+    report.reject(officer.userId, reason, this.deps.clock.now());
+    return this.settle(report, officer, 'hazard-report.rejected', reason.trim());
   }
 
   /** UC-3 step 16: the officer confirms; UC-1 receives the request as a pending warning (H4). */
-  async escalate(clusterId: string, officerId: string): Promise<ScoredCluster> {
+  async escalate(clusterId: string, officer: ReviewOfficer): Promise<ScoredCluster> {
     const { clusters, clustering, events, clock } = this.deps;
     const scored = await clustering.rescore(await this.loadCluster(clusterId));
     const now = clock.now();
     // Build the event first: if it cannot be built, nothing has changed yet.
-    const event = toEvent(scored.cluster, scored.escalation, officerId, now);
-    scored.cluster.markEscalated(officerId, now);
+    const event = toEvent(scored.cluster, scored.escalation, officer.userId, now);
+    scored.cluster.markEscalated(officer.userId, now);
     await clusters.save(scored.cluster);
     await events.publish(event);
-    await this.audit('hazard-cluster.escalated', officerId, 'ReportCluster', clusterId);
+    await this.audit('hazard-cluster.escalated', officer, 'ReportCluster', clusterId);
     return scored;
   }
 
   private async settle(
     report: HazardReport,
-    officerId: string,
+    officer: ReviewOfficer,
     action: string,
     reason?: string,
   ): Promise<ReviewResult> {
@@ -143,7 +148,7 @@ export class ReportReviewService {
     const cluster = await this.deps.clustering.rescore(
       await this.loadCluster(report.clusterId as string),
     );
-    await this.audit(action, officerId, 'HazardReport', report.id, reason);
+    await this.audit(action, officer, 'HazardReport', report.id, reason);
     return { report, cluster };
   }
 
@@ -166,15 +171,15 @@ export class ReportReviewService {
 
   private audit(
     action: string,
-    actorId: string,
+    officer: ReviewOfficer,
     subjectType: string,
     subjectId: string,
     reason?: string,
   ): Promise<void> {
     return this.deps.audit.record({
       action,
-      actorId,
-      actorRole: 'DUTY_OFFICER',
+      actorId: officer.userId,
+      actorRole: officer.role,
       subjectType,
       subjectId,
       reason,

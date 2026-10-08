@@ -189,6 +189,67 @@ describe('UC-1 end to end: a DMC Officer reviews, confirms and issues a warning'
   });
 });
 
+describe('UC-1, the citizen’s side: GET /api/me/alerts is what the phone’s Alerts tab polls', () => {
+  /** The first Gampaha demo citizen (Sinhala, has a device token) and the first Colombo one (Tamil). */
+  const GAMPAHA_CITIZEN = '0771500001';
+  const COLOMBO_CITIZEN = '0771500061';
+
+  it('shows nothing until an officer issues the warning, then the citizen’s own alert in their language', async () => {
+    const { app } = await startApplication();
+    const citizen = await signIn(app, GAMPAHA_CITIZEN);
+    const colombo = await signIn(app, COLOMBO_CITIZEN);
+    const officer = await signIn(app, SECOND_OFFICER);
+    expect((await citizen.get('/api/me/alerts')).body.alerts).toEqual([]);
+
+    const drafted = await officer.get('/api/warnings/warning-demo-gampaha');
+    const res = await issue(officer, 'warning-demo-gampaha', 'inbox-key-0001');
+    expect(res.status).toBe(200);
+
+    const inbox = await citizen.get('/api/me/alerts');
+    expect(inbox.status).toBe(200);
+    expect(inbox.headers['cache-control']).toBe('no-store');
+    expect(inbox.body.alerts).toHaveLength(1);
+    expect(inbox.body.alerts[0]).toMatchObject({
+      warningId: 'warning-demo-gampaha',
+      language: 'SI',
+      message: drafted.body.warning.messages.SI,
+      severity: drafted.body.warning.severity,
+      hazardType: drafted.body.warning.hazardType,
+      validTo: drafted.body.warning.validTo,
+    });
+    expect(inbox.body.alerts[0].areas).toEqual([
+      { areaId: 'GAMPAHA', type: 'DISTRICT', name: 'Gampaha', district: 'GAMPAHA' },
+    ]);
+    expect(Date.parse(inbox.body.serverTime)).toBeGreaterThanOrEqual(
+      Date.parse(inbox.body.alerts[0].deliveredAt),
+    );
+    expect((await colombo.get('/api/me/alerts')).body.alerts).toEqual([]);
+  });
+
+  it('shows an alert as soon as one channel got through, even while the pushes are still failing', async () => {
+    const { app } = await startApplication();
+    const officer = await signIn(app, SECOND_OFFICER);
+    expect((await setGateway(officer, 'PUSH', 'DOWN')).status).toBe(200);
+    await issue(officer, 'warning-demo-gampaha', 'inbox-key-0002');
+    const citizen = await signIn(app, GAMPAHA_CITIZEN);
+
+    const inbox = await citizen.get('/api/me/alerts');
+
+    expect(inbox.body.alerts).toHaveLength(1);
+  });
+
+  it('keeps the signed-out and the staff out', async () => {
+    const { app } = await startApplication();
+    const officer = await signIn(app, SECOND_OFFICER);
+
+    const anonymous = await request(app).get('/api/me/alerts');
+    const staff = await officer.get('/api/me/alerts');
+
+    expect([anonymous.status, anonymous.body.error.code]).toEqual([401, 'UNAUTHENTICATED']);
+    expect([staff.status, staff.body.error.code]).toEqual([403, 'FORBIDDEN_ROLE']);
+  });
+});
+
 describe('UC-1 A1 and E3: some sends fail, and the officer retries them', () => {
   it('UC-1 A1: with some pushes failing, SMS still reaches everyone, and Retry failed clears the failures', async () => {
     const { app } = await startApplication();

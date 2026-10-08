@@ -27,6 +27,9 @@ test('the sidebar, the top bar, the phone menu and the Pending Approvals list', 
       /^Pending Approvals/,
       'Issued Warnings',
       'Rejected Warnings',
+      'Dashboard',
+      'Review reports',
+      'Report history',
       'Impact Analytics',
     ]);
     await expect(pendingLink(page)).toHaveAttribute('aria-current', 'page');

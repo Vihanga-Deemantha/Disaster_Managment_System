@@ -1,8 +1,16 @@
-export function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-md border border-paper bg-white p-4">
-      <p className="text-sm text-ink-soft">{label}</p>
-      <p className="text-2xl font-semibold text-ink">{value}</p>
-    </div>
-  );
+import { StatCard as SharedStatCard, type StatTone } from '@/shared/ui/StatCard';
+import type { IconName } from '@/shared/ui/Icon';
+
+export function StatCard({
+  label,
+  value,
+  icon = 'fileText',
+  tone = 'blue',
+}: {
+  label: string;
+  value: number;
+  icon?: IconName;
+  tone?: StatTone;
+}) {
+  return <SharedStatCard label={label} value={String(value)} icon={icon} tone={tone} />;
 }

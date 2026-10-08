@@ -207,10 +207,92 @@ describe('POST /api/hazard-reports: refusals', () => {
 });
 
 describe('access control', () => {
-  it('a duty officer cannot submit and a DMC officer cannot list', async () => {
-    const { h, submit } = setup();
-    expect((await submit(officer)).body.error.code).toBe('FORBIDDEN_ROLE');
-    expect((await h.as(dmcOfficer).get(URL)).status).toBe(403);
+  it.each([officer, dmcOfficer])(
+    'UC-3: reviewing officers cannot submit citizen reports (%s)',
+    async (actor) => {
+      const { h, submit } = setup();
+      expect((await submit(actor)).body.error.code).toBe('FORBIDDEN_ROLE');
+      expect((await h.as(actor).get(URL)).status).toBe(200);
+    },
+  );
+
+  it.each([officer, dmcOfficer])(
+    'UC-3 steps 11–16: both officer roles review and escalate with their actual audit identity (%s)',
+    async (actor) => {
+      const { h, seedCluster } = setup();
+      await seedCluster({ count: 10, verified: 2 });
+      const queue = await h.as(actor).get(`${URL}/clusters`);
+      expect(queue.status).toBe(200);
+      expect(queue.body[0].id).toBe('c1');
+      const detail = await h.as(actor).get(`${URL}/clusters/c1`);
+      expect(detail.status).toBe(200);
+      expect(detail.body.reports).toHaveLength(10);
+      const report = await h.as(actor).get(`${URL}/c1-r3`);
+      expect(report.status).toBe(200);
+      expect(report.body.reporterId).toBe('citizen-3');
+      const history = await h.as(actor).get(`${URL}?status=PENDING`);
+      expect(history.status).toBe(200);
+      expect(history.body).toHaveLength(8);
+      const verified = await h.as(actor).post(`${URL}/c1-r3/verify`);
+      expect(verified.status).toBe(200);
+      expect(verified.body.report).toMatchObject({ status: 'VERIFIED', reviewedBy: actor.userId });
+      expect(verified.body.cluster.escalation.recommended).toBe(true);
+      const rejected = await h
+        .as(actor)
+        .post(`${URL}/c1-r4/reject`)
+        .send({ reason: 'Different location' });
+      expect(rejected.status).toBe(200);
+      expect(rejected.body.report).toMatchObject({
+        status: 'REJECTED',
+        reviewedBy: actor.userId,
+        rejectionReason: 'Different location',
+      });
+      const escalated = await h.as(actor).post(`${URL}/clusters/c1/escalate`);
+      expect(escalated.status).toBe(200);
+      expect(escalated.body.status).toBe('ESCALATED');
+      expect(h.events.ofType('ClusterEscalationRequested')).toMatchObject([
+        { requestedBy: actor.userId },
+      ]);
+      expect(h.audit.entries).toMatchObject([
+        { action: 'hazard-report.verified', actorId: actor.userId, actorRole: actor.role },
+        { action: 'hazard-report.rejected', actorId: actor.userId, actorRole: actor.role },
+        { action: 'hazard-cluster.escalated', actorId: actor.userId, actorRole: actor.role },
+      ]);
+      expect((await h.as(actor).post(`${URL}/c1-r3/verify`)).status).toBe(409);
+      expect((await h.as(actor).post(`${URL}/clusters/c1/escalate`)).status).toBe(409);
+    },
+  );
+
+  it.each([
+    'CITIZEN',
+    'COMMUNITY_VOLUNTEER',
+    'DISTRICT_OFFICER',
+    'NGO_MANAGER',
+    'ARMED_FORCES_LIAISON',
+    'GOVERNMENT_AGENCY_OFFICER',
+    'DONOR',
+  ] as const)('UC-3: other roles cannot review or escalate (%s)', async (role) => {
+    const { h, seedCluster } = setup();
+    await seedCluster({ count: 10, verified: 3 });
+    const actor = { userId: 'other-user', role };
+    expect((await h.as(actor).get(`${URL}/clusters`)).status).toBe(403);
+    expect((await h.as(actor).get(`${URL}/clusters/c1`)).status).toBe(403);
+    expect((await h.as(actor).post(`${URL}/c1-r4/verify`)).status).toBe(403);
+    expect((await h.as(actor).post(`${URL}/c1-r4/reject`).send({ reason: 'Test' })).status).toBe(
+      403,
+    );
+    expect((await h.as(actor).post(`${URL}/clusters/c1/escalate`)).status).toBe(403);
+    expect(h.audit.entries).toEqual([]);
+    expect(h.events.published).toEqual([]);
+  });
+
+  it('UC-3 H4: DMC escalation still requires an eligible cluster', async () => {
+    const { h, seedCluster } = setup();
+    await seedCluster({ count: 10, verified: 2 });
+    const result = await h.as(dmcOfficer).post(`${URL}/clusters/c1/escalate`);
+    expect(result.status).toBe(409);
+    expect(result.body.error.code).toBe('ESCALATION_NOT_ALLOWED');
+    expect(h.events.published).toEqual([]);
   });
 
   it('a request without a session is 401', async () => {
@@ -404,23 +486,26 @@ describe('GET /api/hazard-reports/photos/:fileName', () => {
   });
   afterAll(() => rmSync(join(directory, '..', '..'), { recursive: true, force: true }));
 
-  it('UC-3 step 12: streams a stored photo, even from a dot-folder', async () => {
-    const { h, photoFiles } = setup();
-    writeFileSync(join(directory, 'abc-1.jpg'), JPEG);
-    photoFiles.set('abc-1.jpg', join(directory, 'abc-1.jpg'));
-    const res = await h
-      .as(officer)
-      .get(`${URL}/photos/abc-1.jpg`)
-      .buffer(true)
-      .parse((r, done) => {
-        const chunks: Buffer[] = [];
-        r.on('data', (chunk: Buffer) => chunks.push(chunk));
-        r.on('end', () => done(null, Buffer.concat(chunks)));
-      });
-    expect(res.status).toBe(200);
-    expect(res.headers['content-type']).toBe('image/jpeg');
-    expect([...res.body]).toEqual([...JPEG]);
-  });
+  it.each([officer, dmcOfficer])(
+    'UC-3 step 12: either officer can read photo evidence, even from a dot-folder (%s)',
+    async (actor) => {
+      const { h, photoFiles } = setup();
+      writeFileSync(join(directory, 'abc-1.jpg'), JPEG);
+      photoFiles.set('abc-1.jpg', join(directory, 'abc-1.jpg'));
+      const res = await h
+        .as(actor)
+        .get(`${URL}/photos/abc-1.jpg`)
+        .buffer(true)
+        .parse((r, done) => {
+          const chunks: Buffer[] = [];
+          r.on('data', (chunk: Buffer) => chunks.push(chunk));
+          r.on('end', () => done(null, Buffer.concat(chunks)));
+        });
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toBe('image/jpeg');
+      expect([...res.body]).toEqual([...JPEG]);
+    },
+  );
 
   it('a name this module did not store is a 404', async () => {
     const { h } = setup();
