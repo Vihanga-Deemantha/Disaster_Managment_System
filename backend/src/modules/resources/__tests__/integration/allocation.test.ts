@@ -19,6 +19,35 @@ const needId = 'gampaha-flood-area-WATER';
 const itemId = 'red-cross-WATER';
 const base = '/api/resources';
 const body = { requirementId: needId, resourceId: itemId, quantity: 100 };
+it('UC-2 steps 9–14/E1: sends scoped in-app notifications for requests, responses, arrivals and expiry', async () => {
+  const created = await allocate();
+  expect((await h.as(owner).get(`${base}/notifications`)).body[0].message).toMatch(/requested/);
+  expect((await h.as(district).get(`${base}/notifications`)).body).toHaveLength(0);
+  const accepted = await answer(created.body.requestId, { quantity: 60 });
+  expect((await h.as(district).get(`${base}/notifications`)).body[0].message).toMatch(/confirmed/);
+  h.clock.advance(1000);
+  await h
+    .as(district)
+    .post(`${base}/dispatches/${accepted.body.dispatchId}/deploy`)
+    .set('Idempotency-Key', 'notification-arrival-1')
+    .send({});
+  expect((await h.as(owner).get(`${base}/notifications`)).body[0].message).toMatch(/arrived/);
+  await allocate(20, 'expiry-notice');
+  h.clock.advance(30 * 60_000);
+  expect((await h.as().get(`${base}/notifications`)).body[0].message).toMatch(/did not respond/);
+  expect((await h.as(district).get(`${base}/notifications`)).body).toHaveLength(2);
+  expect(
+    (await h.as({ role: 'DISTRICT_OFFICER', district: 'COLOMBO' }).get(`${base}/notifications`))
+      .body,
+  ).toHaveLength(0);
+  expect(
+    (
+      await h
+        .as({ role: 'NGO_MANAGER', organizationId: 'other-owner' })
+        .get(`${base}/notifications`)
+    ).body,
+  ).toHaveLength(0);
+});
 function allocate(quantity = 100, key = 'request') {
   return h
     .as(district)
@@ -46,11 +75,190 @@ beforeAll(async () => {
 });
 beforeEach(async () => {
   h = createModuleHarness(createResourcesModule);
-  for (const name of ['areas', 'needs', 'inventory', 'requests', 'dispatches']) {
+  for (const name of [
+    'areas',
+    'needs',
+    'inventory',
+    'requests',
+    'dispatches',
+    'occupancyLogs',
+    'notifications',
+  ]) {
     await mongoose.connection.collection(`resource_${name}`).deleteMany({});
   }
   await mongoose.connection.collection('audit_logs').deleteMany({});
   await seedResources({ clock: h.clock });
+});
+
+it('UC-2 A4: allocates an army team through its liaison and restores availability after its assignment', async () => {
+  const id = 'army-rescue-team-1';
+  const created = await h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'team-request-1')
+    .send({ requirementId: 'gampaha-flood-area-ARMY', resourceId: id, quantity: 1 });
+  expect(created.status).toBe(201);
+  const army = h.as({ role: 'ARMED_FORCES_LIAISON', organizationId: 'org-sl-army' });
+  const update = () =>
+    army
+      .post(`${base}/inventory/${id}/team-status`)
+      .set('Idempotency-Key', 'team-status-1')
+      .send({ status: 'AVAILABLE', location: { lat: 7.1, lng: 80 } });
+  expect((await update()).status).toBe(409);
+  expect((await answer(created.body.requestId, { quantity: 1 })).status).toBe(403);
+  const response = await army
+    .post(`${base}/allocation-requests/${created.body.requestId}/respond`)
+    .set('Idempotency-Key', 'team-confirm-1')
+    .send({ quantity: 1 });
+  expect(response.status).toBe(200);
+  expect((await update()).status).toBe(409);
+  expect(
+    (
+      await h
+        .as(district)
+        .post(`${base}/dispatches/${response.body.dispatchId}/deploy`)
+        .set('Idempotency-Key', 'team-arrival-1')
+        .send({})
+    ).status,
+  ).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({ status: 'DEPLOYED', availableQty: 0 });
+  expect(
+    (
+      await army
+        .post(`${base}/inventory/${id}/team-status`)
+        .set('Idempotency-Key', 'team-return-1')
+        .send({ status: 'AVAILABLE', location: { lat: 7.1, lng: 80 } })
+    ).status,
+  ).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({
+    availableQty: 1,
+    status: 'AVAILABLE',
+    location: { lat: 7.1, lng: 80 },
+  });
+  expect(
+    (
+      await army
+        .post(`${base}/inventory/${id}/team-status`)
+        .set('Idempotency-Key', 'team-unavailable-1')
+        .send({ status: 'UNAVAILABLE', location: { lat: 7.1, lng: 80 } })
+    ).status,
+  ).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({
+    availableQty: 0,
+    status: 'UNAVAILABLE',
+  });
+});
+it('UC-2 UCD-12b: keeps shelter places held until arrival and records occupancy without double counting', async () => {
+  expect(
+    (
+      await h
+        .as(district)
+        .get(`${base}/requirements/gampaha-flood-area-EVACUATION_SHELTER/resources`)
+    ).body.resources,
+  ).toHaveLength(1);
+  const id = 'gampaha-shelter-1';
+  const created = await h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'shelter-request-1')
+    .send({
+      requirementId: 'gampaha-flood-area-EVACUATION_SHELTER',
+      resourceId: id,
+      quantity: 100,
+    });
+  expect(created.status).toBe(201);
+  const occupancy = (value: number, key: string) =>
+    h
+      .as(owner)
+      .post(`${base}/inventory/${id}/occupancy`)
+      .set('Idempotency-Key', key)
+      .send({ occupancy: value });
+  expect((await occupancy(250, 'occupancy-block-1')).status).toBe(409);
+  const response = await answer(created.body.requestId, { quantity: 60 });
+  expect(await store.get('inventory', id)).toMatchObject({
+    availableQty: 200,
+    currentOccupancy: 40,
+    committedQty: 60,
+    reservedQty: 0,
+  });
+  expect((await occupancy(250, 'occupancy-block-2')).status).toBe(409);
+  expect(
+    (
+      await h
+        .as(district)
+        .post(`${base}/dispatches/${response.body.dispatchId}/deploy`)
+        .set('Idempotency-Key', 'shelter-arrival-1')
+        .send({})
+    ).status,
+  ).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({
+    availableQty: 200,
+    currentOccupancy: 100,
+    committedQty: 0,
+  });
+  expect((await occupancy(50, 'occupancy-depart-1')).status).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({
+    currentOccupancy: 50,
+    availableQty: 250,
+  });
+  expect(await store.list('occupancyLogs')).toHaveLength(2);
+});
+it('UC-2 BR1/BR2: scopes inventory and rejects fractional teams, cross district shelters and unauthorized updates', async () => {
+  const all = await h.as().get(`${base}/inventory`);
+  expect(all.body).toHaveLength(14);
+  const own = await h.as(owner).get(`${base}/inventory`);
+  expect(
+    own.body.every((item: { organizationId: string }) => item.organizationId === 'org-red-cross'),
+  ).toBe(true);
+  const scoped = await h.as(district).get(`${base}/inventory`);
+  expect(scoped.body).toHaveLength(3);
+  const create = (resourceId: string, category: string, quantity: number) =>
+    h
+      .as(district)
+      .post(`${base}/allocation-requests`)
+      .set('Idempotency-Key', `request-${resourceId}-${quantity}`)
+      .send({ resourceId, requirementId: `gampaha-flood-area-${category}`, quantity });
+  expect((await create('army-rescue-team-1', 'ARMY', 0.5)).status).toBe(400);
+  expect((await create('colombo-shelter-1', 'EVACUATION_SHELTER', 1)).status).toBe(409);
+  expect(
+    (await h.as(district).post(`${base}/inventory/army-rescue-team-1/team-status`).send({})).status,
+  ).toBe(403);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/inventory/army-rescue-team-1/team-status`)
+        .set('Idempotency-Key', 'wrong-owner-1')
+        .send({ status: 'AVAILABLE', location: { lat: 7, lng: 80 } })
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/inventory/${itemId}/team-status`)
+        .set('Idempotency-Key', 'wrong-team-1')
+        .send({ status: 'AVAILABLE', location: { lat: 7, lng: 80 } })
+    ).status,
+  ).toBe(409);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/inventory/${itemId}/occupancy`)
+        .set('Idempotency-Key', 'wrong-shelter-1')
+        .send({ occupancy: 0 })
+    ).status,
+  ).toBe(409);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/inventory/gampaha-shelter-1/occupancy`)
+        .set('Idempotency-Key', 'negative-occupancy')
+        .send({ occupancy: -1 })
+    ).status,
+  ).toBe(400);
 });
 afterAll(async () => {
   await mongoose.disconnect();

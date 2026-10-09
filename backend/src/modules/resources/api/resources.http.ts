@@ -86,6 +86,7 @@ function addRequestRoute(router: Router, ctx: ModuleContext, service: Allocation
   );
 }
 function addReadRoutes(router: Router, store: ResourceStore): void {
+  addNotificationRoute(router, store);
   router.get('/board', async (req, res) => {
     const auth = getAuth(req);
     const areas = (await store.list('areas')).filter(
@@ -109,9 +110,24 @@ function addReadRoutes(router: Router, store: ResourceStore): void {
       (item) =>
         item.resourceType === need.resourceType &&
         item.category === need.category &&
-        item.unit === need.unit,
+        item.unit === need.unit &&
+        (item.resourceType !== 'SHELTER' || item.district === area.district),
     );
     res.json({ requirement: need, resources: inventory });
+  });
+}
+function addNotificationRoute(router: Router, store: ResourceStore) {
+  router.get('/notifications', async (req, res) => {
+    const auth = getAuth(req);
+    const notifications = (await store.list('notifications'))
+      .filter((n) => {
+        if (auth.role === 'DISTRICT_OFFICER')
+          return n.district !== undefined && n.district === auth.district;
+        if (auth.role === 'DMC_OFFICER') return n.national === true;
+        return n.organizationId !== undefined && n.organizationId === auth.organizationId;
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    res.json(notifications.slice(0, 20));
   });
 }
 function visible(

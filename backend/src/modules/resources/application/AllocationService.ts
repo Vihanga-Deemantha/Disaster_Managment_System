@@ -5,9 +5,9 @@ import type { EventBus } from '@shared/events/EventBus';
 import { ConflictError, ForbiddenError } from '@shared/errors';
 import { AllocationRequest } from '../domain/AllocationRequest';
 import { ResourceRequirement } from '../domain/ResourceRequirement';
-import { ReliefSupply } from '../domain/ReliefSupply';
+import { assertResourceQuantity, recordArrival, resourceStock } from './resourceStock';
 import { assertQuantity } from '../domain/quantity';
-import type { Inventory, ResourceStore, ResourceUnitOfWork, RequestRecord } from './ports';
+import type { Inventory, ResourceStore, ResourceUnitOfWork, RequestRecord, Records } from './ports';
 
 export interface AllocationDeps {
   uow: ResourceUnitOfWork;
@@ -28,7 +28,10 @@ export class AllocationService {
       const item = await store.get('inventory', resourceId);
       assertMatch(item, need);
       assertOutstanding(new ResourceRequirement(need).outstanding() - need.pendingQty, quantity);
-      const stock = new ReliefSupply({ ...item, supplyType: item.category });
+      assertResourceQuantity(item, quantity);
+      if (item.resourceType === 'SHELTER' && item.district !== area.district)
+        throw new ConflictError('RESOURCE_MISMATCH', 'Choose a shelter in the affected district.');
+      const stock = resourceStock(item);
       stock.reserve(quantity);
       const now = this.deps.clock.now();
       const request: RequestRecord = {
@@ -46,6 +49,11 @@ export class AllocationService {
       await store.save('inventory', resourceId, { ...item, ...stock.snapshot() });
       await store.save('needs', requirementId, { ...need, pendingQty: need.pendingQty + quantity });
       await store.save('requests', requestId, request);
+      await this.notify(store, {
+        requestId,
+        organizationId: item.organizationId,
+        message: `${quantity} ${item.unit} of ${item.category} requested for ${area.name}. Respond within 30 minutes.`,
+      });
       await this.audit(store, auth, 'resources.requested', requestId);
       return request;
     });
@@ -61,11 +69,12 @@ export class AllocationService {
       assertOwner(auth, record.organizationId);
       const request = new AllocationRequest(record);
       const item = await store.get('inventory', record.resourceId);
-      const stock = new ReliefSupply({ ...item, supplyType: item.category });
+      const stock = resourceStock(item);
       const need = await store.get('needs', record.requirementId);
       const now = this.deps.clock.now();
       let dispatchId: string | undefined;
       if (response.quantity !== undefined) {
+        assertResourceQuantity(item, response.quantity);
         request.confirm(response.quantity, now);
         stock.consume(response.quantity);
         const unused = record.requestedQty - response.quantity;
@@ -78,12 +87,11 @@ export class AllocationService {
         request.reject(response.reason ?? '', now);
         stock.release(record.requestedQty);
       }
-      await store.save('needs', record.requirementId, {
-        ...need,
-        pendingQty: need.pendingQty - record.requestedQty,
-      });
+      need.pendingQty -= record.requestedQty;
+      await store.save('needs', record.requirementId, need);
       await store.save('inventory', record.resourceId, { ...item, ...stock.snapshot() });
       await store.save('requests', requestId, { ...record, ...request.snapshot() });
+      await this.notifyResponse(store, record, item, request.status);
       await this.audit(store, auth, `resources.${request.status.toLowerCase()}`, requestId);
       return { ...record, ...request.snapshot(), dispatchId };
     });
@@ -97,12 +105,18 @@ export class AllocationService {
         throw new ConflictError('ILLEGAL_TRANSITION', 'Dispatch already deployed.');
       const item = await store.get('inventory', dispatch.resourceId);
       const now = this.deps.clock.now();
+      await recordArrival(store, item, dispatch, now, this.deps.ids.next());
       await store.save('dispatches', dispatchId, {
         ...dispatch,
         status: 'DEPLOYED',
         deployedAt: now,
       });
       await this.audit(store, auth, 'resources.deployed', dispatchId);
+      await this.notify(store, {
+        requestId: dispatch.requestId,
+        organizationId: item.organizationId,
+        message: `${dispatch.quantity} ${item.unit} of ${item.category} arrived in ${dispatch.district}.`,
+      });
       return {
         type: 'AllocationDeployed' as const,
         allocationId: dispatchId,
@@ -134,7 +148,7 @@ export class AllocationService {
     const request = new AllocationRequest(record);
     request.markNoResponse(this.deps.clock.now());
     const item = await store.get('inventory', record.resourceId);
-    const stock = new ReliefSupply({ ...item, supplyType: item.category });
+    const stock = resourceStock(item);
     stock.release(record.requestedQty);
     const need = await store.get('needs', record.requirementId);
     await store.save('inventory', record.resourceId, { ...item, ...stock.snapshot() });
@@ -143,6 +157,12 @@ export class AllocationService {
       pendingQty: need.pendingQty - record.requestedQty,
     });
     await store.save('requests', record.requestId, { ...record, ...request.snapshot() });
+    await this.notify(store, {
+      requestId: record.requestId,
+      district: record.district,
+      national: true,
+      message: `${item.organizationName} did not respond in time. ${record.requestedQty} ${item.unit} released; choose another owner.`,
+    });
     await store.audit({
       action: 'resources.expired',
       subjectId: record.requestId,
@@ -179,6 +199,29 @@ export class AllocationService {
       occurredAt: this.deps.clock.now(),
     });
   }
+  private async notify(
+    store: ResourceStore,
+    notification: Omit<Records['notifications'], 'notificationId' | 'createdAt'>,
+  ) {
+    const notificationId = this.deps.ids.next();
+    await store.save('notifications', notificationId, {
+      ...notification,
+      notificationId,
+      createdAt: this.deps.clock.now(),
+    });
+  }
+  private notifyResponse(
+    store: ResourceStore,
+    record: RequestRecord,
+    item: Inventory,
+    status: string,
+  ) {
+    return this.notify(store, {
+      requestId: record.requestId,
+      district: record.district,
+      message: `${item.organizationName} ${status.toLowerCase()} your request for ${item.category}.`,
+    });
+  }
 }
 export function assertDistrict(auth: AuthContext, district: string): void {
   if (auth.role !== 'DISTRICT_OFFICER' || auth.district !== district) {
@@ -203,11 +246,10 @@ function assertMatch(
   need: { resourceType: string; category: string; unit: string },
 ): void {
   if (
-    item.resourceType !== 'RELIEF_SUPPLY' ||
     item.resourceType !== need.resourceType ||
     item.category !== need.category ||
     item.unit !== need.unit
   ) {
-    throw new ConflictError('RESOURCE_MISMATCH', 'Choose matching relief supplies and units.');
+    throw new ConflictError('RESOURCE_MISMATCH', 'Choose matching resources and units.');
   }
 }
