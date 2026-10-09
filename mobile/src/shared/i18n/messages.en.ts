@@ -268,6 +268,11 @@ export const en = {
   'reports.notificationsReason':
     'Allow notifications so we can tell you when your saved reports are sent.',
   'reports.enableNotifications': 'Enable delivery notifications',
+  'reports.notifications.GRANTED': 'Delivery notifications are enabled.',
+  'reports.notifications.DENIED':
+    'Notifications are not allowed. Enable them in your phone settings under Apps → Safe Zone → Notifications. Saved reports can still be sent.',
+  'reports.notifications.UNAVAILABLE':
+    'Could not check notification permission. Try again. Your saved report is safe.',
   'reports.backgroundRestricted':
     'Background sending is unavailable. Saved reports will be sent when you open Safe Zone and a connection is available.',
   'reports.syncTitle': 'Safe Zone report delivery',

@@ -24,6 +24,28 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 describe('UC-3 sync native boundaries', () => {
   it.each([
+    [{ granted: true, canAskAgain: true }, 'GRANTED'],
+    [{ granted: false, canAskAgain: false }, 'DENIED'],
+  ] as const)(
+    'returns existing permission without asking again (%s)',
+    async (permission, result) => {
+      jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue(permission as never);
+      expect(await askNotificationPermission()).toBe(result);
+      expect(Notifications.requestPermissionsAsync).not.toHaveBeenCalled();
+    },
+  );
+  it('reports native permission failures and a refused new request explicitly', async () => {
+    jest.mocked(Notifications.getPermissionsAsync).mockRejectedValueOnce(new Error('native'));
+    expect(await askNotificationPermission()).toBe('UNAVAILABLE');
+    jest
+      .mocked(Notifications.getPermissionsAsync)
+      .mockResolvedValue({ granted: false, canAskAgain: true } as never);
+    jest
+      .mocked(Notifications.requestPermissionsAsync)
+      .mockResolvedValue({ granted: false } as never);
+    expect(await askNotificationPermission()).toBe('DENIED');
+  });
+  it.each([
     [200, { user: { userId: 'citizen-1', role: 'CITIZEN' } }, 'citizen-1'],
     [200, { user: { userId: 'volunteer-1', role: 'COMMUNITY_VOLUNTEER' } }, 'volunteer-1'],
     [401, {}, undefined],

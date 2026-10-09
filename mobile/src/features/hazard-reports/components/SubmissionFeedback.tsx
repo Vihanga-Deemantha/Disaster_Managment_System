@@ -5,6 +5,8 @@ import { Banner } from '@/shared/ui/Banner';
 import { Button } from '@/shared/ui/Button';
 import type { UploadOptions } from '../offline/types';
 import type { SubmissionOutcome } from '../hooks/useReportSubmission';
+import type { DeliveryPermissionResult } from '../adapters/ExpoSyncNotifier';
+import { DeliveryPermission } from './DeliveryPermission';
 
 const messages = {
   RETRY: 'reports.retry',
@@ -13,23 +15,6 @@ const messages = {
   SAVED_OFFLINE: 'reports.savedOffline',
   STORAGE_ERROR: 'reports.storageError',
 } as const;
-function DeliveryPermission({ enable, busy }: { enable?: () => Promise<void>; busy: boolean }) {
-  const t = useT();
-  if (!enable) return null;
-  return (
-    <>
-      <Banner tone="info">{t('reports.notificationsReason')}</Banner>
-      <Button
-        title={t('reports.enableNotifications')}
-        variant="secondary"
-        onPress={() => {
-          void enable().catch(() => undefined);
-        }}
-        disabled={busy}
-      />
-    </>
-  );
-}
 export function SubmissionFeedback({
   outcome,
   busy,
@@ -39,7 +24,7 @@ export function SubmissionFeedback({
   outcome?: SubmissionOutcome;
   busy: boolean;
   onChoice: (choice: NonNullable<UploadOptions['duplicateAction']>) => void;
-  onEnableNotifications?: () => Promise<void>;
+  onEnableNotifications?: () => Promise<DeliveryPermissionResult>;
 }) {
   const t = useT();
   if (!outcome || outcome.kind === 'DELIVERED' || outcome.kind === 'ALREADY_SENT') return null;

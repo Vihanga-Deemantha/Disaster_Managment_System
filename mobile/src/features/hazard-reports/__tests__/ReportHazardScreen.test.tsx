@@ -18,7 +18,7 @@ function setup(outcome: UploadOutcome = { kind: 'DELIVERED', via: 'CREATED', rep
   const deps = {
     queue: runtime.queue,
     sync: runtime.sync,
-    enableNotifications: jest.fn(async () => undefined),
+    enableNotifications: jest.fn(async () => 'GRANTED' as const),
     location: {
       requestPermission: async () => true,
       current: async () => ({ lat: 6.5854, lng: 79.9607 }),
@@ -109,6 +109,7 @@ describe('UC-3 steps 1–7: Report form', () => {
     expect(screen.getByText(en['reports.notificationsReason'])).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: en['reports.enableNotifications'] }));
     expect(h.deps.enableNotifications).toHaveBeenCalledTimes(1);
+    await screen.findByText(en['reports.notifications.GRANTED']);
   });
   it('retains the form and reports a failed disk write without claiming it was saved', async () => {
     const h = setup();

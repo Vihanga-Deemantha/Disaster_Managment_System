@@ -4,14 +4,14 @@
 
 The authoritative phase table is [IMPLEMENTATION_PLAN.md](../../../IMPLEMENTATION_PLAN.md). The task examples below describe the original plan; their historical unchecked steps are not a current progress report.
 
-| Phase | Progress                                                                      |
-| ----- | ----------------------------------------------------------------------------- |
-| M0    | DONE — foundation and installed standalone APK accepted                       |
-| M1    | DONE — validators and journal core                                            |
-| M2    | DONE — corrected photo upload accepted on the phone                           |
-| M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                |
-| M4    | WIP — native integration verified; 677 tests passed; phone acceptance pending |
-| M5–M7 | TODO — offline screens, recovery and device acceptance                        |
+| Phase | Progress                                                                             |
+| ----- | ------------------------------------------------------------------------------------ |
+| M0    | DONE — foundation and installed standalone APK accepted                              |
+| M1    | DONE — validators and journal core                                                   |
+| M2    | DONE — corrected photo upload accepted on the phone                                  |
+| M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                       |
+| M4    | WIP — offline save/login/reconnect accepted on phone; closed-app OS delivery pending |
+| M5–M7 | TODO — offline screens, recovery and device acceptance                               |
 
 See `evidence/m0` through `evidence/m4` for verification details. M4 device acceptance is tracked separately from automated implementation checks.
 
@@ -1632,7 +1632,7 @@ export function useSyncTriggers(): void {
 vendor) should be surfaced once on _My reports_: "Background sending is turned off for Safe Zone in your phone's
 settings. Saved reports will be sent when you open the app."
 
-- [ ] On the phone: airplane mode on → submit (shows Saved on this phone) → airplane mode off
+- [x] On the phone: airplane mode on → submit (shows Saved on this phone) → airplane mode off
       with the app open → the entry disappears from the journal within seconds (check the server). That is trigger
       `RECONNECT`.
 - [ ] App in the background, one entry journaled → run the `adb … jobscheduler run` command from Plan D §11 → the

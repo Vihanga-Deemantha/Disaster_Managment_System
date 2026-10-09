@@ -3,6 +3,7 @@ import { ApiSessionGate } from './adapters/ApiSessionGate';
 import { AsyncStorageQueueStorage } from './adapters/AsyncStorageQueueStorage';
 import { AsyncStorageRunLog } from './adapters/AsyncStorageRunLog';
 import { ExpoSyncNotifier, askNotificationPermission } from './adapters/ExpoSyncNotifier';
+import type { DeliveryPermissionResult } from './adapters/ExpoSyncNotifier';
 import { FileSystemPhotoStore } from './adapters/FileSystemPhotoStore';
 import { NetInfoConnectivityMonitor } from './adapters/NetInfoConnectivityMonitor';
 import { systemClock, uuidGenerator } from './adapters/system';
@@ -18,7 +19,7 @@ import { SyncManager } from './offline/SyncManager';
 export interface ReportDependencies extends SubmissionDeps {
   location: LocationProvider;
   photos: PhotoPicker;
-  enableNotifications?: () => Promise<void>;
+  enableNotifications?: () => Promise<DeliveryPermissionResult>;
 }
 function build() {
   const files = new FileSystemPhotoStore();

@@ -281,6 +281,11 @@ export const ta: Record<MessageKey, string> = {
   'reports.notificationsReason':
     'சேமித்த புகார்கள் அனுப்பப்பட்டதும் தெரிவிக்க அறிவிப்புகளை அனுமதிக்கவும்.',
   'reports.enableNotifications': 'அனுப்பல் அறிவிப்புகளை இயக்கவும்',
+  'reports.notifications.GRANTED': 'அனுப்பல் அறிவிப்புகள் இயக்கப்பட்டுள்ளன.',
+  'reports.notifications.DENIED':
+    'அறிவிப்புகளுக்கு அனுமதி இல்லை. தொலைபேசி அமைப்புகளில் Apps → Safe Zone → Notifications சென்று இயக்கவும். சேமித்த புகார்களை இன்னும் அனுப்ப முடியும்.',
+  'reports.notifications.UNAVAILABLE':
+    'அறிவிப்பு அனுமதியைச் சரிபார்க்க முடியவில்லை. மீண்டும் முயலவும். சேமித்த புகார் பாதுகாப்பாக உள்ளது.',
   'reports.backgroundRestricted':
     'பின்னணியில் அனுப்ப இயலவில்லை. இணைப்பு இருக்கும்போது Safe Zone ஐத் திறந்தால் சேமித்த புகார்கள் அனுப்பப்படும்.',
   'reports.syncTitle': 'Safe Zone புகார் அனுப்பல்',

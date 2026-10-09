@@ -6,6 +6,7 @@ import type { KeyValueStore } from '@/shared/storage/KeyValueStore';
 import type { SyncNotifier } from '../offline/ports';
 
 const CHANNEL = 'report-sync';
+export type DeliveryPermissionResult = 'GRANTED' | 'DENIED' | 'UNAVAILABLE';
 async function ensureChannel(): Promise<void> {
   if (Platform.OS === 'android')
     await Notifications.setNotificationChannelAsync(CHANNEL, {
@@ -14,13 +15,17 @@ async function ensureChannel(): Promise<void> {
     });
 }
 /** Called only from the foreground permission button, after its explanation is visible. */
-export async function askNotificationPermission(): Promise<void> {
-  if (Platform.OS === 'web') return;
+export async function askNotificationPermission(): Promise<DeliveryPermissionResult> {
+  if (Platform.OS === 'web') return 'UNAVAILABLE';
   try {
     await ensureChannel();
-    await Notifications.requestPermissionsAsync();
+    const current = await Notifications.getPermissionsAsync();
+    if (current.granted) return 'GRANTED';
+    if (current.canAskAgain === false) return 'DENIED';
+    const requested = await Notifications.requestPermissionsAsync();
+    return requested.granted ? 'GRANTED' : 'DENIED';
   } catch {
-    /* A denied/unavailable permission cannot undo saving a report. */
+    return 'UNAVAILABLE';
   }
 }
 export class ExpoSyncNotifier implements SyncNotifier {

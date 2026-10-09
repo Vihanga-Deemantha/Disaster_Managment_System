@@ -269,6 +269,11 @@ export const si: Record<MessageKey, string> = {
   'reports.notificationsReason':
     'සුරැකි වාර්තා යැවූ විට ඔබට දැනුම් දීමට දැනුම්දීම් සඳහා අවසර දෙන්න.',
   'reports.enableNotifications': 'යැවීමේ දැනුම්දීම් සක්‍රිය කරන්න',
+  'reports.notifications.GRANTED': 'යැවීමේ දැනුම්දීම් සක්‍රියයි.',
+  'reports.notifications.DENIED':
+    'දැනුම්දීම් සඳහා අවසර නැත. දුරකථනයේ සැකසුම් යටතේ Apps → Safe Zone → Notifications වෙත ගොස් සක්‍රිය කරන්න. සුරැකි වාර්තා තවමත් යැවිය හැක.',
+  'reports.notifications.UNAVAILABLE':
+    'දැනුම්දීම් අවසරය පරීක්ෂා කළ නොහැකි විය. නැවත උත්සාහ කරන්න. ඔබේ සුරැකි වාර්තාව ආරක්ෂිතයි.',
   'reports.backgroundRestricted':
     'පසුබිමෙන් යැවීම ලබාගත නොහැක. සම්බන්ධතාවක් ඇති විට Safe Zone විවෘත කිරීමෙන් සුරැකි වාර්තා යැවේ.',
   'reports.syncTitle': 'Safe Zone වාර්තා යැවීම',

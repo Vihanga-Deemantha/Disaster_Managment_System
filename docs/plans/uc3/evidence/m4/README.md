@@ -40,11 +40,17 @@ New tests cover native persistence and photo cleanup, corruption/write failures,
 
 Implementation commit: `9f188b7`. Standalone Android preview build [`99b3fa18-f3b8-425d-83a8-7f08868aeff6`](https://expo.dev/accounts/pawan-menukas-team/projects/safezone/builds/99b3fa18-f3b8-425d-83a8-7f08868aeff6) was accepted by EAS on 9 October. This records submission, not successful cloud compilation or device acceptance. The profile embeds `http://192.168.8.191:4000` and reuses the existing package/signing identity. No native packages or plugins were added in M4.
 
-Pending owner/device checks:
+Owner feedback after installing the M4 APK: Saved on this phone appeared in airplane mode, the login survived closing/reopening offline, and the report was subsequently submitted. This accepts the basic foreground offline/reconnect path. Photo retrieval, exactly-once server effect and OS-triggered delivery were not independently verified in this feedback.
+
+The owner also reported that tapping Enable delivery notifications gave no visible response, and delivery could only be confirmed from an officer console. The permission adapter discarded its result, leaving already-granted/denied/unavailable permissions indistinguishable in the UI. The follow-up fix displays that result explicitly, avoids repeated OS prompts for granted or blocked permissions, and explains where to enable denied notifications. It is a source change for the next APK; the installed M4 APK retains the old button. Reporter-facing delivery/review status is the planned M5 My reports screen, which remains a placeholder in this APK.
+
+Permission feedback follow-up checks: lint and TypeScript passed; three affected test suites / 25 tests passed, covering the form, native adapter and visible permission outcomes. The four UI regression tests first failed because the new feedback component was missing. No additional APK was submitted for this small fix; include it in the next mobile phase build.
+
+Remaining owner/device checks:
 
 1. Open online as a Citizen or Volunteer and obtain a valid location. Turn airplane mode on, submit a uniquely described report with a photo and confirm Saved on this phone. Notification permission must only appear after tapping Enable delivery notifications.
 2. Close and reopen offline. The standalone app should retain the login and saved journal. Restore Wi-Fi with the app open; confirm the report and photo reach the server once. Repeat opening/reconnecting and confirm no extra report is created.
 3. Save another offline report, put the app in the background and restore connectivity. Verify OS-triggered delivery and its notification using Android jobscheduler as described in Plan D, or allow the OS to schedule the job. Fifteen minutes is the minimum requested interval, not a guaranteed delivery deadline. Force-stop can prevent OS jobs until the app is opened again.
 4. Disable background activity where supported, reopen the app and verify the fallback notice if the native API reports restricted/unavailable. Foreground delivery must still work.
 
-Full My reports listing, saved-report actions and status chips remain M5. Automatic orphan-photo sweeping is not implemented here; acknowledged reports clean up their owned photos. Actual phone persistence and OS scheduling have not been claimed from mocked tests.
+Full My reports listing, saved-report actions and status chips remain M5. Automatic orphan-photo sweeping is not implemented here; acknowledged reports clean up their owned photos. OS scheduling has not been claimed from the foreground test or mocked tests.
