@@ -1,6 +1,6 @@
 # M5 — reporter history and offline status
 
-Branch: `feat/uc3-mobile-reporting`. Automated verification passed; a standalone Android preview build is next. Device acceptance remains pending. No subagents used.
+Branch: `feat/uc3-mobile-reporting`. Automated verification passed; the standalone Android preview build was submitted. Device acceptance remains pending. No subagents used.
 
 ## Behaviour
 
@@ -30,7 +30,7 @@ No dependencies, native plugins, backend behaviour or web screens changed in M5.
 
 ## Build and phone acceptance
 
-The next EAS preview build will use the existing standalone APK profile, package/signing identity and laptop API URL. Build ID and cloud status will be recorded after submission; no installed-device result is claimed here.
+Implementation commit: `33c2397`. EAS accepted standalone preview build [`97077042-362c-4544-ab90-06e7b7f4b40c`](https://expo.dev/accounts/pawan-menukas-team/projects/safezone/builds/97077042-362c-4544-ab90-06e7b7f4b40c) on 9 October, initially reporting `NEW`. This records successful submission, not completed cloud compilation or installation. The existing standalone profile, package/signing identity and `http://192.168.8.191:4000` API URL were reused. A laptop health request to that URL returned `status: ok` after submission. The build includes the M4 notification-permission feedback fix.
 
 After installing the M5 APK over the existing app:
 
