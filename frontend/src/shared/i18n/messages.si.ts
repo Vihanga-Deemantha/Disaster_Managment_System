@@ -770,4 +770,8 @@ export const si: Messages = {
   'hazardReports.approval.pending':
     'අනතුරු ඇඟවීමේ ඉල්ලීම DMC අනුමැතිය සඳහා යොමු කර ඇත. කිසිදු දැනුම්දීමක් යවා නැත.',
   'hazardReports.approval.openQueue': 'අනුමැතිය බලාපොරොත්තු වන ඉල්ලීම් බලන්න',
+  'resources.nav.overview': 'දළ විශ්ලේෂණය',
+  'resources.nav.requests': 'ඉල්ලීම් හා ප්‍රතිචාර',
+  'resources.nav.deployments': 'යෙදවීම්',
+  'resources.nav.field': 'කණ්ඩායම් හා ආරක්ෂිත ස්ථාන',
 };

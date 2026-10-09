@@ -1,0 +1,538 @@
+import mongoose from 'mongoose';
+import request from 'supertest';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
+import { createResourcesModule } from '../../composition';
+import { createModuleHarness } from '@shared/testing/moduleHarness';
+import {
+  MongoResourceStore,
+  MongoResourceUnitOfWork,
+} from '../../infrastructure/MongoResourceStore';
+import { seedResources } from '../../seed';
+import { AllocationService } from '../../application/AllocationService';
+
+const store = new MongoResourceStore();
+let h: ReturnType<typeof createModuleHarness>;
+let replicaSet: MongoMemoryReplSet | undefined;
+const district = { role: 'DISTRICT_OFFICER' as const, district: 'GAMPAHA' as const };
+const owner = { role: 'NGO_MANAGER' as const, organizationId: 'org-red-cross' };
+const needId = 'gampaha-flood-area-WATER';
+const itemId = 'red-cross-WATER';
+const base = '/api/resources';
+const body = { requirementId: needId, resourceId: itemId, quantity: 100 };
+it('UC-2 steps 9–14/E1: sends scoped in-app notifications for requests, responses, arrivals and expiry', async () => {
+  const created = await allocate();
+  expect((await h.as(owner).get(`${base}/notifications`)).body[0].message).toMatch(/requested/);
+  expect((await h.as(district).get(`${base}/notifications`)).body).toHaveLength(0);
+  const accepted = await answer(created.body.requestId, { quantity: 60 });
+  expect((await h.as(district).get(`${base}/notifications`)).body[0].message).toMatch(/confirmed/);
+  h.clock.advance(1000);
+  await h
+    .as(district)
+    .post(`${base}/dispatches/${accepted.body.dispatchId}/deploy`)
+    .set('Idempotency-Key', 'notification-arrival-1')
+    .send({});
+  expect((await h.as(owner).get(`${base}/notifications`)).body[0].message).toMatch(/arrived/);
+  await allocate(20, 'expiry-notice');
+  h.clock.advance(30 * 60_000);
+  expect((await h.as().get(`${base}/notifications`)).body[0].message).toMatch(/did not respond/);
+  expect((await h.as(district).get(`${base}/notifications`)).body).toHaveLength(2);
+  expect(
+    (await h.as({ role: 'DISTRICT_OFFICER', district: 'COLOMBO' }).get(`${base}/notifications`))
+      .body,
+  ).toHaveLength(0);
+  expect(
+    (
+      await h
+        .as({ role: 'NGO_MANAGER', organizationId: 'other-owner' })
+        .get(`${base}/notifications`)
+    ).body,
+  ).toHaveLength(0);
+});
+function allocate(quantity = 100, key = 'request') {
+  return h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'uc2-test-' + key)
+    .send({ ...body, quantity });
+}
+function answer(id: string, data: object, key = 'response') {
+  return h
+    .as(owner)
+    .post(`${base}/allocation-requests/${id}/respond`)
+    .set('Idempotency-Key', 'uc2-test-' + key)
+    .send(data);
+}
+beforeAll(async () => {
+  // CI uses a throwaway replica set; local Docker runs opt in to an isolated database.
+  let uri = process.env.UC2_TEST_MONGODB_URI;
+  if (uri && new URL(uri).pathname !== '/safezone_uc2_test')
+    throw new Error('Use the isolated safezone_uc2_test database.');
+  if (!uri) {
+    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+    uri = replicaSet.getUri('safezone_uc2_test');
+  }
+  await mongoose.connect(uri);
+});
+beforeEach(async () => {
+  h = createModuleHarness(createResourcesModule);
+  for (const name of [
+    'areas',
+    'needs',
+    'inventory',
+    'requests',
+    'dispatches',
+    'occupancyLogs',
+    'notifications',
+  ]) {
+    await mongoose.connection.collection(`resource_${name}`).deleteMany({});
+  }
+  await mongoose.connection.collection('audit_logs').deleteMany({});
+  await seedResources({ clock: h.clock });
+});
+
+it('UC-2 A4: allocates an army team through its liaison and restores availability after its assignment', async () => {
+  const id = 'army-rescue-team-1';
+  const created = await h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'team-request-1')
+    .send({ requirementId: 'gampaha-flood-area-ARMY', resourceId: id, quantity: 1 });
+  expect(created.status).toBe(201);
+  const army = h.as({ role: 'ARMED_FORCES_LIAISON', organizationId: 'org-sl-army' });
+  const update = () =>
+    army
+      .post(`${base}/inventory/${id}/team-status`)
+      .set('Idempotency-Key', 'team-status-1')
+      .send({ status: 'AVAILABLE', location: { lat: 7.1, lng: 80 } });
+  expect((await update()).status).toBe(409);
+  expect((await answer(created.body.requestId, { quantity: 1 })).status).toBe(403);
+  const response = await army
+    .post(`${base}/allocation-requests/${created.body.requestId}/respond`)
+    .set('Idempotency-Key', 'team-confirm-1')
+    .send({ quantity: 1 });
+  expect(response.status).toBe(200);
+  expect((await update()).status).toBe(409);
+  expect(
+    (
+      await h
+        .as(district)
+        .post(`${base}/dispatches/${response.body.dispatchId}/deploy`)
+        .set('Idempotency-Key', 'team-arrival-1')
+        .send({})
+    ).status,
+  ).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({ status: 'DEPLOYED', availableQty: 0 });
+  expect(
+    (
+      await army
+        .post(`${base}/inventory/${id}/team-status`)
+        .set('Idempotency-Key', 'team-return-1')
+        .send({ status: 'AVAILABLE', location: { lat: 7.1, lng: 80 } })
+    ).status,
+  ).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({
+    availableQty: 1,
+    status: 'AVAILABLE',
+    location: { lat: 7.1, lng: 80 },
+  });
+  expect(
+    (
+      await army
+        .post(`${base}/inventory/${id}/team-status`)
+        .set('Idempotency-Key', 'team-unavailable-1')
+        .send({ status: 'UNAVAILABLE', location: { lat: 7.1, lng: 80 } })
+    ).status,
+  ).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({
+    availableQty: 0,
+    status: 'UNAVAILABLE',
+  });
+});
+it('UC-2 UCD-12b: keeps shelter places held until arrival and records occupancy without double counting', async () => {
+  expect(
+    (
+      await h
+        .as(district)
+        .get(`${base}/requirements/gampaha-flood-area-EVACUATION_SHELTER/resources`)
+    ).body.resources,
+  ).toHaveLength(1);
+  const id = 'gampaha-shelter-1';
+  const created = await h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'shelter-request-1')
+    .send({
+      requirementId: 'gampaha-flood-area-EVACUATION_SHELTER',
+      resourceId: id,
+      quantity: 100,
+    });
+  expect(created.status).toBe(201);
+  const occupancy = (value: number, key: string) =>
+    h
+      .as(owner)
+      .post(`${base}/inventory/${id}/occupancy`)
+      .set('Idempotency-Key', key)
+      .send({ occupancy: value });
+  expect((await occupancy(250, 'occupancy-block-1')).status).toBe(409);
+  const response = await answer(created.body.requestId, { quantity: 60 });
+  expect(await store.get('inventory', id)).toMatchObject({
+    availableQty: 200,
+    currentOccupancy: 40,
+    committedQty: 60,
+    reservedQty: 0,
+  });
+  expect((await occupancy(250, 'occupancy-block-2')).status).toBe(409);
+  expect(
+    (
+      await h
+        .as(district)
+        .post(`${base}/dispatches/${response.body.dispatchId}/deploy`)
+        .set('Idempotency-Key', 'shelter-arrival-1')
+        .send({})
+    ).status,
+  ).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({
+    availableQty: 200,
+    currentOccupancy: 100,
+    committedQty: 0,
+  });
+  expect((await occupancy(50, 'occupancy-depart-1')).status).toBe(200);
+  expect(await store.get('inventory', id)).toMatchObject({
+    currentOccupancy: 50,
+    availableQty: 250,
+  });
+  expect(await store.list('occupancyLogs')).toHaveLength(2);
+});
+it('UC-2 BR1/BR2: scopes inventory and rejects fractional teams, cross district shelters and unauthorized updates', async () => {
+  const all = await h.as().get(`${base}/inventory`);
+  expect(all.body).toHaveLength(14);
+  const own = await h.as(owner).get(`${base}/inventory`);
+  expect(
+    own.body.every((item: { organizationId: string }) => item.organizationId === 'org-red-cross'),
+  ).toBe(true);
+  const scoped = await h.as(district).get(`${base}/inventory`);
+  expect(scoped.body).toHaveLength(3);
+  const create = (resourceId: string, category: string, quantity: number) =>
+    h
+      .as(district)
+      .post(`${base}/allocation-requests`)
+      .set('Idempotency-Key', `request-${resourceId}-${quantity}`)
+      .send({ resourceId, requirementId: `gampaha-flood-area-${category}`, quantity });
+  expect((await create('army-rescue-team-1', 'ARMY', 0.5)).status).toBe(400);
+  expect((await create('colombo-shelter-1', 'EVACUATION_SHELTER', 1)).status).toBe(409);
+  expect(
+    (await h.as(district).post(`${base}/inventory/army-rescue-team-1/team-status`).send({})).status,
+  ).toBe(403);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/inventory/army-rescue-team-1/team-status`)
+        .set('Idempotency-Key', 'wrong-owner-1')
+        .send({ status: 'AVAILABLE', location: { lat: 7, lng: 80 } })
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/inventory/${itemId}/team-status`)
+        .set('Idempotency-Key', 'wrong-team-1')
+        .send({ status: 'AVAILABLE', location: { lat: 7, lng: 80 } })
+    ).status,
+  ).toBe(409);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/inventory/${itemId}/occupancy`)
+        .set('Idempotency-Key', 'wrong-shelter-1')
+        .send({ occupancy: 0 })
+    ).status,
+  ).toBe(409);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/inventory/gampaha-shelter-1/occupancy`)
+        .set('Idempotency-Key', 'negative-occupancy')
+        .send({ occupancy: -1 })
+    ).status,
+  ).toBe(400);
+});
+afterAll(async () => {
+  await mongoose.disconnect();
+  await replicaSet?.stop();
+});
+
+it('reserves stock, accepts a partial confirmation, and publishes only on arrival', async () => {
+  const created = await allocate();
+  expect(created.status).toBe(201);
+  expect(await store.get('inventory', itemId)).toMatchObject({
+    availableQty: 400,
+    reservedQty: 100,
+  });
+  const confirmed = await answer(created.body.requestId, { quantity: 60 });
+  expect(confirmed.status).toBe(200);
+  expect(await store.get('inventory', itemId)).toMatchObject({ availableQty: 440, reservedQty: 0 });
+  expect(await store.get('needs', needId)).toMatchObject({ fulfilledQty: 60, pendingQty: 0 });
+  expect(h.events.published).toHaveLength(0);
+  const url = `${base}/dispatches/${confirmed.body.dispatchId}/deploy`;
+  expect(
+    (
+      await h
+        .as(district)
+        .post(url)
+        .set('Idempotency-Key', 'uc2-test-' + 'arrival')
+        .send({})
+    ).status,
+  ).toBe(200);
+  expect(
+    (
+      await h
+        .as(district)
+        .post(url)
+        .set('Idempotency-Key', 'uc2-test-' + 'arrival')
+        .send({})
+    ).status,
+  ).toBe(200);
+  expect(h.events.ofType('AllocationDeployed')).toHaveLength(1);
+  expect(
+    (
+      await h
+        .as(district)
+        .post(url)
+        .set('Idempotency-Key', 'uc2-test-' + 'second-arrival')
+        .send({})
+    ).status,
+  ).toBe(409);
+  expect(await mongoose.connection.collection('audit_logs').countDocuments()).toBe(3);
+});
+it('releases all held stock and need when the owner declines', async () => {
+  const created = await allocate();
+  expect((await answer(created.body.requestId, { reason: 'Vehicle unavailable' })).status).toBe(
+    200,
+  );
+  expect(await store.get('inventory', itemId)).toMatchObject({ availableQty: 500, reservedQty: 0 });
+  expect(await store.get('needs', needId)).toMatchObject({ fulfilledQty: 0, pendingQty: 0 });
+  expect(await store.list('dispatches')).toHaveLength(0);
+});
+it('expires unanswered reservations at the 30 minute boundary without double releasing', async () => {
+  const created = await allocate();
+  h.clock.advance(30 * 60_000);
+  expect((await h.as(district).get(`${base}/board`)).status).toBe(200);
+  await h.as(district).get(`${base}/board`);
+  expect(await store.get('requests', created.body.requestId)).toMatchObject({
+    status: 'NO_RESPONSE',
+  });
+  expect(await store.get('inventory', itemId)).toMatchObject({ availableQty: 500, reservedQty: 0 });
+});
+it('cannot overbook one requirement with concurrent requests', async () => {
+  const results = await Promise.all([allocate(150, 'first'), allocate(150, 'second')]);
+  expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+  expect(await store.get('needs', needId)).toMatchObject({ pendingQty: 150 });
+  expect(await store.list('requests')).toHaveLength(1);
+});
+it('cannot overbook shared stock across different districts', async () => {
+  const item = await store.get('inventory', itemId);
+  await store.save('inventory', itemId, { ...item, availableQty: 150 });
+  const other = h
+    .as({ ...district, district: 'COLOMBO' })
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'uc2-test-' + 'colombo')
+    .send({ ...body, requirementId: 'colombo-flood-area-WATER' });
+  const results = await Promise.all([allocate(), other]);
+  expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+  expect(await store.get('inventory', itemId)).toMatchObject({
+    availableQty: 50,
+    reservedQty: 100,
+  });
+});
+it('rolls back stock and request writes when the transactional audit fails', async () => {
+  const spy = jest
+    .spyOn(MongoResourceStore.prototype, 'audit')
+    .mockRejectedValueOnce(new Error('audit unavailable'));
+  const failed = await allocate();
+  spy.mockRestore();
+  expect(failed.status).toBe(500);
+  expect(await store.get('inventory', itemId)).toMatchObject({ availableQty: 500, reservedQty: 0 });
+  expect(await store.get('needs', needId)).toMatchObject({ pendingQty: 0 });
+  expect(await store.list('requests')).toHaveLength(0);
+});
+it('replays requests without reserving stock twice', async () => {
+  const first = await allocate();
+  const second = await allocate();
+  expect(second.body.requestId).toBe(first.body.requestId);
+  expect(await store.get('inventory', itemId)).toMatchObject({
+    availableQty: 400,
+    reservedQty: 100,
+  });
+});
+it.each([0, -1, 201, '100', null])('rejects invalid or excessive quantity %s', async (quantity) => {
+  const response = await h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'uc2-test-' + 'invalid')
+    .send({ ...body, quantity });
+  expect([400, 409]).toContain(response.status);
+  expect(await store.list('requests')).toHaveLength(0);
+});
+it('rejects a different district, unauthorized owner and national officer writes', async () => {
+  const wrongDistrict = await h
+    .as({ ...district, district: 'COLOMBO' })
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'uc2-test-' + 'wrong-district')
+    .send(body);
+  expect(wrongDistrict.status).toBe(403);
+  const created = await allocate();
+  const wrongOwner = await h
+    .as({ ...owner, organizationId: 'org-sl-army' })
+    .post(`${base}/allocation-requests/${created.body.requestId}/respond`)
+    .set('Idempotency-Key', 'uc2-test-' + 'wrong-owner')
+    .send({ quantity: 100 });
+  expect(wrongOwner.status).toBe(403);
+  expect((await h.as().post(`${base}/allocation-requests`).send(body)).status).toBe(403);
+  expect((await request(h.app).get(`${base}/board`)).status).toBe(401);
+});
+it('validates response bodies and leaves the reservation intact on invalid confirmation', async () => {
+  const created = await allocate();
+  expect((await answer(created.body.requestId, { quantity: 101 }, 'too-many')).status).toBe(409);
+  expect((await answer(created.body.requestId, { reason: ' ' }, 'blank')).status).toBe(400);
+  expect(
+    (await answer(created.body.requestId, { quantity: 50, reason: 'both' }, 'ambiguous')).status,
+  ).toBe(400);
+  expect(await store.get('inventory', itemId)).toMatchObject({ reservedQty: 100 });
+});
+it('returns district and organization scoped boards and matching search results', async () => {
+  await allocate();
+  expect((await h.as(district).get(`${base}/board`)).body.areas).toHaveLength(1);
+  expect((await h.as().get(`${base}/board`)).body.areas).toHaveLength(3);
+  expect((await h.as(owner).get(`${base}/board`)).body.requests).toHaveLength(1);
+  expect(
+    (await h.as({ ...owner, organizationId: 'org-sl-army' }).get(`${base}/board`)).body.requests,
+  ).toHaveLength(0);
+  expect(
+    (await h.as(district).get(`${base}/requirements/${needId}/resources`)).body.resources,
+  ).toHaveLength(3);
+  expect(
+    (
+      await h
+        .as({ ...district, district: 'COLOMBO' })
+        .get(`${base}/requirements/${needId}/resources`)
+    ).status,
+  ).toBe(403);
+  expect((await h.as(district).get(`${base}/requirements/missing/resources`)).status).toBe(404);
+});
+it('keeps modified stock and fulfilled needs when demo data is seeded again', async () => {
+  const created = await allocate();
+  await answer(created.body.requestId, { quantity: 100 });
+  await seedResources({ clock: h.clock });
+  expect(await store.get('inventory', itemId)).toMatchObject({ availableQty: 400, reservedQty: 0 });
+  expect(await store.get('needs', needId)).toMatchObject({ fulfilledQty: 100 });
+});
+it('uses a transaction even when domain authorization is called outside HTTP', async () => {
+  const service = new AllocationService({
+    uow: new MongoResourceUnitOfWork(),
+    clock: h.clock,
+    ids: h.ids,
+    events: h.events,
+  });
+  await expect(
+    service.request(
+      { userId: 'citizen', sessionId: 's', authenticatedAt: h.clock.now(), role: 'CITIZEN' },
+      needId,
+      itemId,
+      10,
+    ),
+  ).rejects.toMatchObject({ code: 'FORBIDDEN_SCOPE' });
+});
+it('rejects mismatched supplies before making a reservation', async () => {
+  const response = await h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'uc2-mismatched-supply')
+    .send({ ...body, resourceId: 'red-cross-MEDICAL' });
+  expect(response.status).toBe(409);
+  expect(response.body.error.code).toBe('RESOURCE_MISMATCH');
+  expect(await store.list('requests')).toHaveLength(0);
+});
+it('rejects a direct owner response without a quantity or reason', async () => {
+  const created = await allocate();
+  const service = new AllocationService({
+    uow: new MongoResourceUnitOfWork(),
+    clock: h.clock,
+    ids: h.ids,
+    events: h.events,
+  });
+  await expect(
+    service.respond(
+      { ...owner, userId: 'owner', sessionId: 's', authenticatedAt: h.clock.now() },
+      created.body.requestId,
+      {},
+    ),
+  ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+  expect(await store.get('inventory', itemId)).toMatchObject({ reservedQty: 100 });
+});
+it('includes confirmed dispatches on the officer board and redacts audit secrets', async () => {
+  const created = await allocate();
+  const confirmed = await answer(created.body.requestId, { quantity: 100 });
+  const board = await h.as(district).get(`${base}/board`);
+  expect(board.body.dispatches).toEqual([
+    expect.objectContaining({ dispatchId: confirmed.body.dispatchId }),
+  ]);
+  await store.audit({
+    action: 'resources.test',
+    occurredAt: h.clock.now(),
+    details: { password: 'must not persist', quantity: 100 },
+  });
+  const audit = await mongoose.connection
+    .collection('audit_logs')
+    .findOne({ action: 'resources.test' });
+  expect(audit?.details).toEqual({ password: '[redacted]', quantity: 100 });
+});
+it('rolls back confirmation and deployment together with their audit records', async () => {
+  const created = await allocate();
+  const confirmFailure = jest
+    .spyOn(MongoResourceStore.prototype, 'audit')
+    .mockRejectedValueOnce(new Error('audit unavailable'));
+  expect((await answer(created.body.requestId, { quantity: 100 })).status).toBe(500);
+  confirmFailure.mockRestore();
+  expect(await store.get('requests', created.body.requestId)).toMatchObject({ status: 'PENDING' });
+  expect(await store.get('inventory', itemId)).toMatchObject({ reservedQty: 100 });
+  expect(await store.list('dispatches')).toHaveLength(0);
+  const confirmed = await answer(created.body.requestId, { quantity: 100 });
+  const deployFailure = jest
+    .spyOn(MongoResourceStore.prototype, 'audit')
+    .mockRejectedValueOnce(new Error('audit unavailable'));
+  const response = await h
+    .as(district)
+    .post(`${base}/dispatches/${confirmed.body.dispatchId}/deploy`)
+    .set('Idempotency-Key', 'uc2-failed-deploy')
+    .send({});
+  deployFailure.mockRestore();
+  expect(response.status).toBe(500);
+  expect(await store.get('dispatches', confirmed.body.dispatchId)).toMatchObject({
+    status: 'DISPATCHED',
+  });
+  expect(h.events.published).toHaveLength(0);
+});
+it.each([
+  ['army-WATER', 'ARMED_FORCES_LIAISON', 'org-sl-army'],
+  ['irrigation-WATER', 'GOVERNMENT_AGENCY_OFFICER', 'org-irrigation-dept'],
+] as const)('lets the owning agency confirm %s', async (resourceId, role, organizationId) => {
+  const created = await h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'uc2-other-agency-request')
+    .send({ ...body, resourceId });
+  const response = await h
+    .as({ role, organizationId })
+    .post(`${base}/allocation-requests/${created.body.requestId}/respond`)
+    .set('Idempotency-Key', 'uc2-other-agency-confirm')
+    .send({ quantity: 100 });
+  expect(response.status).toBe(200);
+  expect(await store.get('inventory', resourceId)).toMatchObject({
+    availableQty: 400,
+    reservedQty: 0,
+  });
+});

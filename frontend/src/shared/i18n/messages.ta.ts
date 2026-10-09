@@ -798,4 +798,8 @@ export const ta: Messages = {
   'hazardReports.approval.pending':
     'எச்சரிக்கை கோரிக்கை DMC அங்கீகாரத்திற்காக அனுப்பப்பட்டது. அறிவிப்புகள் அனுப்பப்படவில்லை.',
   'hazardReports.approval.openQueue': 'நிலுவையிலுள்ள அங்கீகாரங்களைத் திறக்க',
+  'resources.nav.overview': 'மேலோட்டம்',
+  'resources.nav.requests': 'கோரிக்கைகள் மற்றும் பதில்கள்',
+  'resources.nav.deployments': 'பணியமர்த்தல்கள்',
+  'resources.nav.field': 'குழுக்கள் மற்றும் தங்குமிடங்கள்',
 };

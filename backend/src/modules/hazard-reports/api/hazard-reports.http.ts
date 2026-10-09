@@ -1,5 +1,5 @@
 import { getAuth } from '@shared/auth';
-import { NotFoundError } from '@shared/errors/DomainError';
+import { ForbiddenError, NotFoundError } from '@shared/errors/DomainError';
 import { parseOrThrow } from '@shared/errors/zod';
 import type { ModuleContext } from '@shared/module';
 import { Router, type Request, type RequestHandler } from 'express';
@@ -151,6 +151,18 @@ export function createHazardReportsRouter(
   );
   const router = Router();
   router.use(guards.requireAuth);
+
+  router.get('/district/situation', guards.requireRole('DISTRICT_OFFICER'), async (req, res) => {
+    const { district } = getAuth(req);
+    if (!district)
+      throw new ForbiddenError('FORBIDDEN_SCOPE', 'A district assignment is required.');
+    const clusters = await api.review.queue(['OPEN', 'ESCALATION_RECOMMENDED', 'ESCALATED']);
+    res.json(
+      clusters
+        .filter(({ cluster }) => cluster.snapshot().district === district)
+        .map(toClusterSummaryDto),
+    );
+  });
 
   router.post('/', reportersOnly, api.upload, submit.submit);
   router.get('/', anyUc3Role, reading.list);

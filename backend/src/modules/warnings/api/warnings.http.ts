@@ -1,6 +1,11 @@
 import { Router, type Request, type Response } from 'express';
 import { getAuth } from '@shared/auth';
-import { ServiceUnavailableError, ValidationError, parseOrThrow } from '@shared/errors';
+import {
+  ForbiddenError,
+  ServiceUnavailableError,
+  ValidationError,
+  parseOrThrow,
+} from '@shared/errors';
 import { retainIdempotentResult } from '@shared/http/idempotency';
 import type { ModuleContext } from '@shared/module';
 import type { WarningController } from '../application/WarningController';
@@ -20,7 +25,37 @@ const officerOf = (req: Request): string => getAuth(req).userId;
  */
 export function createWarningsRouter(controller: WarningController, ctx: ModuleContext): Router {
   const router = Router();
-  router.use(ctx.guards.requireAuth, ctx.guards.requireRole('DMC_OFFICER'));
+  router.use(ctx.guards.requireAuth);
+  router.get(
+    '/district/situation',
+    ctx.guards.requireRole('DISTRICT_OFFICER'),
+    async (req, res) => {
+      const { district } = getAuth(req);
+      if (!district)
+        throw new ForbiddenError('FORBIDDEN_SCOPE', 'A district assignment is required.');
+      const now = ctx.clock.now();
+      const warnings = (await controller.listWarnings('ISSUED')).map(toWarningDto);
+      res.json(
+        warnings
+          .filter(
+            (warning) =>
+              warning.targetAreas.some((area) => area.district === district) &&
+              new Date(warning.validFrom) <= now &&
+              now < new Date(warning.validTo),
+          )
+          .map((warning) => ({
+            warningId: warning.warningId,
+            hazardType: warning.hazardType,
+            severity: warning.severity,
+            targetAreas: warning.targetAreas.filter((area) => area.district === district),
+            validFrom: warning.validFrom,
+            validTo: warning.validTo,
+            messages: warning.messages,
+          })),
+      );
+    },
+  );
+  router.use(ctx.guards.requireRole('DMC_OFFICER'));
   addReviewRoutes(router, controller, ctx);
   addIssueRoutes(router, controller, ctx);
   addDeliveryRoutes(router, controller, ctx);

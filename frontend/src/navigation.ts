@@ -7,7 +7,7 @@ import {
   hazardHistoryNav,
   hazardReporterNav,
 } from '@/features/hazard-reports/nav';
-import { resourcesNav } from '@/features/resources/nav';
+import { resourceSidebarItems } from '@/features/resources/nav';
 import { warningsIssuedNav, warningsNav, warningsRejectedNav } from '@/features/warnings/nav';
 
 /** An entry's own icon wins; this only gives the entries that did not choose one a sensible default. */
@@ -31,7 +31,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       hazardReviewNav,
       hazardHistoryNav,
       hazardReporterNav,
-      withIcon(resourcesNav, 'package'),
+      ...resourceSidebarItems,
     ],
   },
   { id: 'analysis', labelKey: 'nav.group.analysis', items: [withIcon(analyticsNav, 'barChart')] },
