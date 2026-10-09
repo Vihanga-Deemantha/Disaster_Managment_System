@@ -20,6 +20,9 @@ vi.mock(
 afterEach(() => resetBrowserOnline());
 beforeEach(() =>
   server.use(
+    http.get('/api/resources/notifications', () => HttpResponse.json([])),
+    http.get('/api/hazard-reports/district/situation', () => HttpResponse.json([])),
+    http.get('/api/warnings/district/situation', () => HttpResponse.json([])),
     http.get('/api/resources/board', () =>
       HttpResponse.json({ areas: [], needs: [], requests: [], dispatches: [] }),
     ),
@@ -45,10 +48,16 @@ const NAV_BY_ROLE: Record<Role, string[]> = {
     'Resource Allocation',
     'Impact Analytics',
   ],
-  DISTRICT_OFFICER: ['Resource Allocation'],
-  NGO_MANAGER: ['Resource Allocation', 'Impact Analytics'],
-  ARMED_FORCES_LIAISON: ['Resource Allocation'],
-  GOVERNMENT_AGENCY_OFFICER: ['Resource Allocation'],
+  DISTRICT_OFFICER: [
+    'Overview',
+    'Resource Allocation',
+    'Requests & Responses',
+    'Deployments',
+    'Teams & Shelters',
+  ],
+  NGO_MANAGER: ['Requests & Responses', 'Deployments', 'Teams & Shelters', 'Impact Analytics'],
+  ARMED_FORCES_LIAISON: ['Requests & Responses', 'Deployments', 'Teams & Shelters'],
+  GOVERNMENT_AGENCY_OFFICER: ['Requests & Responses', 'Deployments', 'Teams & Shelters'],
   DONOR: ['Impact Analytics'],
 };
 

@@ -67,15 +67,31 @@ beforeEach(() => {
     dispatches: [],
   };
   server.use(
+    http.get('/api/hazard-reports/district/situation', () => HttpResponse.json([])),
+    http.get('/api/warnings/district/situation', () => HttpResponse.json([])),
+    http.get('/api/resources/inventory', () => HttpResponse.json([])),
+    http.get('/api/resources/notifications', () => HttpResponse.json([])),
     http.get('/api/resources/board', () => HttpResponse.json(board)),
     http.get('/api/resources/requirements/:id/resources', () =>
       HttpResponse.json({ resources: [supply] }),
     ),
   );
 });
-function open(role: 'DISTRICT_OFFICER' | 'NGO_MANAGER' | 'DMC_OFFICER' = 'DISTRICT_OFFICER') {
+async function open(role: 'DISTRICT_OFFICER' | 'NGO_MANAGER' | 'DMC_OFFICER' = 'DISTRICT_OFFICER') {
   signIn(makeMe({ role, district: 'GAMPAHA', organizationId: 'org-red-cross' }));
-  return renderWithProviders(<ResourcesPage />);
+  const rendered = renderWithProviders(<ResourcesPage />);
+  const tab =
+    role === 'DISTRICT_OFFICER'
+      ? board.dispatches.length
+        ? 'Deployments'
+        : board.requests.length
+          ? 'Requests'
+          : 'Allocate'
+      : role === 'NGO_MANAGER'
+        ? 'Requests'
+        : 'Overview';
+  fireEvent.click(await screen.findByRole('tab', { name: tab }));
+  return rendered;
 }
 async function selectSupply() {
   const user = userEvent.setup();
@@ -97,14 +113,14 @@ it('loads district requirements and requests stock with a CSRF header and idempo
       return HttpResponse.json(pending, { status: 201 });
     }),
   );
-  open();
+  await open();
   const user = await selectSupply();
   expect(screen.getByLabelText('Quantity to request')).toHaveAttribute('max', '80');
   await user.type(screen.getByLabelText('Quantity to request'), '50');
   await user.click(screen.getByRole('button', { name: 'Send allocation request' }));
   expect(await screen.findByText(/Request sent/)).toBeInTheDocument();
   expect(sent).toEqual({ requirementId: needId, resourceId: supply.resourceId, quantity: 50 });
-  expect(await screen.findByText(/50 to request/)).toBeInTheDocument();
+  expect(await screen.findByRole('option', { name: /50 packs to request/ })).toBeInTheDocument();
 });
 it('shows a stock conflict without reporting a successful request', async () => {
   server.use(
@@ -120,7 +136,7 @@ it('shows a stock conflict without reporting a successful request', async () => 
       ),
     ),
   );
-  open();
+  await open();
   const user = await selectSupply();
   await user.type(screen.getByLabelText('Quantity to request'), '50');
   await user.click(screen.getByRole('button', { name: 'Send allocation request' }));
@@ -143,7 +159,7 @@ it('keeps zero and unavailable stock unselectable', async () => {
       }),
     ),
   );
-  open();
+  await open();
   const user = userEvent.setup();
   await user.selectOptions(await screen.findByLabelText('Affected area'), 'area-1');
   await user.selectOptions(screen.getByLabelText('Resource requirement'), needId);
@@ -171,7 +187,7 @@ it('lets the owner confirm a smaller quantity and shows the resulting dispatch',
       return HttpResponse.json(board.requests[0]);
     }),
   );
-  open('NGO_MANAGER');
+  await open('NGO_MANAGER');
   const user = userEvent.setup();
   const quantity = await screen.findByLabelText('Quantity to confirm');
   await user.clear(quantity);
@@ -179,6 +195,7 @@ it('lets the owner confirm a smaller quantity and shows the resulting dispatch',
   await user.click(screen.getByRole('button', { name: 'Confirm allocation' }));
   expect(await screen.findByText('Confirmed 30 packs')).toBeInTheDocument();
   expect(sent).toEqual({ quantity: 30 });
+  await user.click(screen.getByRole('tab', { name: 'Deployments' }));
   expect(await screen.findByText('30 packs of Water')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Confirm arrival' })).not.toBeInTheDocument();
 });
@@ -192,7 +209,7 @@ it('requires a decline reason and sends the trimmed reason', async () => {
       return HttpResponse.json(board.requests[0]);
     }),
   );
-  open('NGO_MANAGER');
+  await open('NGO_MANAGER');
   const user = userEvent.setup();
   await screen.findByLabelText('Reason for declining');
   await user.click(screen.getByRole('button', { name: 'Decline request' }));
@@ -214,7 +231,7 @@ it('preserves the same idempotency key when retrying an owner response', async (
       );
     }),
   );
-  open('NGO_MANAGER');
+  await open('NGO_MANAGER');
   const user = userEvent.setup();
   await screen.findByLabelText('Quantity to confirm');
   await user.click(screen.getByRole('button', { name: 'Confirm allocation' }));
@@ -243,7 +260,7 @@ it('records an arrival and removes the arrival action after refresh', async () =
       return HttpResponse.json({});
     }),
   );
-  open();
+  await open();
   const user = userEvent.setup();
   await user.click(await screen.findByRole('button', { name: 'Confirm arrival' }));
   expect(await screen.findByText(/Arrival confirmed/)).toBeInTheDocument();
@@ -253,15 +270,16 @@ it('records an arrival and removes the arrival action after refresh', async () =
 });
 it('shows DMC a read-only overview', async () => {
   board.requests = [pending];
-  open('DMC_OFFICER');
+  await open('DMC_OFFICER');
   await screen.findByRole('heading', { name: 'Resource overview' });
+  await userEvent.setup().click(screen.getByRole('tab', { name: 'Requests' }));
   await screen.findByText(/Requested 50 packs/);
   expect(screen.queryByLabelText('Affected area')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Confirm allocation' })).not.toBeInTheDocument();
 });
 it('filters expired requests and explains stock release', async () => {
   board.requests = [pending, { ...pending, requestId: 'expired', status: 'NO_RESPONSE' }];
-  open();
+  await open();
   const user = userEvent.setup();
   await user.selectOptions(await screen.findByLabelText('Request status'), 'NO_RESPONSE');
   expect(await screen.findByText(/Reserved stock has been released/)).toBeInTheDocument();
@@ -277,14 +295,14 @@ it('shows load failures and recovers on refresh', async () => {
       ),
     ),
   );
-  open();
+  await open();
   await screen.findByText('Board unavailable');
   server.use(http.get('/api/resources/board', () => HttpResponse.json(board)));
   await userEvent.setup().click(screen.getByRole('button', { name: 'Refresh' }));
   expect(await screen.findByLabelText('Affected area')).toBeInTheDocument();
 });
 it('queues requests offline with their quantities and URL', async () => {
-  open();
+  await open();
   const user = await selectSupply();
   server.use(
     http.get('/api/resources/board', () => HttpResponse.error()),
@@ -304,7 +322,7 @@ it('queues requests offline with their quantities and URL', async () => {
 });
 it('disables both owner response actions offline', async () => {
   board.requests = [pending];
-  open('NGO_MANAGER');
+  await open('NGO_MANAGER');
   await screen.findByRole('button', { name: 'Confirm allocation' });
   await settle(() => setBrowserOnline(false));
   expect(screen.getByRole('button', { name: 'Confirm allocation' })).toBeDisabled();
@@ -324,7 +342,7 @@ it('queues an arrival offline and prevents a second click', async () => {
       dispatchedAt: pending.createdAt,
     },
   ];
-  open();
+  await open();
   await screen.findByRole('button', { name: 'Confirm arrival' });
   await settle(() => setBrowserOnline(false));
   await userEvent.setup().click(screen.getByRole('button', { name: 'Confirm arrival' }));
@@ -355,7 +373,7 @@ it('shows a failed arrival without changing its dispatched status', async () => 
       ),
     ),
   );
-  open();
+  await open();
   await userEvent.setup().click(await screen.findByRole('button', { name: 'Confirm arrival' }));
   expect(await screen.findByText('Wrong district')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Confirm arrival' })).toBeEnabled();
@@ -369,7 +387,7 @@ it('retries stock lookup after a search failure', async () => {
       ),
     ),
   );
-  open();
+  await open();
   const user = userEvent.setup();
   await user.selectOptions(await screen.findByLabelText('Affected area'), 'area-1');
   await user.selectOptions(screen.getByLabelText('Resource requirement'), needId);
@@ -384,7 +402,7 @@ it('retries stock lookup after a search failure', async () => {
 });
 it('does not offer requirements whose outstanding quantity is fully held', async () => {
   board.needs[0]!.pendingQty = 100;
-  open();
+  await open();
   const user = userEvent.setup();
   await user.selectOptions(await screen.findByLabelText('Affected area'), 'area-1');
   expect(screen.getByText(/All needs in this area/)).toBeInTheDocument();
@@ -400,7 +418,7 @@ it('formats safe fallbacks and clamps a fulfilled requirement', () => {
   expect(remaining({ ...board.needs[0]!, fulfilledQty: 120 })).toBe(0);
 });
 it('guards a programmatic form submission with an invalid quantity', async () => {
-  open();
+  await open();
   await selectSupply();
   const field = screen.getByLabelText('Quantity to request');
   fireEvent.change(field, { target: { value: '0' } });

@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/Button';
 import { TextField, TextAreaField } from '@/shared/ui/Field';
 import { Card } from '@/shared/ui/Card';
 import { Alert } from '@/shared/ui/Alert';
+import { ResponseDeadline } from './ResponseDeadline';
 import {
   describeAllocation,
   dateLabel,
@@ -103,6 +104,7 @@ function RequestCard({
       <p className="mt-3 text-xs text-ink-soft">
         Sent {dateLabel(request.createdAt)} · Respond by {dateLabel(request.respondBy)}
       </p>
+      {request.status === 'PENDING' && <ResponseDeadline deadline={request.respondBy} />}
       {request.confirmedQty !== undefined && (
         <p className="mt-2 text-sm font-bold text-success-600">
           Confirmed {request.confirmedQty} {description.unit}
