@@ -790,4 +790,8 @@ export const ta: Messages = {
   'error.CLUSTER_NOT_FOUND': 'இந்தக் குழுவைக் கண்டுபிடிக்க முடியவில்லை.',
   'error.REPORT_ALREADY_REVIEWED': 'இந்த அறிக்கை ஏற்கனவே மதிப்பாய்வு செய்யப்பட்டுள்ளது.',
   'error.ESCALATION_NOT_ALLOWED': 'இந்தக் குழுவை இன்னும் மேல்நிலைக்கு அனுப்ப முடியாது.',
+  'resources.nav.overview': 'மேலோட்டம்',
+  'resources.nav.requests': 'கோரிக்கைகள் மற்றும் பதில்கள்',
+  'resources.nav.deployments': 'பணியமர்த்தல்கள்',
+  'resources.nav.field': 'குழுக்கள் மற்றும் தங்குமிடங்கள்',
 };

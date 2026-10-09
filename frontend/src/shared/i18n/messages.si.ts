@@ -761,4 +761,8 @@ export const si: Messages = {
   'error.CLUSTER_NOT_FOUND': 'මෙම පොකුර සොයාගත නොහැකි විය.',
   'error.REPORT_ALREADY_REVIEWED': 'මෙම වාර්තාව දැනටමත් සමාලෝචනය කර ඇත.',
   'error.ESCALATION_NOT_ALLOWED': 'මෙම පොකුර තවම ඉහළ යොමු කළ නොහැක.',
+  'resources.nav.overview': 'දළ විශ්ලේෂණය',
+  'resources.nav.requests': 'ඉල්ලීම් හා ප්‍රතිචාර',
+  'resources.nav.deployments': 'යෙදවීම්',
+  'resources.nav.field': 'කණ්ඩායම් හා ආරක්ෂිත ස්ථාන',
 };

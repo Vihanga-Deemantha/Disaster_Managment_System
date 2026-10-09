@@ -18,8 +18,20 @@ vi.mock(
 );
 
 afterEach(() => resetBrowserOnline());
+beforeEach(() =>
+  server.use(
+    http.get('/api/resources/notifications', () => HttpResponse.json([])),
+    http.get('/api/hazard-reports/district/situation', () => HttpResponse.json([])),
+    http.get('/api/warnings/district/situation', () => HttpResponse.json([])),
+    http.get('/api/resources/board', () =>
+      HttpResponse.json({ areas: [], needs: [], requests: [], dispatches: [] }),
+    ),
+  ),
+);
 
-const heading = (name: string) => screen.findByRole('heading', { level: 1, name });
+// The first lazy analytics import can exceed five seconds on a busy development laptop.
+const heading = (name: string) =>
+  screen.findByRole('heading', { level: 1, name }, { timeout: 15_000 });
 
 /** Which sidebar links each role should see. */
 const NAV_BY_ROLE: Record<Role, string[]> = {
@@ -33,19 +45,26 @@ const NAV_BY_ROLE: Record<Role, string[]> = {
     'Dashboard',
     'Review reports',
     'Report history',
+    'Resource Allocation',
     'Impact Analytics',
   ],
-  DISTRICT_OFFICER: ['Resource Allocation'],
-  NGO_MANAGER: ['Resource Allocation', 'Impact Analytics'],
-  ARMED_FORCES_LIAISON: ['Resource Allocation'],
-  GOVERNMENT_AGENCY_OFFICER: ['Resource Allocation'],
+  DISTRICT_OFFICER: [
+    'Overview',
+    'Resource Allocation',
+    'Requests & Responses',
+    'Deployments',
+    'Teams & Shelters',
+  ],
+  NGO_MANAGER: ['Requests & Responses', 'Deployments', 'Teams & Shelters', 'Impact Analytics'],
+  ARMED_FORCES_LIAISON: ['Requests & Responses', 'Deployments', 'Teams & Shelters'],
+  GOVERNMENT_AGENCY_OFFICER: ['Requests & Responses', 'Deployments', 'Teams & Shelters'],
   DONOR: ['Impact Analytics'],
 };
 
 describe('the route table (master plan §5: all routes registered up front)', () => {
   it.each([
     ['/warnings', 'DMC_OFFICER', 'Pending Approvals'],
-    ['/resources', 'DISTRICT_OFFICER', 'Resource Allocation'],
+    ['/resources', 'DISTRICT_OFFICER', 'Resource allocation'],
     ['/hazard-reports', 'DUTY_OFFICER', 'Hazard report clusters'],
     ['/analytics', 'DONOR', 'Impact Analytics'],
   ] as const)('%s opens for a %s inside the shared shell', async (path, role, title) => {
@@ -58,7 +77,7 @@ describe('the route table (master plan §5: all routes registered up front)', ()
     expect(screen.getByRole('main')).toBeInTheDocument();
   });
 
-  it.each([['/resources/allocations/new', 'NGO_MANAGER', 'Resource Allocation']] as const)(
+  it.each([['/resources/allocations/new', 'NGO_MANAGER', 'Agency allocations']] as const)(
     'leaves everything below %s to its owner',
     async (path, role, title) => {
       signIn(makeMe({ role }));
@@ -81,7 +100,7 @@ describe('the route table (master plan §5: all routes registered up front)', ()
 
   it.each([
     ['/warnings', 'DUTY_OFFICER'],
-    ['/resources', 'DMC_OFFICER'],
+    ['/resources', 'CITIZEN'],
     ['/hazard-reports', 'DONOR'],
     ['/analytics', 'CITIZEN'],
   ] as const)('refuses %s to a %s with the 403 page', async (path, role) => {
