@@ -14,6 +14,7 @@ export interface QueuedReport {
   attempts: number;
   lastAttemptAt?: string;
   existingReportId?: string;
+  duplicateAction?: 'NEW' | 'UPDATE';
   problem?: { code: string; message: string };
 }
 export type UploadOutcome =

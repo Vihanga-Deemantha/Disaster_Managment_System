@@ -1,6 +1,6 @@
 # M2 mobile online report submission — 9 October 2026
 
-Branch: `feat/uc3-mobile-reporting`. No subagents used. The first M2 Android build completed and was installed; phone testing exposed a photo upload compatibility defect. M2 remains open pending acceptance of the corrected APK. M3 has not started.
+Branch: `feat/uc3-mobile-reporting`. No subagents used. The first M2 Android build completed and was installed; phone testing exposed a photo upload compatibility defect. The owner subsequently installed the corrected APK and confirmed successful report submission. M2 is complete; M3 evidence is recorded separately.
 
 ## Implemented
 
@@ -29,7 +29,7 @@ A clearly labelled demonstration report was submitted as a seeded Citizen to the
 
 Identifiers and assertions are recorded in [api-smoke.json](api-smoke.json). This fixture submission verifies the server contract; it does not substitute for physical camera/GPS acceptance.
 
-## Remaining phone acceptance
+## Phone acceptance checklist
 
 Install the updated standalone preview APK when available. Keep the laptop API running on port 4000 and the phone on the same Wi-Fi. Its configured API URL is `http://192.168.8.191:4000`; rebuild with an updated URL if that laptop address changes.
 
@@ -61,4 +61,4 @@ Checked the installed SDK 57 runtime, FormData/converter source and File typings
 
 Correction checks: lint and TypeScript passed. The full mobile run passed 592 of 593 tests (28 suites); one existing registration-screen test exceeded its 20-second timeout. Rerunning that suite with a 60-second limit passed all 23 tests in 7 seconds. The new upload regression passed both photo/no-photo cases. Coverage remained 99.84% statements / 99.76% branches / 100% functions and lines, with the UC3 core at 100% on all four measures.
 
-Android export passed with 1,439 modules and a 3.1 MB Hermes bundle. Fix commit: `597b73d`. EAS accepted replacement standalone preview build [5b8ffa48-580f-4200-a001-f99b9ae30749](https://expo.dev/accounts/pawan-menukas-team/projects/safezone/builds/5b8ffa48-580f-4200-a001-f99b9ae30749), initial status `NEW`. Cloud completion and physical-phone photo submission remain pending. No Git push was made.
+Android export passed with 1,439 modules and a 3.1 MB Hermes bundle. Fix commit: `597b73d`. EAS accepted replacement standalone preview build [5b8ffa48-580f-4200-a001-f99b9ae30749](https://expo.dev/accounts/pawan-menukas-team/projects/safezone/builds/5b8ffa48-580f-4200-a001-f99b9ae30749), initial status `NEW`. The owner subsequently installed this APK and confirmed that report submission works on the phone. No Git push was made.
