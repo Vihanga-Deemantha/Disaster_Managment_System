@@ -4,12 +4,21 @@ import type { AllocationRequestProps } from '../domain/AllocationRequest';
 import type { RequirementProps } from '../domain/ResourceRequirement';
 import type { ResourceProps } from '../domain/Resource';
 import type { District, OrganizationType } from '@shared/contracts/enums';
+import type { TeamType } from '../domain/types';
 
 export interface Inventory extends ResourceProps {
   category: string;
   unit: string;
   organizationName: string;
   organizationType: OrganizationType;
+  name?: string;
+  district?: District;
+  teamType?: TeamType;
+  teamSize?: number;
+  lastUpdatedAt?: Date;
+  capacity?: number;
+  currentOccupancy?: number;
+  committedQty?: number;
 }
 export interface Need extends RequirementProps {
   category: string;
@@ -38,6 +47,16 @@ export interface Records {
   inventory: Inventory;
   requests: RequestRecord;
   dispatches: Dispatch;
+  occupancyLogs: { shelterId: string; recordedAt: Date; occupancy: number };
+  notifications: {
+    notificationId: string;
+    requestId: string;
+    message: string;
+    createdAt: Date;
+    district?: District;
+    organizationId?: string;
+    national?: boolean;
+  };
 }
 export interface ResourceStore {
   get<K extends keyof Records>(kind: K, id: string): Promise<Records[K]>;
