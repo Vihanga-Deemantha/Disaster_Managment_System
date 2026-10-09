@@ -37,7 +37,7 @@ describe('enums: the same lists as the API', () => {
       expect(en[`district.${district}`]).toBe(backendEnums.DISTRICT_LABELS[district]);
     }
     for (const hazard of backendEnums.HAZARD_TYPES) {
-      expect(en[`hazard.${hazard}`].toUpperCase()).toBe(hazard);
+      expect(en[`hazard.${hazard}`].toUpperCase().replaceAll(' ', '_')).toBe(hazard);
     }
   });
 

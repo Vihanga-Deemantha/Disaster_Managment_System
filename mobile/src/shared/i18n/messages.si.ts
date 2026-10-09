@@ -215,4 +215,5 @@ export const si: Record<MessageKey, string> = {
   'month.10': 'ඔක්',
   'month.11': 'නොවැ',
   'month.12': 'දෙසැ',
+  'hazard.ROAD_BLOCKAGE': 'මාර්ග අවහිරය',
 };

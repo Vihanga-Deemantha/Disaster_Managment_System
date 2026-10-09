@@ -223,4 +223,5 @@ export const ta: Record<MessageKey, string> = {
   'month.10': 'அக்',
   'month.11': 'நவ',
   'month.12': 'டிச',
+  'hazard.ROAD_BLOCKAGE': 'வீதி தடை',
 };

@@ -146,7 +146,7 @@ export const en = {
   'district.RATNAPURA': 'Ratnapura',
   'district.TRINCOMALEE': 'Trincomalee',
   'district.VAVUNIYA': 'Vavuniya',
-  'hazard.OTHER': 'Hazard',
+  'hazard.OTHER': 'Other',
   'tabs.report': 'Report',
   'tabs.myReports': 'My reports',
   'tabs.alerts': 'Alerts',
@@ -212,6 +212,7 @@ export const en = {
   'month.10': 'Oct',
   'month.11': 'Nov',
   'month.12': 'Dec',
+  'hazard.ROAD_BLOCKAGE': 'Road blockage',
 } as const;
 
 export type MessageKey = keyof typeof en;

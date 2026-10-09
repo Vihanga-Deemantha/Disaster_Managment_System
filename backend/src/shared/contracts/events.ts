@@ -1,5 +1,5 @@
 /**
- * The three cross-module events (master plan §8). FROZEN after the foundation commit.
+ * Cross-module events, including the owner-approved individual report -> warning handoff.
  * Modules never import each other: they only publish and subscribe to these on the shared EventBus.
  */
 import type { GeoPoint } from '../geo/GeoPoint';
@@ -26,7 +26,20 @@ export interface ClusterEscalationRequested {
   priorityScore: number;
   /** Duty officer id. */
   requestedBy: string;
+  requestedByRole?: 'DUTY_OFFICER' | 'DMC_OFFICER';
   /** ISO timestamp. */
+  occurredAt: string;
+}
+
+/** UC-3 -> UC-1: an individual report approved by either officer enters the DMC warning queue. */
+export interface HazardReportApproved {
+  type: 'HazardReportApproved';
+  reportId: string;
+  hazardType: HazardType;
+  proposedSeverity: Severity;
+  targetArea: TargetAreaRef;
+  approvedBy: string;
+  approvedByRole: 'DUTY_OFFICER' | 'DMC_OFFICER';
   occurredAt: string;
 }
 
@@ -61,6 +74,7 @@ export interface AllocationDeployed {
   deployedAt: string;
 }
 
-export type DomainEvent = ClusterEscalationRequested | WarningIssued | AllocationDeployed;
+export type DomainEvent =
+  ClusterEscalationRequested | HazardReportApproved | WarningIssued | AllocationDeployed;
 export type DomainEventType = DomainEvent['type'];
 export type EventOfType<T extends DomainEventType> = Extract<DomainEvent, { type: T }>;
