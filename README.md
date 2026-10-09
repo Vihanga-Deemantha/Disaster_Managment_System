@@ -38,6 +38,8 @@ Open <http://localhost:5173> and sign in with one of the [demo logins](#demo-log
 - _Docker_: `docker compose up -d mongo`. If port 27017 is already taken, run it with `MONGO_PORT=27018` and set
   `MONGODB_URI=mongodb://127.0.0.1:27018/safezone_dev` in `backend/.env`.
 - _MongoDB Atlas_: create a free cluster, allow your IP, and paste its connection string into `MONGODB_URI` in `backend/.env`.
+  For the final demonstration, fill it with `npm run seed:demo -- --fresh`: every use case in every state, with a guide to
+  what to show ([`docs/demo-data.md`](docs/demo-data.md)).
 
 ## Demo logins
 
@@ -61,16 +63,17 @@ These are fictional demo people with made-up NICs and phone numbers.
 
 ## Everyday commands
 
-| Command                      | What it does                                                                       |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| `npm run dev`                | API (tsx watch) and web app (Vite) together                                        |
-| `npm run seed`               | Idempotent demo data. `npm run seed -- --fresh` wipes a `safezone*` database first |
-| `npm test`                   | Backend Jest and frontend Vitest, with the coverage gates                          |
-| `npm run lint` / `typecheck` | ESLint (incl. architecture rules) / TypeScript                                     |
-| `npm run format`             | Prettier (a pre-commit hook also does this for staged files)                       |
-| `npm run build`              | Production build of both workspaces                                                |
-| `npm run test:e2e`           | Playwright against the production build, own API (`:4100`) and DB (`safezone_e2e`) |
-| `npm run test:mutation`      | Stryker mutation testing on domain and application code (slow)                     |
+| Command                      | What it does                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `npm run dev`                | API (tsx watch) and web app (Vite) together                                                       |
+| `npm run seed`               | Idempotent demo data. `npm run seed -- --fresh` wipes a `safezone*` database first                |
+| `npm run seed:demo`          | The demonstration database: the base seed plus every state of every use case (`-- --fresh` first) |
+| `npm test`                   | Backend Jest and frontend Vitest, with the coverage gates                                         |
+| `npm run lint` / `typecheck` | ESLint (incl. architecture rules) / TypeScript                                                    |
+| `npm run format`             | Prettier (a pre-commit hook also does this for staged files)                                      |
+| `npm run build`              | Production build of both workspaces                                                               |
+| `npm run test:e2e`           | Playwright against the production build, own API (`:4100`) and DB (`safezone_e2e`)                |
+| `npm run test:mutation`      | Stryker mutation testing on domain and application code (slow)                                    |
 
 First time running end-to-end tests: `npx playwright install chromium`.
 

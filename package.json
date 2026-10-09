@@ -14,6 +14,7 @@
     "setup": "node scripts/setup-env.mjs",
     "dev": "concurrently -k -n api,web -c blue,magenta \"npm run dev -w backend\" \"npm run dev -w frontend\"",
     "seed": "npm run seed -w backend --",
+    "seed:demo": "npm run seed:demo -w backend --",
     "build": "npm run build -w backend && npm run build -w frontend",
     "typecheck": "npm run typecheck -w backend && npm run typecheck -w frontend",
     "lint": "eslint .",
