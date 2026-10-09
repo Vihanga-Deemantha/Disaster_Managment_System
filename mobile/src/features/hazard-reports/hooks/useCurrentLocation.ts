@@ -14,7 +14,13 @@ type ManualReason = 'DENIED' | 'TIMEOUT' | 'UNAVAILABLE' | 'ADJUSTED';
 export type LocationState =
   | { status: 'LOCATING' }
   | { status: 'READY'; location: DraftLocation }
-  | { status: 'MANUAL'; reason: ManualReason; center: Point; location?: DraftLocation };
+  | {
+      status: 'MANUAL';
+      reason: ManualReason;
+      center: Point;
+      lastKnown?: Point;
+      location?: DraftLocation;
+    };
 const COLOMBO = { lat: 6.9271, lng: 79.8612 };
 
 function startRequest(
@@ -32,7 +38,7 @@ function startRequest(
     void provider
       .lastKnown()
       .then((center) => {
-        if (center) set({ status: 'MANUAL', reason, center });
+        if (center) set({ status: 'MANUAL', reason, center, lastKnown: center });
       })
       .catch(() => undefined);
   };

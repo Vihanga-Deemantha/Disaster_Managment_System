@@ -1,6 +1,6 @@
 # M5 — reporter history and offline status
 
-Branch: `feat/uc3-mobile-reporting`. Automated verification passed; the standalone Android preview build was submitted. Device acceptance remains pending. No subagents used.
+Branch: `feat/uc3-mobile-reporting`. Automated verification passed; the owner accepted the installed standalone Android preview on 9 October. No subagents used.
 
 ## Behaviour
 
@@ -42,4 +42,6 @@ After installing the M5 APK over the existing app:
 6. If a duplicate needs a choice, choose Update earlier report or Send a separate report from My reports. If a report is Not sent, verify photo removal and confirmed discard where applicable.
 7. M4 closed-app background delivery and M7 acceptance T1–T8 remain separate physical checks. A standalone preview does not show the development-only testing worker.
 
-M5 remains WIP until the phone checks are accepted. M6 and M7 have not started.
+Owner acceptance on 9 October: in response to the installation checklist, the owner confirmed that everything works. This accepts the four checks presented in chat: previous reports visible, offline Pending sync, reconnect Pending review and visible delivery-notification permission feedback. Conditional duplicate/rejected-photo recovery remains covered by automated tests; separate manual results for those conditional cases were not provided. Closed-app OS delivery has not been inferred from foreground reconnection.
+
+M5 is DONE. M6 and M7 have not started; M4 remains WIP for its separate closed-app OS-delivery checks.

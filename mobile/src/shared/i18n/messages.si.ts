@@ -233,12 +233,28 @@ export const si: Record<MessageKey, string> = {
   'reports.location.title': 'වාර්තාවේ ස්ථානය',
   'reports.location.locating': 'ඔබේ ස්ථානය සොයමින්…',
   'reports.location.gps': 'වත්මන් GPS ස්ථානය',
-  'reports.location.denied': 'ස්ථාන අවසරය අවශ්‍යයි. දුරකථන සැකසුම්වලින් අවසර දී නැවත උත්සාහ කරන්න.',
+  'reports.location.denied':
+    'ස්ථාන අවසරය අක්‍රියයි. අවදානම් ස්ථානය සිතියමේ සලකුණු කරන්න හෝ දුරකථන සැකසුම්වලින් අවසර දී නැවත උත්සාහ කරන්න.',
   'reports.location.timeout':
     'ස්ථානය සෙවීමට වැඩි කාලයක් ගත විය. විවෘත ප්‍රදේශයකට ගොස් නැවත උත්සාහ කරන්න.',
   'reports.location.unavailable': 'ස්ථානය ලබාගත නොහැක. ස්ථාන සේවා සක්‍රීය කර නැවත උත්සාහ කරන්න.',
   'reports.location.manual': 'ඔබ විසින් ස්ථානය වෙනස් කර ඇත.',
   'reports.location.retry': 'ස්ථානය නැවත සොයන්න',
+  'reports.location.map': 'වාර්තාවේ ස්ථාන සිතියම',
+  'reports.location.adjust': 'සලකුණ වෙනස් කරන්න',
+  'reports.location.tapMap':
+    'අවදානම ඇති ස්ථානය සලකුණු කිරීමට සිතියම තට්ටු කරන්න හෝ සලකුණ ඇදගෙන යන්න.',
+  'reports.location.settings': 'ස්ථාන සැකසුම් විවෘත කරන්න',
+  'reports.location.settingsFailed':
+    'සැකසුම් විවෘත කළ නොහැක. දුරකථනයේ සැකසුම් තුළ යෙදුමේ අවසර විවෘත කර නැවත උත්සාහ කරන්න.',
+  'reports.location.lastKnownHint':
+    'අවසන් වරට දන්නා ස්ථානය — අවදානම ඇත්තේ මෙහි නම් පමණක් භාවිත කරන්න.',
+  'reports.location.useLastKnown': 'මෙම ස්ථානය භාවිත කරන්න',
+  'reports.location.mapUnavailable':
+    'සිතියම පූරණය කළ නොහැක. සලකුණ වෙනස් කිරීමට අන්තර්ජාලයට සම්බන්ධ වන්න. තහවුරු කළ ඛණ්ඩාංක සුරක්ෂිතයි.',
+  'reports.location.reloadMap': 'සිතියම නැවත පූරණය කරන්න',
+  'reports.photo.retake': 'ඡායාරූපය නැවත ගන්න',
+  'reports.photo.continueWithout': 'ඡායාරූපයක් නොමැතිව ඉදිරියට යන්න',
   'reports.submit': 'වාර්තාව යවන්න',
   'reports.submitting': 'වාර්තාව යවමින්…',
   'reports.sent': 'වාර්තාව යවන ලදී',

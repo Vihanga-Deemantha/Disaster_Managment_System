@@ -132,7 +132,15 @@ export function ReportHazardForm({ ownerId, deps, onSessionExpired }: Props) {
           onChange={(hazardType) => change({ hazardType })}
           disabled={disabled}
         />
-        <LocationField state={location.state} retry={location.retry} disabled={disabled} />
+        <LocationField
+          state={location.state}
+          retry={location.retry}
+          disabled={disabled}
+          onPin={(point) => {
+            location.pin(point);
+            submission.reset();
+          }}
+        />
         {locationErrors.map((problem) => (
           <Banner key={problem} tone="warning">
             {t(`reports.${problem}`)}

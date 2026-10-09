@@ -231,13 +231,28 @@ export const en = {
   'reports.location.locating': 'Finding your location…',
   'reports.location.gps': 'Current GPS location',
   'reports.location.denied':
-    'Location permission is needed. Allow access in phone settings, then try again.',
+    'Location permission is off. Place the hazard pin manually, or allow access in phone settings and try again.',
   'reports.location.timeout':
     'Finding your location took too long. Move to an open area and try again.',
   'reports.location.unavailable':
     'Location is unavailable. Turn on location services and try again.',
   'reports.location.manual': 'Location adjusted by you.',
   'reports.location.retry': 'Find location again',
+  'reports.location.map': 'Report location map',
+  'reports.location.adjust': 'Adjust pin',
+  'reports.location.tapMap':
+    'Tap the map to place the pin, or drag the pin to the hazard location.',
+  'reports.location.settings': 'Open location settings',
+  'reports.location.settingsFailed':
+    'Could not open settings. Open app permissions in your phone settings, then try again.',
+  'reports.location.lastKnownHint':
+    'Last known position — use only if this is where the hazard is.',
+  'reports.location.useLastKnown': 'Use this position',
+  'reports.location.mapUnavailable':
+    'The map could not load. Connect to the internet to adjust the pin. Any confirmed coordinates are kept.',
+  'reports.location.reloadMap': 'Reload map',
+  'reports.photo.retake': 'Retake photo',
+  'reports.photo.continueWithout': 'Continue without photo',
   'reports.submit': 'Submit report',
   'reports.submitting': 'Sending report…',
   'reports.sent': 'Report sent',

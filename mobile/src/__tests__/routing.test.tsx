@@ -195,3 +195,4 @@ describe('the gate', () => {
     ).toBeTruthy();
   });
 });
+jest.mock('react-native-webview', () => ({ WebView: 'WebView' }));
