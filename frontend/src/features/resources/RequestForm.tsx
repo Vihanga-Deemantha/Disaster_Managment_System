@@ -7,16 +7,25 @@ import { Button } from '@/shared/ui/Button';
 import { Alert } from '@/shared/ui/Alert';
 import { Card } from '@/shared/ui/Card';
 import { errorMessage, label, remaining, type Board, type Need, type Supply } from './types';
-export function RequestForm({ board, onSaved }: { board: Board; onSaved: () => void }) {
-  const [areaId, setArea] = useState('');
+export function RequestForm({
+  board,
+  onSaved,
+  initialAreaId = '',
+}: {
+  board: Board;
+  onSaved: () => void;
+  initialAreaId?: string;
+}) {
+  const [areaId, setArea] = useState(initialAreaId);
   const [needId, setNeed] = useState('');
   const needs = board.needs.filter((n) => n.areaId === areaId && remaining(n) > 0);
   const need = needs.find((n) => n.requirementId === needId);
   return (
     <Card>
-      <h2 className="text-lg font-extrabold text-navy-900">Request relief supplies</h2>
+      <h2 className="text-lg font-extrabold text-navy-900">Request resources</h2>
       <p className="mb-5 mt-1 text-sm text-ink-soft">
-        Choose an affected area, its requirement, and an agency with available stock.
+        Choose an affected area, its requirement, and an owner with supplies, a rescue team or
+        shelter places.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectField
@@ -78,6 +87,7 @@ function useSupplyRequest(need: Need, onSaved: () => void) {
   const [error, setError] = useState('');
   const supply = stock.data?.resources.find((s) => s.resourceId === resourceId);
   const maximum = Math.min(remaining(need), supply?.availableQty ?? 0);
+  const wholeUnits = need.resourceType === 'RESCUE_TEAM' || need.resourceType === 'SHELTER';
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!supply || Number(quantity) <= 0 || Number(quantity) > maximum) {
@@ -117,6 +127,7 @@ function useSupplyRequest(need: Need, onSaved: () => void) {
     error,
     supply,
     maximum,
+    wholeUnits,
     submit,
     setResource,
     setQuantity,
@@ -132,10 +143,12 @@ function SupplyFields({ state }: { state: ReturnType<typeof useSupplyRequest> })
     error,
     supply,
     maximum,
+    wholeUnits,
     submit,
     setResource,
     setQuantity,
   } = state;
+  const quantityInput = quantityAttributes(wholeUnits);
   return (
     <form onSubmit={submit} className="mt-5 space-y-4">
       <StockStatus stock={stock} />
@@ -156,7 +169,8 @@ function SupplyFields({ state }: { state: ReturnType<typeof useSupplyRequest> })
             value={s.resourceId}
             disabled={s.status !== 'AVAILABLE' || s.availableQty <= 0}
           >
-            {s.organizationName} · {s.availableQty} {s.unit} available
+            {s.organizationName}
+            {s.name ? ` · ${s.name}` : ''} · {s.availableQty} {s.unit} available
           </option>
         ))}
       </SelectField>
@@ -172,8 +186,7 @@ function SupplyFields({ state }: { state: ReturnType<typeof useSupplyRequest> })
       <TextField
         label="Quantity to request"
         type="number"
-        min="0.01"
-        step="any"
+        {...quantityInput}
         max={maximum}
         required
         disabled={!supply || busy}
@@ -187,6 +200,9 @@ function SupplyFields({ state }: { state: ReturnType<typeof useSupplyRequest> })
       </Button>
     </form>
   );
+}
+function quantityAttributes(wholeUnits: boolean) {
+  return wholeUnits ? { min: 1, step: 1 } : { min: 0.01, step: 'any' };
 }
 function StockStatus({ stock }: { stock: ReturnType<typeof useSupplyRequest>['stock'] }) {
   return (

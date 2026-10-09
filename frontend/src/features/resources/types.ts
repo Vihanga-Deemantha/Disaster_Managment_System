@@ -7,6 +7,7 @@ export interface Area {
   disasterEventId: string;
 }
 export interface Need {
+  resourceType?: 'RELIEF_SUPPLY' | 'RESCUE_TEAM' | 'SHELTER';
   requirementId: string;
   areaId: string;
   category: string;
@@ -16,6 +17,16 @@ export interface Need {
   pendingQty: number;
 }
 export interface Supply {
+  resourceType?: 'RELIEF_SUPPLY' | 'RESCUE_TEAM' | 'SHELTER';
+  name?: string;
+  district?: District;
+  teamSize?: number;
+  lastUpdatedAt?: string;
+  lastSyncedAt?: string;
+  location?: { lat: number; lng: number };
+  capacity?: number;
+  currentOccupancy?: number;
+  committedQty?: number;
   resourceId: string;
   organizationId: string;
   organizationName: string;
