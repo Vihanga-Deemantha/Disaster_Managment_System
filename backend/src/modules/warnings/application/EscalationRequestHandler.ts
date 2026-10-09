@@ -95,7 +95,7 @@ export class EscalationRequestHandler {
     return this.deps.audit.record({
       action,
       actorId: event.requestedBy,
-      actorRole: 'DUTY_OFFICER',
+      actorRole: event.requestedByRole ?? 'DUTY_OFFICER',
       subjectType: 'warning',
       subjectId: warning.warningId,
       occurredAt: this.deps.clock.now(),

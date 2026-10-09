@@ -43,6 +43,19 @@ describe('the warnings entries in the sidebar', () => {
 });
 
 describe('usePendingCount (the number on Pending Approvals)', () => {
+  it('refreshes when approving a report creates a warning request', async () => {
+    let waiting = 1;
+    server.use(
+      http.get('/api/warnings', () =>
+        json(Array.from({ length: waiting }, (_, index) => aWarning({ warningId: `W-${index}` }))),
+      ),
+    );
+    const { result } = renderHook(() => usePendingCount(), { wrapper });
+    await waitFor(() => expect(result.current).toBe(1));
+    waiting = 2;
+    act(() => window.dispatchEvent(new Event('safezone:warning-request-created')));
+    await waitFor(() => expect(result.current).toBe(2));
+  });
   it('is unknown until the list has been read, then how many warnings are waiting', async () => {
     server.use(http.get('/api/warnings', () => json([aWarning(), aWarning({ warningId: 'W-2' })])));
 

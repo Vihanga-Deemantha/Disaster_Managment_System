@@ -226,18 +226,13 @@ describe('UC-1 step 7 / BR2: Warning.approve', () => {
     });
   });
 
-  it('UC-1 BR2: refuses the officer who submitted the warning (four-eyes)', () => {
+  it('DMC policy: the submitting officer can also approve the warning', () => {
     const warning = aWarning({ submittedBy: 'usr-dmc-1' });
 
-    const error = thrownBy(() => warning.approve('usr-dmc-1', NOW));
-
-    expect(error).toMatchObject({
-      code: 'SELF_APPROVAL_FORBIDDEN',
-      kind: 'FORBIDDEN',
-      message: 'The officer who submitted a warning cannot approve it.',
-    });
-    expect(warning.isApproved).toBe(false);
-    expect(warning.version).toBe(1);
+    warning.approve('usr-dmc-1', NOW);
+    expect(warning.isApproved).toBe(true);
+    expect(warning.snapshot().approvedBy).toBe('usr-dmc-1');
+    expect(warning.version).toBe(2);
   });
 
   it('UC-1 BR2: lets a different officer approve a warning another DMC Officer submitted', () => {

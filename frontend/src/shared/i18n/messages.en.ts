@@ -267,7 +267,7 @@ export const en = {
   'error.PHONE_ALREADY_REGISTERED': 'This phone number is already registered. Try signing in.',
 
   // UC-1 Issue Warning
-  'warnings.list.intro': 'Review warning requests submitted by Duty Officers.',
+  'warnings.list.intro': 'Review warning requests from approved reports and officer submissions.',
   'warnings.list.stat.pending': 'Pending Approvals',
   'warnings.list.stat.urgent': 'High Priority',
   'warnings.list.filterLabel': 'Show warnings for',
@@ -708,7 +708,8 @@ export const en = {
   'hazardReports.report.backToCluster': 'Back to the cluster',
   'hazardReports.verify.button': 'Verify report',
   'hazardReports.verify.confirmTitle': 'Verify this report?',
-  'hazardReports.verify.confirmBody': 'It will count as genuine and cannot be changed afterwards.',
+  'hazardReports.verify.confirmBody':
+    'This approves the report and creates a request in DMC Pending Approvals. No alerts are sent until a DMC Officer issues the warning.',
   'hazardReports.verify.confirm': 'Verify',
   'hazardReports.verify.done': 'Verified. Cluster score is now {score} ({band}).',
   'hazardReports.reject.button': 'Reject report',
@@ -749,6 +750,13 @@ export const en = {
   'error.CLUSTER_NOT_FOUND': 'This cluster could not be found.',
   'error.REPORT_ALREADY_REVIEWED': 'This report has already been reviewed.',
   'error.ESCALATION_NOT_ALLOWED': 'This cluster cannot be escalated yet.',
+  'warnings.hazard.ROAD_BLOCKAGE': 'Road blockage',
+  'warnings.hazard.OTHER': 'Other',
+  'warnings.review.sourceReport': 'Source report',
+  'warnings.review.openReport': 'View approved report',
+  'hazardReports.approval.pending':
+    'A warning request is now in the DMC Pending Approvals queue. No alerts have been sent.',
+  'hazardReports.approval.openQueue': 'Open Pending Approvals',
 } as const;
 
 export type MessageKey = keyof typeof en;

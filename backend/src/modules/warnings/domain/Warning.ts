@@ -1,5 +1,5 @@
 import { LANGUAGES, type HazardType, type Language, type Severity } from '@shared/contracts/enums';
-import { ConflictError, ForbiddenError, ValidationError } from '@shared/errors';
+import { ConflictError, ValidationError } from '@shared/errors';
 import type { TargetArea } from './TargetArea';
 import { SMS_MAX_LENGTH, lengthOf, type Messages, type WarningStatus } from './types';
 import { validationResult, type FieldIssue, type ValidationResult } from './ValidationResult';
@@ -25,6 +25,7 @@ export interface WarningProps {
   rejectionReason?: string;
   /** The UC-3 cluster this draft came from, so a second escalation updates it instead of duplicating it. */
   sourceClusterId?: string;
+  sourceReportId?: string;
   updatedAt: Date;
   /** Bumped by every change; the repository saves only against the version the caller loaded (A2). */
   version: number;
@@ -42,6 +43,7 @@ export type NewWarning = Pick<
   | 'submittedBy'
   | 'submittedByName'
   | 'sourceClusterId'
+  | 'sourceReportId'
 >;
 
 /** What an officer may change while a warning waits for approval (A2). */
@@ -147,18 +149,12 @@ export class Warning {
   }
 
   /**
-   * UC-1 step 7 (BR2): records who approved and when. The submitter may not approve their own warning.
+   * Records who approved and when. The DMC-only issue route also permits issuing one's own request.
    * The same officer may approve again to resume an interrupted issue: the original approval is kept,
    * but the version still moves on, so two parallel attempts cannot both win the claim.
    */
   approve(officerId: string, now: Date): void {
     this.assertPending();
-    if (officerId === this.state.submittedBy) {
-      throw new ForbiddenError(
-        'SELF_APPROVAL_FORBIDDEN',
-        'The officer who submitted a warning cannot approve it.',
-      );
-    }
     if (this.state.approvedBy !== undefined && this.state.approvedBy !== officerId) {
       throw new ConflictError(
         'WARNING_NOT_PENDING',

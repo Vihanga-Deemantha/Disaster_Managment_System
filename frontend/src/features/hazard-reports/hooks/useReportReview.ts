@@ -8,12 +8,17 @@ export interface ReviewReceipt {
   action: ReviewAction;
   value: ReviewResult;
 }
+
+function refreshWarningQueue(action: ReviewAction): void {
+  if (action === 'verify') window.dispatchEvent(new Event('safezone:warning-request-created'));
+}
 export function useReportReview(client: HazardReportsApi, id: string, reload: () => void) {
   const [receipt, setReceipt] = useState<ReviewReceipt>();
   async function review(action: ReviewAction, reason = ''): Promise<void> {
     if (!navigator.onLine) throw new NetworkError();
     try {
       const value = action === 'verify' ? await client.verify(id) : await client.reject(id, reason);
+      refreshWarningQueue(action);
       setReceipt({ action, value });
       reload();
     } catch (error) {

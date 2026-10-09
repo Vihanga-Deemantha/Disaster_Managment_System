@@ -43,6 +43,40 @@ function build() {
 
 type Context = ReturnType<typeof build>;
 
+describe('approved individual reports enter DMC Pending Approvals', () => {
+  it.each(['DUTY_OFFICER', 'DMC_OFFICER'] as const)(
+    'publishes the approving %s identity, even for a single moderate report',
+    async (role) => {
+      const ctx = build();
+      await seed(ctx, { count: 1, hazard: 'ROAD_BLOCKAGE' });
+      await ctx.service.verify('c1-r1', { userId: 'approver', role });
+      expect(ctx.events.ofType('HazardReportApproved')).toMatchObject([
+        {
+          reportId: 'c1-r1',
+          hazardType: 'ROAD_BLOCKAGE',
+          proposedSeverity: 'MEDIUM',
+          approvedBy: 'approver',
+          approvedByRole: role,
+          targetArea: { district: 'KALUTARA' },
+        },
+      ]);
+      await expect(ctx.service.verify('c1-r1', { userId: 'approver', role })).rejects.toMatchObject(
+        { code: 'REPORT_ALREADY_REVIEWED' },
+      );
+      expect(ctx.events.ofType('HazardReportApproved')).toHaveLength(1);
+    },
+  );
+
+  it('proposes HIGH for a high-priority approved report and emits nothing for rejection', async () => {
+    const ctx = build();
+    await seed(ctx, { count: 10 });
+    await ctx.service.verify('c1-r1', ACTOR);
+    await ctx.service.reject('c1-r2', ACTOR, 'Incorrect evidence');
+    expect(ctx.events.ofType('HazardReportApproved')).toHaveLength(1);
+    expect(ctx.events.ofType('HazardReportApproved')[0]?.proposedSeverity).toBe('HIGH');
+  });
+});
+
 interface Seed {
   clusterId?: string;
   count?: number;
@@ -278,6 +312,7 @@ describe('ReportReviewService.escalate', () => {
     totalReportCount: 10,
     priorityScore: 94,
     requestedBy: OFFICER,
+    requestedByRole: 'DUTY_OFFICER',
     occurredAt: clock.toISOString(),
   });
 

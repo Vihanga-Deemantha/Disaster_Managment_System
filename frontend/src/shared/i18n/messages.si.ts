@@ -269,7 +269,8 @@ export const si: Messages = {
     'මෙම දුරකථන අංකය දැනටමත් ලියාපදිංචි වී ඇත. පිවිසීමට උත්සාහ කරන්න.',
 
   // UC-1 Issue Warning
-  'warnings.list.intro': 'රාජකාරි නිලධාරීන් ඉදිරිපත් කළ අනතුරු ඇඟවීම් ඉල්ලීම් සමාලෝචනය කරන්න.',
+  'warnings.list.intro':
+    'අනුමත වාර්තා සහ නිලධාරීන් ඉදිරිපත් කළ අනතුරු ඇඟවීමේ ඉල්ලීම් සමාලෝචනය කරන්න.',
   'warnings.list.stat.pending': 'අනුමැතිය බලාපොරොත්තු වන',
   'warnings.list.stat.urgent': 'ඉහළ ප්‍රමුඛතාව',
   'warnings.list.filterLabel': 'අනතුරු ඇඟවීම් පෙන්වන්න',
@@ -719,7 +720,8 @@ export const si: Messages = {
   'hazardReports.report.backToCluster': 'පොකුර වෙත ආපසු',
   'hazardReports.verify.button': 'වාර්තාව තහවුරු කරන්න',
   'hazardReports.verify.confirmTitle': 'මෙම වාර්තාව තහවුරු කරන්නද?',
-  'hazardReports.verify.confirmBody': 'එය සත්‍ය වාර්තාවක් ලෙස ගණන් ගනු ඇත; පසුව වෙනස් කළ නොහැක.',
+  'hazardReports.verify.confirmBody':
+    'මෙය වාර්තාව අනුමත කර DMC අනුමැතිය සඳහා ඉල්ලීමක් යොමු කරයි. DMC නිලධාරියෙකු අනතුරු ඇඟවීම නිකුත් කරන තුරු දැනුම්දීම් යවන්නේ නැත.',
   'hazardReports.verify.confirm': 'තහවුරු කරන්න',
   'hazardReports.verify.done': 'තහවුරු කර ඇත. පොකුරේ ලකුණු දැන් {score} ({band}).',
   'hazardReports.reject.button': 'වාර්තාව ප්‍රතික්ෂේප කරන්න',
@@ -761,4 +763,11 @@ export const si: Messages = {
   'error.CLUSTER_NOT_FOUND': 'මෙම පොකුර සොයාගත නොහැකි විය.',
   'error.REPORT_ALREADY_REVIEWED': 'මෙම වාර්තාව දැනටමත් සමාලෝචනය කර ඇත.',
   'error.ESCALATION_NOT_ALLOWED': 'මෙම පොකුර තවම ඉහළ යොමු කළ නොහැක.',
+  'warnings.hazard.ROAD_BLOCKAGE': 'මාර්ග අවහිරය',
+  'warnings.hazard.OTHER': 'වෙනත්',
+  'warnings.review.sourceReport': 'මුල් වාර්තාව',
+  'warnings.review.openReport': 'අනුමත වාර්තාව බලන්න',
+  'hazardReports.approval.pending':
+    'අනතුරු ඇඟවීමේ ඉල්ලීම DMC අනුමැතිය සඳහා යොමු කර ඇත. කිසිදු දැනුම්දීමක් යවා නැත.',
+  'hazardReports.approval.openQueue': 'අනුමැතිය බලාපොරොත්තු වන ඉල්ලීම් බලන්න',
 };
