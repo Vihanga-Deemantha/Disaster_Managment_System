@@ -20,6 +20,9 @@ export class NetInfoConnectivityMonitor implements ConnectivityMonitor {
   async isOnline(): Promise<boolean> {
     return online(await NetInfo.fetch());
   }
+  onChange(listener: (connected: boolean) => void): () => void {
+    return NetInfo.addEventListener((state) => listener(online(state)));
+  }
   onReconnect(listener: () => void): () => void {
     let wasOnline = true;
     return NetInfo.addEventListener((state) => {

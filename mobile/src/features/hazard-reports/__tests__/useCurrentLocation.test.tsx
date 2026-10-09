@@ -49,6 +49,7 @@ describe('UC-3 step 4 / E1: current location', () => {
         status: 'MANUAL',
         reason: 'DENIED',
         center: point,
+        lastKnown: point,
       }),
     );
     expect(result.current.state).not.toHaveProperty('location');

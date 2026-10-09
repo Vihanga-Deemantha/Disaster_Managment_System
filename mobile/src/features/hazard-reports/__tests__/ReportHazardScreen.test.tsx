@@ -7,6 +7,7 @@ import type { QueuedReport, UploadOutcome } from '../offline/types';
 import type { PhotoPickResult } from '../adapters/ExpoPhotoPicker';
 
 jest.mock('../composition', () => ({ reportDependencies: {} }));
+jest.mock('react-native-webview', () => ({ WebView: 'WebView' }));
 function setup(outcome: UploadOutcome = { kind: 'DELIVERED', via: 'CREATED', reportId: 'r-1' }) {
   const calls: QueuedReport[] = [];
   const runtime = syncHarness();
@@ -34,6 +35,84 @@ function setup(outcome: UploadOutcome = { kind: 'DELIVERED', via: 'CREATED', rep
   return { calls, deps, runtime };
 }
 describe('UC-3 steps 1–7: Report form', () => {
+  it('UC-3 E1: submits a denied-GPS report only after an explicit manual pin', async () => {
+    const h = setup();
+    h.deps.location.requestPermission = async () => false;
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    await screen.findByText(en['reports.location.denied']);
+    fireEvent.press(screen.getByRole('radio', { name: 'Flood' }));
+    expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeDisabled();
+    fireEvent(screen.getByTestId('report-map'), 'message', {
+      nativeEvent: { data: '{"type":"PIN","lat":6.6,"lng":80}' },
+    });
+    fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] }));
+    await screen.findByText(en['reports.sent']);
+    expect(h.calls[0].location).toEqual({ lat: 6.6, lng: 80, source: 'MANUAL' });
+  });
+  it('UC-3 E1: an adjusted GPS pin is submitted as MANUAL', async () => {
+    const h = setup();
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(await screen.findByRole('button', { name: en['reports.location.adjust'] }));
+    fireEvent(screen.getByTestId('report-map'), 'message', {
+      nativeEvent: { data: '{"type":"PIN","lat":6.7,"lng":80.1}' },
+    });
+    fireEvent.press(screen.getByRole('radio', { name: 'Other' }));
+    fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] }));
+    await screen.findByText(en['reports.sent']);
+    expect(h.calls[0].location).toEqual({ lat: 6.7, lng: 80.1, source: 'MANUAL' });
+  });
+  it('UC-3 E2: continues without a rejected replacement photo, preserving the form', async () => {
+    const h = setup();
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(screen.getByRole('radio', { name: 'Flood' }));
+    fireEvent.changeText(screen.getByLabelText(en['reports.description']), 'Water rising');
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.gallery'] }));
+    await screen.findByLabelText(en['reports.photo.preview']);
+    h.deps.photos.pick = async () => ({
+      kind: 'PICKED',
+      photo: {
+        uri: 'file:///huge.jpg',
+        fileSize: 6 * 1024 * 1024,
+        mimeType: 'image/jpeg',
+      },
+    });
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.gallery'] }));
+    const button = await screen.findByRole('button', { name: en['reports.photo.continueWithout'] });
+    expect(screen.getByLabelText(en['reports.photo.preview'])).toBeTruthy();
+    fireEvent.press(button);
+    expect(screen.queryByLabelText(en['reports.photo.preview'])).toBeNull();
+    expect(screen.getByDisplayValue('Water rising')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] }));
+    await screen.findByText(en['reports.sent']);
+    expect(h.calls[0]).toMatchObject({ hazardType: 'FLOOD', description: 'Water rising' });
+    expect(h.calls[0].photo).toBeUndefined();
+  });
+  it('UC-3 E2: replaces a rejected photo by retaking a valid one', async () => {
+    const h = setup();
+    h.deps.photos.pick = async () => ({
+      kind: 'PICKED',
+      photo: {
+        uri: 'file:///huge.jpg',
+        fileSize: 6 * 1024 * 1024,
+        mimeType: 'image/jpeg',
+      },
+    });
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.gallery'] }));
+    await screen.findByRole('button', { name: en['reports.photo.retake'] });
+    expect(screen.queryByLabelText(en['reports.photo.preview'])).toBeNull();
+    h.deps.photos.pick = async () => ({
+      kind: 'PICKED',
+      photo: {
+        uri: 'file:///new.jpg',
+        fileSize: 100,
+        mimeType: 'image/jpeg',
+      },
+    });
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.retake'] }));
+    await screen.findByLabelText(en['reports.photo.preview']);
+    expect(screen.queryByRole('button', { name: en['reports.photo.continueWithout'] })).toBeNull();
+  });
   it('expires a refused session and never treats authentication failure as delivery', async () => {
     const h = setup({ kind: 'AUTH_REQUIRED' });
     const expire = jest.fn(async () => undefined);

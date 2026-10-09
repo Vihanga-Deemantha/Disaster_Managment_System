@@ -233,12 +233,28 @@ export const si: Record<MessageKey, string> = {
   'reports.location.title': 'වාර්තාවේ ස්ථානය',
   'reports.location.locating': 'ඔබේ ස්ථානය සොයමින්…',
   'reports.location.gps': 'වත්මන් GPS ස්ථානය',
-  'reports.location.denied': 'ස්ථාන අවසරය අවශ්‍යයි. දුරකථන සැකසුම්වලින් අවසර දී නැවත උත්සාහ කරන්න.',
+  'reports.location.denied':
+    'ස්ථාන අවසරය අක්‍රියයි. අවදානම් ස්ථානය සිතියමේ සලකුණු කරන්න හෝ දුරකථන සැකසුම්වලින් අවසර දී නැවත උත්සාහ කරන්න.',
   'reports.location.timeout':
     'ස්ථානය සෙවීමට වැඩි කාලයක් ගත විය. විවෘත ප්‍රදේශයකට ගොස් නැවත උත්සාහ කරන්න.',
   'reports.location.unavailable': 'ස්ථානය ලබාගත නොහැක. ස්ථාන සේවා සක්‍රීය කර නැවත උත්සාහ කරන්න.',
   'reports.location.manual': 'ඔබ විසින් ස්ථානය වෙනස් කර ඇත.',
   'reports.location.retry': 'ස්ථානය නැවත සොයන්න',
+  'reports.location.map': 'වාර්තාවේ ස්ථාන සිතියම',
+  'reports.location.adjust': 'සලකුණ වෙනස් කරන්න',
+  'reports.location.tapMap':
+    'අවදානම ඇති ස්ථානය සලකුණු කිරීමට සිතියම තට්ටු කරන්න හෝ සලකුණ ඇදගෙන යන්න.',
+  'reports.location.settings': 'ස්ථාන සැකසුම් විවෘත කරන්න',
+  'reports.location.settingsFailed':
+    'සැකසුම් විවෘත කළ නොහැක. දුරකථනයේ සැකසුම් තුළ යෙදුමේ අවසර විවෘත කර නැවත උත්සාහ කරන්න.',
+  'reports.location.lastKnownHint':
+    'අවසන් වරට දන්නා ස්ථානය — අවදානම ඇත්තේ මෙහි නම් පමණක් භාවිත කරන්න.',
+  'reports.location.useLastKnown': 'මෙම ස්ථානය භාවිත කරන්න',
+  'reports.location.mapUnavailable':
+    'සිතියම පූරණය කළ නොහැක. සලකුණ වෙනස් කිරීමට අන්තර්ජාලයට සම්බන්ධ වන්න. තහවුරු කළ ඛණ්ඩාංක සුරක්ෂිතයි.',
+  'reports.location.reloadMap': 'සිතියම නැවත පූරණය කරන්න',
+  'reports.photo.retake': 'ඡායාරූපය නැවත ගන්න',
+  'reports.photo.continueWithout': 'ඡායාරූපයක් නොමැතිව ඉදිරියට යන්න',
   'reports.submit': 'වාර්තාව යවන්න',
   'reports.submitting': 'වාර්තාව යවමින්…',
   'reports.sent': 'වාර්තාව යවන ලදී',
@@ -279,4 +295,39 @@ export const si: Record<MessageKey, string> = {
   'reports.syncTitle': 'Safe Zone වාර්තා යැවීම',
   'reports.syncSent': 'යැවූ සුරැකි වාර්තා: {count}.',
   'reports.syncSignIn': 'සුරැකි වාර්තා ({count}) යැවීමට පුරන්න.',
+  'reports.mine.title': 'මගේ වාර්තා',
+  'reports.mine.intro': 'ඔබේ අවදානම් වාර්තා යැවීම සහ නිලධාරී සමාලෝචනය බලන්න.',
+  'reports.mine.loading': 'ඔබේ වාර්තා පූරණය වෙමින්…',
+  'reports.mine.empty': 'ඔබ තවම කිසිවක් වාර්තා කර නැත.',
+  'reports.mine.noCached': 'මෙම දුරකථනයේ සුරැකි වාර්තා නැත. යැවූ වාර්තා පූරණය කිරීමට සම්බන්ධ වන්න.',
+  'reports.mine.offline':
+    'ඔබ නොබැඳියි. වාර්තා මෙම දුරකථනයේ සුරැකී පසුව යැවේ. සුරැකි තත්ත්වය පෙන්වයි.',
+  'reports.mine.error':
+    'වාර්තා යාවත්කාලීන කළ නොහැකි විය. අවසන් සුරැකි තත්ත්වය පෙන්වයි. සම්බන්ධ වූ විට නැවත උත්සාහ කරන්න.',
+  'reports.mine.storageError':
+    'මෙම දුරකථනයේ සුරැකි වාර්තා කියවිය නොහැකි විය. සුරැකි දත්ත වෙනස් කර නැත. නැවත උත්සාහ කරන්න.',
+  'reports.mine.refresh': 'වාර්තා යාවත්කාලීන කරන්න',
+  'reports.mine.savedHint': 'යැවීමේ සහ සමාලෝචන තත්ත්වය බැලීමට මගේ වාර්තා විවෘත කරන්න.',
+  'reports.mine.status.PENDING_SYNC': 'යැවීමට රැඳී ඇත',
+  'reports.mine.status.SENDING': 'යවමින්…',
+  'reports.mine.status.NEEDS_CHOICE': 'ඔබේ තේරීම අවශ්‍යයි',
+  'reports.mine.status.NOT_SENT': 'යවා නැත',
+  'reports.mine.status.PENDING_REVIEW': 'සමාලෝචනයට රැඳී ඇත',
+  'reports.mine.status.VERIFIED': 'තහවුරු කර ඇත',
+  'reports.mine.status.REJECTED': 'ප්‍රතික්ෂේප කර ඇත',
+  'reports.mine.withoutPhoto': 'ඡායාරූපය නොමැතිව යවන්න',
+  'reports.mine.discard': 'ඉවත් කරන්න',
+  'reports.mine.discardPrompt':
+    'මෙම සුරැකි වාර්තාව ඉවත් කරන්නද? එය මෙම දුරකථනයෙන් ඉවත් වන අතර යවනු නොලැබේ.',
+  'reports.mine.confirmDiscard': 'සුරැකි වාර්තාව ඉවත් කරන්න',
+  'reports.mine.discarded': 'සුරැකි වාර්තාව ඉවත් කර ඇත.',
+  'reports.mine.actionError':
+    'එම ක්‍රියාව සම්පූර්ණ කළ නොහැකි විය. සුරැකි වාර්තාව තවම ඇත. නැවත උත්සාහ කරන්න.',
+  'reports.mine.lastSync': 'අවසන් යැවීම {time} · {trigger} · {sent} යැවූ, {waiting} රැඳී ඇති',
+  'reports.mine.trigger.OS_TASK': 'පද්ධතිය මගින් පසුබිමේදී',
+  'reports.mine.trigger.RECONNECT': 'සම්බන්ධතාව නැවත ලැබුණු විට',
+  'reports.mine.trigger.APP_FOREGROUND': 'යෙදුම විවෘත කළ විට',
+  'reports.mine.trigger.MANUAL': 'ඔබ යාවත්කාලීන කළ විට',
+  'reports.mine.debug': 'පසුබිම් යැවීම දැන් පරීක්ෂා කරන්න',
+  'reports.mine.debugFailed': 'පසුබිම් පරීක්ෂණ සේවාව ලබාගත නොහැක. සංවර්ධන ගොඩනැගීමක් භාවිත කරන්න.',
 };

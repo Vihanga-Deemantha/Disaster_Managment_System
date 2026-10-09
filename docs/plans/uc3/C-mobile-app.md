@@ -4,16 +4,20 @@
 
 The authoritative phase table is [IMPLEMENTATION_PLAN.md](../../../IMPLEMENTATION_PLAN.md). The task examples below describe the original plan; their historical unchecked steps are not a current progress report.
 
-| Phase | Progress                                                                             |
-| ----- | ------------------------------------------------------------------------------------ |
-| M0    | DONE — foundation and installed standalone APK accepted                              |
-| M1    | DONE — validators and journal core                                                   |
-| M2    | DONE — corrected photo upload accepted on the phone                                  |
-| M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                       |
-| M4    | WIP — offline save/login/reconnect accepted on phone; closed-app OS delivery pending |
-| M5–M7 | TODO — offline screens, recovery and device acceptance                               |
+| Phase | Progress                                                                                   |
+| ----- | ------------------------------------------------------------------------------------------ |
+| M0    | DONE — foundation and installed standalone APK accepted                                    |
+| M1    | DONE — validators and journal core                                                         |
+| M2    | DONE — corrected photo upload accepted on the phone                                        |
+| M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                             |
+| M4    | WIP — offline save/login/reconnect accepted on phone; closed-app OS delivery pending       |
+| M5    | DONE — owner accepted reporter history, offline/reconnect status and notification feedback |
+| M6    | DONE — automated checks passed; owner accepted manual pin and photo recovery on the phone  |
+| M7    | WIP — physical sync acceptance started; device setup and T1–T8 results pending             |
 
 See `evidence/m0` through `evidence/m4` for verification details. M4 device acceptance is tracked separately from automated implementation checks.
+
+M5 implementation and installation checks are recorded in `evidence/m5/README.md`. Its history cache is scoped per owner; queue subscriptions and server reads are coordinated by a single controller. After an offline save, the form retains its existing retry behaviour and offers **Report another hazard** explicitly, rather than automatically clearing the form.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development` or
 > `superpowers:executing-plans`. Steps use checkbox (`- [ ]`) syntax. Read `IMPLEMENTATION_PLAN.md` (decisions, REST
@@ -1713,6 +1717,8 @@ _Submit_ shows a busy state and ignores a second press while a submission is in 
 
 ## Phase M6 – Manual pin and photo recovery
 
+**9 Oct implementation and acceptance:** manual map taps/dragging, explicit GPS adjustment, permission settings, genuine last-known confirmation, map failure/reload feedback, and invalid-photo retake/continue controls are implemented. Mobile lint/typecheck, 47 suites / 736 tests with coverage, and Android export passed. The owner accepted the M6 phone checklist on APK `a1688c84-60d1-40a7-8f35-0b286600f803`; see `evidence/m6/README.md`. The offline map message preserves confirmed coordinates and never claims that an unconfirmed last-known point has been used. M6.1 and M6.2 are committed together as one phase. M7 sync acceptance and M4 closed-app delivery remain open.
+
 ### Task M6.1: `MapPin` (E1)
 
 **Files:** Create `components/MapPin.tsx`
@@ -1730,20 +1736,22 @@ In `ReportHazardScreen`: `LOCATING` → spinner line; `READY` → read-only map 
 `Linking.openSettings()` and _Try again_; "Could not get a GPS fix"), the editable map, and "Tap the map to place the
 pin."
 
-- [ ] On the phone: deny the location permission → manual pin → Submit → the web report detail says "Pinned on the map
+- [x] On the phone: deny the location permission → manual pin → Submit → the web report detail says "Pinned on the map
       by the reporter". Then allow it → GPS pin → _Adjust pin_ → source becomes MANUAL.
-- [ ] Commit `feat(mobile): manual location pin (E1)`.
+- [x] Manual location pin (E1) committed in phase commit `6dc454e`.
 
 ### Task M6.2: Photo recovery (E2)
 
-- [ ] In `PhotoField`, a photo failing `validatePickedPhoto` is **not** attached; show the reason ("Use a JPEG, PNG or
+- [x] In `PhotoField`, a photo failing `validatePickedPhoto` is **not** attached; show the reason ("Use a JPEG, PNG or
       WebP photo" / "This photo is larger than 5 MB") with _Retake_ and _Continue without photo_.
-- [ ] On the phone: pick the > 5 MB gallery image kept for the demo → message → _Continue without photo_ → Submit works.
-- [ ] Commit `feat(mobile): invalid photo recovery (E2)`.
+- [x] On the phone: pick the > 5 MB gallery image kept for the demo → message → _Continue without photo_ → Submit works.
+- [x] Invalid photo recovery (E2) committed in phase commit `6dc454e`.
 
 ---
 
 ## Phase M7 – Sync acceptance tests
+
+**9 Oct:** acceptance preparation started using the installed M6 standalone APK. API health is confirmed. The owner reports Oppo F11 Pro / Android 11 and has deferred USB testing; T1–T8 physical outcomes remain pending. Track results in `evidence/m7/README.md`. Existing automated coverage does not substitute for these device checks.
 
 - [ ] Run T1–T8 from `D-offline-sync-design.md` §11 on the real phone. Record the screen for T2, T3, T4.
 - [ ] Note the phone model, Android version and the result of each test in the report (prototype constraints

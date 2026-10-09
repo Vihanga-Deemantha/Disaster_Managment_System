@@ -11,6 +11,9 @@ import { ExpoLocationProvider } from './adapters/ExpoLocationProvider';
 import { ExpoPhotoPicker, type PhotoPicker } from './adapters/ExpoPhotoPicker';
 import { createSubmitTransport } from './adapters/MultipartTransport';
 import { HttpReportUploader } from './api/HttpReportUploader';
+import { MyReportsApi } from './api/MyReportsApi';
+import { MyReportsCache } from './adapters/MyReportsCache';
+import type { ConnectivityMonitor } from './offline/ports';
 import type { LocationProvider } from './hooks/useCurrentLocation';
 import type { SubmissionDeps } from './hooks/useReportSubmission';
 import { OfflineReportQueue } from './offline/OfflineReportQueue';
@@ -20,6 +23,7 @@ export interface ReportDependencies extends SubmissionDeps {
   location: LocationProvider;
   photos: PhotoPicker;
   enableNotifications?: () => Promise<DeliveryPermissionResult>;
+  connectivity?: ConnectivityMonitor;
 }
 function build() {
   const files = new FileSystemPhotoStore();
@@ -41,7 +45,15 @@ function build() {
     session: new ApiSessionGate(api),
     notifier: new ExpoSyncNotifier(storage),
   });
-  return { api, queue, sync, connectivity, runLog };
+  return {
+    api,
+    queue,
+    sync,
+    connectivity,
+    runLog,
+    reports: new MyReportsApi(api),
+    cache: new MyReportsCache(storage),
+  };
 }
 export type HazardReportsRuntime = ReturnType<typeof build>;
 let runtime: HazardReportsRuntime | undefined;
@@ -63,4 +75,9 @@ export const reportDependencies: ReportDependencies = {
   location: new ExpoLocationProvider(),
   photos: new ExpoPhotoPicker(),
   enableNotifications: askNotificationPermission,
+  connectivity: {
+    isOnline: () => getHazardReportsRuntime().connectivity.isOnline(),
+    onReconnect: (listener) => getHazardReportsRuntime().connectivity.onReconnect(listener),
+    onChange: (listener) => getHazardReportsRuntime().connectivity.onChange(listener),
+  },
 };

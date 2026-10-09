@@ -243,13 +243,28 @@ export const ta: Record<MessageKey, string> = {
   'reports.location.locating': 'உங்கள் இருப்பிடத்தைத் தேடுகிறது…',
   'reports.location.gps': 'தற்போதைய GPS இருப்பிடம்',
   'reports.location.denied':
-    'இருப்பிட அனுமதி தேவை. தொலைபேசி அமைப்புகளில் அனுமதித்து மீண்டும் முயலவும்.',
+    'இருப்பிட அனுமதி முடக்கப்பட்டுள்ளது. ஆபத்தின் இடத்தை வரைபடத்தில் குறிக்கவும் அல்லது தொலைபேசி அமைப்புகளில் அனுமதித்து மீண்டும் முயலவும்.',
   'reports.location.timeout':
     'இருப்பிடத்தைப் பெற அதிக நேரமானது. திறந்த இடத்திற்குச் சென்று மீண்டும் முயலவும்.',
   'reports.location.unavailable':
     'இருப்பிடம் கிடைக்கவில்லை. இருப்பிடச் சேவையை இயக்கி மீண்டும் முயலவும்.',
   'reports.location.manual': 'இருப்பிடத்தை நீங்கள் மாற்றியுள்ளீர்கள்.',
   'reports.location.retry': 'இருப்பிடத்தை மீண்டும் தேடவும்',
+  'reports.location.map': 'அறிக்கையின் இருப்பிட வரைபடம்',
+  'reports.location.adjust': 'குறியீட்டை மாற்றவும்',
+  'reports.location.tapMap':
+    'ஆபத்தின் இடத்தைக் குறிக்க வரைபடத்தைத் தட்டவும் அல்லது குறியீட்டை இழுக்கவும்.',
+  'reports.location.settings': 'இருப்பிட அமைப்புகளைத் திறக்கவும்',
+  'reports.location.settingsFailed':
+    'அமைப்புகளைத் திறக்க முடியவில்லை. தொலைபேசி அமைப்புகளில் செயலியின் அனுமதிகளைத் திறந்து மீண்டும் முயற்சிக்கவும்.',
+  'reports.location.lastKnownHint':
+    'கடைசியாக அறியப்பட்ட இடம் — ஆபத்து இங்கு இருந்தால் மட்டுமே பயன்படுத்தவும்.',
+  'reports.location.useLastKnown': 'இந்த இடத்தைப் பயன்படுத்தவும்',
+  'reports.location.mapUnavailable':
+    'வரைபடத்தை ஏற்ற முடியவில்லை. குறியீட்டை மாற்ற இணையத்துடன் இணையவும். உறுதிப்படுத்திய ஆயத்தொலைவுகள் பாதுகாக்கப்பட்டுள்ளன.',
+  'reports.location.reloadMap': 'வரைபடத்தை மீண்டும் ஏற்றவும்',
+  'reports.photo.retake': 'படத்தை மீண்டும் எடுக்கவும்',
+  'reports.photo.continueWithout': 'படமின்றித் தொடரவும்',
   'reports.submit': 'புகாரை அனுப்பவும்',
   'reports.submitting': 'புகாரை அனுப்புகிறது…',
   'reports.sent': 'புகார் அனுப்பப்பட்டது',
@@ -291,4 +306,43 @@ export const ta: Record<MessageKey, string> = {
   'reports.syncTitle': 'Safe Zone புகார் அனுப்பல்',
   'reports.syncSent': 'அனுப்பிய சேமித்த புகார்கள்: {count}.',
   'reports.syncSignIn': 'சேமித்த புகார்களை ({count}) அனுப்ப உள்நுழையவும்.',
+  'reports.mine.title': 'எனது புகார்கள்',
+  'reports.mine.intro':
+    'உங்கள் அபாயப் புகார்களின் அனுப்பல் மற்றும் அதிகாரி ஆய்வு நிலையைப் பாருங்கள்.',
+  'reports.mine.loading': 'உங்கள் புகார்கள் ஏற்றப்படுகின்றன…',
+  'reports.mine.empty': 'நீங்கள் இன்னும் எதையும் புகாரளிக்கவில்லை.',
+  'reports.mine.noCached':
+    'இந்தத் தொலைபேசியில் சேமித்த புகார்கள் இல்லை. அனுப்பிய புகார்களை ஏற்ற இணைக்கவும்.',
+  'reports.mine.offline':
+    'இணைப்பு இல்லை. புகார்கள் இந்தத் தொலைபேசியில் சேமிக்கப்பட்டு பின்னர் அனுப்பப்படும். சேமித்த நிலை காட்டப்படுகிறது.',
+  'reports.mine.error':
+    'புகார்களைப் புதுப்பிக்க முடியவில்லை. கடைசியாக சேமித்த நிலை காட்டப்படுகிறது. இணைப்பு வந்ததும் மீண்டும் முயலவும்.',
+  'reports.mine.storageError':
+    'இந்தத் தொலைபேசியில் சேமித்த புகார்களைப் படிக்க முடியவில்லை. சேமித்த தரவு மாற்றப்படவில்லை. மீண்டும் முயலவும்.',
+  'reports.mine.refresh': 'புகார்களைப் புதுப்பிக்கவும்',
+  'reports.mine.savedHint': 'அனுப்பல் மற்றும் ஆய்வு நிலையைப் பார்க்க எனது புகார்களைத் திறக்கவும்.',
+  'reports.mine.status.PENDING_SYNC': 'அனுப்பக் காத்திருக்கிறது',
+  'reports.mine.status.SENDING': 'அனுப்பப்படுகிறது…',
+  'reports.mine.status.NEEDS_CHOICE': 'உங்கள் தேர்வு தேவை',
+  'reports.mine.status.NOT_SENT': 'அனுப்பப்படவில்லை',
+  'reports.mine.status.PENDING_REVIEW': 'ஆய்வுக்குக் காத்திருக்கிறது',
+  'reports.mine.status.VERIFIED': 'உறுதிப்படுத்தப்பட்டது',
+  'reports.mine.status.REJECTED': 'நிராகரிக்கப்பட்டது',
+  'reports.mine.withoutPhoto': 'புகைப்படமின்றி அனுப்பவும்',
+  'reports.mine.discard': 'நீக்கவும்',
+  'reports.mine.discardPrompt':
+    'இந்தச் சேமித்த புகாரை நீக்கவா? இது தொலைபேசியிலிருந்து நீக்கப்படும், அனுப்பப்படாது.',
+  'reports.mine.confirmDiscard': 'சேமித்த புகாரை நீக்கவும்',
+  'reports.mine.discarded': 'சேமித்த புகார் நீக்கப்பட்டது.',
+  'reports.mine.actionError':
+    'செயலை முடிக்க முடியவில்லை. சேமித்த புகார் இன்னும் உள்ளது. மீண்டும் முயலவும்.',
+  'reports.mine.lastSync':
+    'கடைசி அனுப்பல் {time} · {trigger} · {sent} அனுப்பியது, {waiting} காத்திருக்கிறது',
+  'reports.mine.trigger.OS_TASK': 'கணினியால் பின்னணியில்',
+  'reports.mine.trigger.RECONNECT': 'இணைப்பு திரும்பியபோது',
+  'reports.mine.trigger.APP_FOREGROUND': 'செயலியைத் திறந்தபோது',
+  'reports.mine.trigger.MANUAL': 'நீங்கள் புதுப்பித்தபோது',
+  'reports.mine.debug': 'பின்னணி அனுப்பலை இப்போது சோதிக்கவும்',
+  'reports.mine.debugFailed':
+    'பின்னணிச் சோதனை கிடைக்கவில்லை. மேம்பாட்டு உருவாக்கத்தைப் பயன்படுத்தவும்.',
 };

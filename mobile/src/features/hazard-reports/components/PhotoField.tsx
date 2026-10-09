@@ -64,7 +64,26 @@ export function PhotoField({ photo, picker, onChange, disabled, onBusyChange }: 
           />
         </>
       ) : null}
-      {problem ? <Banner tone="warning">{t(problem)}</Banner> : null}
+      {problem ? (
+        <>
+          <Banner tone="warning">{t(problem)}</Banner>
+          <Button
+            title={t('reports.photo.retake')}
+            variant="secondary"
+            disabled={disabled || busy}
+            onPress={() => void pick('CAMERA')}
+          />
+          <Button
+            title={t('reports.photo.continueWithout')}
+            variant="ghost"
+            disabled={disabled || busy}
+            onPress={() => {
+              onChange(undefined);
+              setProblem(undefined);
+            }}
+          />
+        </>
+      ) : null}
       <Button
         title={t('reports.photo.camera')}
         variant="secondary"

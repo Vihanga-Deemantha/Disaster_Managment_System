@@ -18,6 +18,8 @@ export interface PhotoStore {
 export interface ConnectivityMonitor {
   isOnline(): Promise<boolean>;
   onReconnect(listener: () => void): () => void;
+  /** Foreground status banners need both directions; headless ports may omit this. */
+  onChange?(listener: (online: boolean) => void): () => void;
 }
 export interface SessionGate {
   currentUserId(): Promise<string | undefined>;
