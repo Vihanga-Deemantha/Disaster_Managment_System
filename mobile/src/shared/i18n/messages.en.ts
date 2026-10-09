@@ -261,6 +261,18 @@ export const en = {
   'reports.PHOTO_TOO_LARGE':
     'This photo is larger than 5 MB. Choose a smaller photo or take a new one.',
   'reports.PHOTO_EMPTY': 'This photo is empty or unreadable. Choose another photo.',
+  'reports.savedOffline':
+    'Saved on this phone. Safe Zone will try sending this report when the connection returns.',
+  'reports.storageError':
+    'Could not save this report on your phone. Your form is still here. Free some storage and try again.',
+  'reports.notificationsReason':
+    'Allow notifications so we can tell you when your saved reports are sent.',
+  'reports.enableNotifications': 'Enable delivery notifications',
+  'reports.backgroundRestricted':
+    'Background sending is unavailable. Saved reports will be sent when you open Safe Zone and a connection is available.',
+  'reports.syncTitle': 'Safe Zone report delivery',
+  'reports.syncSent': 'Saved reports sent: {count}.',
+  'reports.syncSignIn': 'Sign in to send your saved reports ({count}).',
 } as const;
 
 export type MessageKey = keyof typeof en;

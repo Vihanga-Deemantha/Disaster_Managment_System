@@ -8,6 +8,15 @@ import { aMe } from '@/shared/testing/renderWithApp';
 jest.mock('@react-native-async-storage/async-storage', () =>
   jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
+jest.mock('@react-native-community/netinfo', () => ({
+  configure: jest.fn(),
+  fetch: async () => ({ isConnected: false, isInternetReachable: false }),
+  addEventListener: () => () => undefined,
+}));
+jest.mock('expo-task-manager', () => ({
+  defineTask: jest.fn(),
+  isAvailableAsync: async () => false,
+}));
 
 // The notification adapter is the boundary to the phone: here it is a stand-in that always allows banners.
 jest.mock('@/features/alerts/adapters/ExpoNotifier', () => ({

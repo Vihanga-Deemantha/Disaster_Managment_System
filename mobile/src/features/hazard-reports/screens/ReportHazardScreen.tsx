@@ -17,7 +17,11 @@ import { DESCRIPTION_MAX_CHARS } from '../domain/reportRules';
 import type { ReportDraft } from '../domain/types';
 import { validateReportDraft, type DraftValidation } from '../domain/validateReportDraft';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
-import { useReportSubmission } from '../hooks/useReportSubmission';
+import { useReportSubmission, type SubmissionOutcome } from '../hooks/useReportSubmission';
+
+function isDelivered(outcome?: SubmissionOutcome): boolean {
+  return outcome?.kind === 'DELIVERED' || outcome?.kind === 'ALREADY_SENT';
+}
 
 interface Props {
   ownerId: string;
@@ -60,7 +64,7 @@ function DescriptionField({
   );
 }
 
-/** M2 direct online submission. Durable phone storage and background delivery follow in M4/M5. */
+/** Every submission is journaled before sending; the sync engine owns delivery and retries. */
 export function ReportHazardForm({ ownerId, deps, onSessionExpired }: Props) {
   const t = useT();
   const [fields, setFields] = useState<ReportDraft>({ description: '' });
@@ -81,7 +85,7 @@ export function ReportHazardForm({ ownerId, deps, onSessionExpired }: Props) {
     if (submission.outcome?.kind === 'AUTH_REQUIRED')
       void onSessionExpired?.().catch(() => undefined);
   }, [submission.outcome, onSessionExpired]);
-  if (submission.outcome?.kind === 'DELIVERED')
+  if (isDelivered(submission.outcome))
     return (
       <Screen edges={['right', 'bottom', 'left']}>
         <Banner tone="success">{t('reports.sent')}</Banner>
@@ -131,6 +135,7 @@ export function ReportHazardForm({ ownerId, deps, onSessionExpired }: Props) {
         outcome={submission.outcome}
         busy={disabled}
         onChoice={(choice) => void submission.submit(draft, choice)}
+        onEnableNotifications={deps.enableNotifications}
       />
       {submission.problems.map((problem) => (
         <Banner key={problem} tone="warning">

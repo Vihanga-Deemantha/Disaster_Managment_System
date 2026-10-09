@@ -1,33 +1,18 @@
 import { useRef, useState } from 'react';
-import type { ReportDraft, ValidReportDraft } from '../domain/types';
+import type { ReportDraft } from '../domain/types';
 import { validateReportDraft, type DraftProblem } from '../domain/validateReportDraft';
-import type { Clock, IdGenerator, ReportUploader } from '../offline/ports';
-import type { QueuedReport, UploadOptions, UploadOutcome } from '../offline/types';
+import { answerDuplicate, type SubmitFlowDeps } from '../offline/submitReport';
+import type { SubmitNowResult } from '../offline/SyncManager';
+import type { UploadOptions } from '../offline/types';
 
-export interface SubmissionDeps {
-  clock: Clock;
-  ids: IdGenerator;
-  uploader: ReportUploader;
-}
-function capture(ownerId: string, draft: ValidReportDraft, deps: SubmissionDeps): QueuedReport {
-  return {
-    ...draft,
-    ownerId,
-    clientReportId: deps.ids.next(),
-    capturedAt: deps.clock.now().toISOString(),
-    state: 'QUEUED',
-    attempts: 0,
-  };
-}
+export type SubmissionDeps = SubmitFlowDeps;
+export type SubmissionOutcome = SubmitNowResult | { kind: 'STORAGE_ERROR' };
 export function useReportSubmission(ownerId: string, deps: SubmissionDeps) {
   const [busy, setBusy] = useState(false);
-  const [outcome, setOutcome] = useState<UploadOutcome>();
+  const [outcome, setOutcome] = useState<SubmissionOutcome>();
   const [problems, setProblems] = useState<DraftProblem[]>([]);
   const pending = useRef(false);
-  const attempt = useRef<
-    | { signature: string; entry: QueuedReport; duplicateAction?: UploadOptions['duplicateAction'] }
-    | undefined
-  >(undefined);
+  const attempt = useRef<{ signature: string; clientReportId: string } | undefined>(undefined);
   function reset(): void {
     attempt.current = undefined;
     setOutcome(undefined);
@@ -44,22 +29,24 @@ export function useReportSubmission(ownerId: string, deps: SubmissionDeps) {
       return;
     }
     const signature = JSON.stringify([ownerId, checked.value]);
-    if (attempt.current?.signature !== signature)
-      attempt.current = { signature, entry: capture(ownerId, checked.value, deps) };
-    if (duplicateAction) attempt.current.duplicateAction = duplicateAction;
     pending.current = true;
     setBusy(true);
     setOutcome(undefined);
     setProblems([]);
     try {
+      if (attempt.current?.signature !== signature) {
+        attempt.current = undefined;
+        const entry = await deps.queue.enqueue(ownerId, checked.value);
+        attempt.current = { signature, clientReportId: entry.clientReportId };
+      }
+      const id = attempt.current.clientReportId;
       setOutcome(
-        await deps.uploader.upload(attempt.current.entry, {
-          syncedFromOffline: false,
-          duplicateAction: attempt.current.duplicateAction,
-        }),
+        duplicateAction
+          ? await answerDuplicate(deps, ownerId, id, duplicateAction)
+          : await deps.sync.submitNow(id),
       );
     } catch {
-      setOutcome({ kind: 'RETRY' });
+      setOutcome(attempt.current ? { kind: 'SAVED_OFFLINE' } : { kind: 'STORAGE_ERROR' });
     } finally {
       pending.current = false;
       setBusy(false);

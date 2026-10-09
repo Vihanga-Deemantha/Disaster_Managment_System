@@ -262,4 +262,16 @@ export const si: Record<MessageKey, string> = {
   'reports.PHOTO_TOO_LARGE':
     'ඡායාරූපය 5 MBට වඩා විශාලය. කුඩා ඡායාරූපයක් තෝරන්න හෝ අලුත් එකක් ගන්න.',
   'reports.PHOTO_EMPTY': 'ඡායාරූපය හිස් හෝ කියවිය නොහැක. වෙනත් එකක් තෝරන්න.',
+  'reports.savedOffline':
+    'මෙම දුරකථනයේ සුරැකිණි. සම්බන්ධතාව යළි ලැබුණු විට Safe Zone මෙම වාර්තාව යැවීමට උත්සාහ කරයි.',
+  'reports.storageError':
+    'දුරකථනයේ වාර්තාව සුරැකිය නොහැකි විය. පෝරමය තවම මෙහි ඇත. ගබඩා ඉඩ නිදහස් කර නැවත උත්සාහ කරන්න.',
+  'reports.notificationsReason':
+    'සුරැකි වාර්තා යැවූ විට ඔබට දැනුම් දීමට දැනුම්දීම් සඳහා අවසර දෙන්න.',
+  'reports.enableNotifications': 'යැවීමේ දැනුම්දීම් සක්‍රිය කරන්න',
+  'reports.backgroundRestricted':
+    'පසුබිමෙන් යැවීම ලබාගත නොහැක. සම්බන්ධතාවක් ඇති විට Safe Zone විවෘත කිරීමෙන් සුරැකි වාර්තා යැවේ.',
+  'reports.syncTitle': 'Safe Zone වාර්තා යැවීම',
+  'reports.syncSent': 'යැවූ සුරැකි වාර්තා: {count}.',
+  'reports.syncSignIn': 'සුරැකි වාර්තා ({count}) යැවීමට පුරන්න.',
 };

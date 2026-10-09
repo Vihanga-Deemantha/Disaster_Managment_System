@@ -1,5 +1,20 @@
 # Plan C – UC3 Mobile App (`mobile/`) – Reporter (Citizen / Community Volunteer)
 
+## Progress — 9 October 2026
+
+The authoritative phase table is [IMPLEMENTATION_PLAN.md](../../../IMPLEMENTATION_PLAN.md). The task examples below describe the original plan; their historical unchecked steps are not a current progress report.
+
+| Phase | Progress                                                                      |
+| ----- | ----------------------------------------------------------------------------- |
+| M0    | DONE — foundation and installed standalone APK accepted                       |
+| M1    | DONE — validators and journal core                                            |
+| M2    | DONE — corrected photo upload accepted on the phone                           |
+| M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                |
+| M4    | WIP — native integration verified; 677 tests passed; phone acceptance pending |
+| M5–M7 | TODO — offline screens, recovery and device acceptance                        |
+
+See `evidence/m0` through `evidence/m4` for verification details. M4 device acceptance is tracked separately from automated implementation checks.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development` or
 > `superpowers:executing-plans`. Steps use checkbox (`- [ ]`) syntax. Read `IMPLEMENTATION_PLAN.md` (decisions, REST
 > contract) and **`D-offline-sync-design.md`** first. Phases M1 and M3 need no device and no backend.
@@ -1368,6 +1383,10 @@ maps to its chip; details; a delivered-but-not-cleaned local entry is hidden; or
 
 ## Phase M4 – OS-level background sync (needs the development build)
 
+**Implementation progress — 9 October:** Native journal/photo storage, authenticated session checks, API reachability, local notifications, the module-scope OS task and signed-in foreground/reconnect triggers are implemented. The report form now saves before delivery and distinguishes a saved report from a failed storage write. Detailed verification and pending phone checks are tracked in [M4 evidence](evidence/m4/README.md).
+
+The implementation uses the existing shared API client and storage wrapper. SDK 57 multipart uploads retain the tested `expo-file-system` `File` transport from M2; the older URI-based FormData example below is illustrative and must not replace it. Reachability uses `GET /api/health` with native public-internet detection disabled so a reachable laptop API works over local Wi-Fi. Notification permission is requested only through an explained foreground button. Background restrictions are visible on My reports; the full offline report list remains M5.
+
 ### Task M4.1: Adapters and composition
 
 **Files:** Create everything under `adapters/` and `composition.ts` (not covered by unit tests – they are thin and
@@ -1523,7 +1542,7 @@ export function getHazardReportsRuntime(): HazardReportsRuntime {
 The app-wide `ApiClient` used by `SessionProvider` should be this same instance (`getHazardReportsRuntime().api`) so
 there is exactly one refresh single-flight per runtime.
 
-- [ ] Implement; `npx tsc --noEmit` clean; replace the temporary wiring from M2.3 with the runtime. Commit
+- [x] Implement; `npx tsc --noEmit` clean; replace the temporary wiring from M2.3 with the runtime. Commit
       `feat(mobile): adapters and composition root`.
 
 ### Task M4.2: The background task
@@ -1573,9 +1592,9 @@ export const triggerSyncTaskForTesting = (): Promise<boolean> =>
   BackgroundTask.triggerTaskWorkerForTestingAsync();
 ```
 
-- [ ] Confirm against the installed typings: `BackgroundTaskResult`, `BackgroundTaskStatus`, `registerTaskAsync`
+- [x] Confirm against the installed typings: `BackgroundTaskResult`, `BackgroundTaskStatus`, `registerTaskAsync`
       options (`minimumInterval` in **minutes**, minimum 15), `triggerTaskWorkerForTestingAsync`.
-- [ ] Confirm `mobile/index.ts` still imports this file **before** `expo-router/entry`, and `package.json` `main` is
+- [x] Confirm `mobile/index.ts` still imports this file **before** `expo-router/entry`, and `package.json` `main` is
       `index.ts`.
 - [ ] If any native package or plugin was added since the last build, rebuild the development client.
 - [ ] Commit `feat(mobile): OS background sync task (WorkManager / BGTaskScheduler)`.
@@ -1613,7 +1632,7 @@ export function useSyncTriggers(): void {
 vendor) should be surfaced once on _My reports_: "Background sending is turned off for Safe Zone in your phone's
 settings. Saved reports will be sent when you open the app."
 
-- [ ] On the phone: airplane mode on → submit (still the M2 screen: it will say it could not send) → airplane mode off
+- [ ] On the phone: airplane mode on → submit (shows Saved on this phone) → airplane mode off
       with the app open → the entry disappears from the journal within seconds (check the server). That is trigger
       `RECONNECT`.
 - [ ] App in the background, one entry journaled → run the `adb … jobscheduler run` command from Plan D §11 → the

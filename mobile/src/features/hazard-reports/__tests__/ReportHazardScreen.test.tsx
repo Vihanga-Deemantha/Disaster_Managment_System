@@ -2,16 +2,23 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { aMe, renderWithApp } from '@/shared/testing/renderWithApp';
 import { en } from '@/shared/i18n/messages.en';
 import { ReportHazardForm } from '../screens/ReportHazardScreen';
-import { FixedClock, SequentialIds } from '../testing/fakes';
+import { syncHarness } from '../testing/syncHarness';
 import type { QueuedReport, UploadOutcome } from '../offline/types';
 import type { PhotoPickResult } from '../adapters/ExpoPhotoPicker';
 
 jest.mock('../composition', () => ({ reportDependencies: {} }));
 function setup(outcome: UploadOutcome = { kind: 'DELIVERED', via: 'CREATED', reportId: 'r-1' }) {
   const calls: QueuedReport[] = [];
+  const runtime = syncHarness();
+  runtime.session.currentUserId.mockResolvedValue('user-1');
+  runtime.uploader.upload.mockImplementation(async (entry) => {
+    calls.push(entry);
+    return outcome;
+  });
   const deps = {
-    clock: new FixedClock(),
-    ids: new SequentialIds(),
+    queue: runtime.queue,
+    sync: runtime.sync,
+    enableNotifications: jest.fn(async () => undefined),
     location: {
       requestPermission: async () => true,
       current: async () => ({ lat: 6.5854, lng: 79.9607 }),
@@ -23,14 +30,8 @@ function setup(outcome: UploadOutcome = { kind: 'DELIVERED', via: 'CREATED', rep
         photo: { uri: 'file:///photo.jpg', mimeType: 'image/jpeg', fileSize: 100 },
       }),
     },
-    uploader: {
-      upload: async (entry: QueuedReport) => {
-        calls.push(entry);
-        return outcome;
-      },
-    },
   };
-  return { calls, deps };
+  return { calls, deps, runtime };
 }
 describe('UC-3 steps 1–7: Report form', () => {
   it('expires a refused session and never treats authentication failure as delivery', async () => {
@@ -86,7 +87,7 @@ describe('UC-3 steps 1–7: Report form', () => {
     expect(h.calls[0]).toMatchObject({
       ownerId: 'user-1',
       description: 'Water rising',
-      photo: { uri: 'file:///photo.jpg' },
+      photo: { uri: 'file:///documents/client-1-photo.jpg' },
       location: { source: 'GPS' },
     });
     fireEvent.press(screen.getByRole('button', { name: en['reports.another'] }));
@@ -101,9 +102,28 @@ describe('UC-3 steps 1–7: Report form', () => {
       expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeEnabled(),
     );
     fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] }));
-    await screen.findByText(en['reports.retry']);
+    await screen.findByText(en['reports.savedOffline']);
     expect(screen.getByDisplayValue('Tree down')).toBeTruthy();
     expect(screen.queryByText(en['reports.sent'])).toBeNull();
+    expect(h.deps.enableNotifications).not.toHaveBeenCalled();
+    expect(screen.getByText(en['reports.notificationsReason'])).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: en['reports.enableNotifications'] }));
+    expect(h.deps.enableNotifications).toHaveBeenCalledTimes(1);
+  });
+  it('retains the form and reports a failed disk write without claiming it was saved', async () => {
+    const h = setup();
+    jest.spyOn(h.runtime.storage, 'save').mockRejectedValueOnce(new Error('disk full'));
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(screen.getByRole('radio', { name: 'Other' }));
+    fireEvent.changeText(screen.getByLabelText(en['reports.description']), 'Tree down');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeEnabled(),
+    );
+    fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] }));
+    await screen.findByText(en['reports.storageError']);
+    expect(screen.getByDisplayValue('Tree down')).toBeTruthy();
+    expect(screen.queryByText(en['reports.savedOffline'])).toBeNull();
+    expect(h.calls).toEqual([]);
   });
   it('does not use a fallback coordinate as report evidence after permission denial', async () => {
     const h = setup();

@@ -1,22 +1,19 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useReportSubmission } from '../hooks/useReportSubmission';
-import { aDraft, FixedClock, SequentialIds } from '../testing/fakes';
+import { aDraft } from '../testing/fakes';
+import { syncHarness } from '../testing/syncHarness';
 import type { QueuedReport, UploadOptions, UploadOutcome } from '../offline/types';
 
 function setup(
   outcomes: UploadOutcome[] = [{ kind: 'DELIVERED', via: 'CREATED', reportId: 'r-1' }],
 ) {
   const calls: Array<{ entry: QueuedReport; options: UploadOptions }> = [];
-  const deps = {
-    clock: new FixedClock(),
-    ids: new SequentialIds(),
-    uploader: {
-      upload: async (entry: QueuedReport, options: UploadOptions) => {
-        calls.push({ entry, options });
-        return outcomes.shift()!;
-      },
-    },
-  };
+  const deps = syncHarness();
+  deps.session.currentUserId.mockResolvedValue('user-1');
+  deps.uploader.upload.mockImplementation(async (entry: QueuedReport, options: UploadOptions) => {
+    calls.push({ entry, options });
+    return outcomes.shift()!;
+  });
   return { ...renderHook(() => useReportSubmission('user-1', deps)), calls, deps };
 }
 describe('UC-3 steps 6–7: interactive report submission', () => {
@@ -53,8 +50,8 @@ describe('UC-3 steps 6–7: interactive report submission', () => {
         ownerId: 'user-1',
         clientReportId: 'client-1',
         capturedAt: h.deps.clock.now().toISOString(),
-        state: 'QUEUED',
-        attempts: 0,
+        state: 'UPLOADING',
+        attempts: 1,
       },
       options: { syncedFromOffline: false },
     });
@@ -72,7 +69,11 @@ describe('UC-3 steps 6–7: interactive report submission', () => {
     await act(async () => {
       await h.result.current.submit(aDraft());
     });
-    expect(h.calls[1].entry).toEqual(h.calls[0].entry);
+    expect(h.calls[1].entry).toMatchObject({
+      clientReportId: h.calls[0].entry.clientReportId,
+      capturedAt: h.calls[0].entry.capturedAt,
+      attempts: 2,
+    });
   });
   it('preserves the capture for an explicit duplicate choice, and gives edited/new reports a fresh id', async () => {
     const h = setup([
@@ -97,18 +98,14 @@ describe('UC-3 steps 6–7: interactive report submission', () => {
   it('blocks overlapping taps and always releases the busy state', async () => {
     let finish!: (value: UploadOutcome) => void;
     let uploads = 0;
-    const deps = {
-      clock: new FixedClock(),
-      ids: new SequentialIds(),
-      uploader: {
-        upload: () => {
-          uploads++;
-          return new Promise<UploadOutcome>((resolve) => {
-            finish = resolve;
-          });
-        },
-      },
-    };
+    const deps = syncHarness();
+    deps.session.currentUserId.mockResolvedValue('user-1');
+    deps.uploader.upload.mockImplementation(() => {
+      uploads++;
+      return new Promise<UploadOutcome>((resolve) => {
+        finish = resolve;
+      });
+    });
     const { result } = renderHook(() => useReportSubmission('user-1', deps));
     let pending!: Promise<void>;
     act(() => {
@@ -116,6 +113,9 @@ describe('UC-3 steps 6–7: interactive report submission', () => {
       void result.current.submit(aDraft());
     });
     expect(result.current.busy).toBe(true);
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
     expect(uploads).toBe(1);
     await act(async () => {
       finish({ kind: 'RETRY' });
