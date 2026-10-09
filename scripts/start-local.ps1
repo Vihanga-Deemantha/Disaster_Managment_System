@@ -50,6 +50,8 @@ try {
         Start-Sleep -Seconds 5
     }
     if (-not $mongoReady) { throw 'MongoDB is not ready. Check docker compose logs mongo.' }
+    Get-Content -Raw -LiteralPath 'scripts/init-mongo.js' | & docker compose exec -T mongo mongosh --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'MongoDB replica set initialization failed.' }
     # The ordinary seed is additive; do not use --fresh (it deletes existing demo data).
     & npm.cmd run seed
     if ($LASTEXITCODE -ne 0) { throw 'Demo data seeding failed.' }
