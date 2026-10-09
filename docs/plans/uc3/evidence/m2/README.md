@@ -1,6 +1,6 @@
 # M2 mobile online report submission — 9 October 2026
 
-Branch: `feat/uc3-mobile-reporting`. No subagents used. M2 implementation and automated checks are complete; Android APK preparation and physical-phone acceptance remain open. M3 has not started.
+Branch: `feat/uc3-mobile-reporting`. No subagents used. M2 implementation and automated checks are complete; The Android cloud build has been submitted; cloud completion and physical-phone acceptance remain open. M3 has not started.
 
 ## Implemented
 
@@ -46,3 +46,7 @@ This phase submits directly online. The form is not yet a durable offline draft 
 Installed Expo SDK 57 / React Native 0.86 versions were checked against the versioned [ImagePicker](https://docs.expo.dev/versions/v57.0.0/sdk/imagepicker/), [Location](https://docs.expo.dev/versions/v57.0.0/sdk/location/) and [Crypto](https://docs.expo.dev/versions/v57.0.0/sdk/crypto/) documentation and installed React Native FormData source before using those APIs.
 
 Android JavaScript export also passed: Metro bundled 1,421 modules into a 3.1 MB Hermes bundle with the configured LAN API URL. The generated export remains a local helper artifact.
+
+## Android preview build
+
+EAS accepted standalone Android preview build `b2150ea1-8cdf-4abc-b78d-4898e2ca4c7a` from source commit `4eccee4`. [Build progress and APK download](https://expo.dev/accounts/pawan-menukas-team/projects/safezone/builds/b2150ea1-8cdf-4abc-b78d-4898e2ca4c7a). Initial status was `NEW`; completion and installation have not yet been confirmed. The APK uses the existing app identity/signing credentials and the verified laptop API URL. No Git push was made.
