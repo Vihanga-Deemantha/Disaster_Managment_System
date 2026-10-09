@@ -1,0 +1,6 @@
+{
+  "realApi": true,
+  "destructiveActions": false,
+  "runtimeErrors": [],
+  "navigationWithoutBrowserBack": true
+}

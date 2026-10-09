@@ -1,0 +1,27 @@
+# Each use case has exactly one owner (master plan §5). GitHub asks the owner to review changes to
+# their folders. Replace the placeholders with each teammate's GitHub username once they have joined
+# the repository (a username GitHub does not recognise makes the whole line ignored).
+
+# Shared code is frozen after the foundation: changes need everyone's approval, so list all four owners.
+/backend/src/shared/                  @Vihanga-Deemantha
+/frontend/src/shared/                 @Vihanga-Deemantha
+/backend/src/app.ts                   @Vihanga-Deemantha
+/backend/src/bootstrap.ts             @Vihanga-Deemantha
+/frontend/src/routes.tsx              @Vihanga-Deemantha
+/frontend/src/App.tsx                 @Vihanga-Deemantha
+
+# UC-1 Issue Warning (+ shared authentication): G.V.D. Perera
+/backend/src/modules/warnings/        @Vihanga-Deemantha
+/frontend/src/features/warnings/      @Vihanga-Deemantha
+
+# UC-2 Allocate Multi-Agency Resource: K.K.I. Shaveen
+# /backend/src/modules/resources/     @<shaveen-github-username>
+# /frontend/src/features/resources/   @<shaveen-github-username>
+
+# UC-3 Submit and Verify Hazard Report: Pawan
+# /backend/src/modules/hazard-reports/   @<pawan-github-username>
+# /frontend/src/features/hazard-reports/ @<pawan-github-username>
+
+# UC-4 Post-Event Impact Analysis: Tharaka
+# /backend/src/modules/analytics/     @<tharaka-github-username>
+# /frontend/src/features/analytics/   @<tharaka-github-username>
