@@ -30,6 +30,7 @@ New tests cover native persistence and photo cleanup, corruption/write failures,
 
 - `npx eslint mobile`: passed.
 - Mobile `npm run typecheck`: passed.
+- Android `expo export --platform android`: passed; 1,466 modules and a 3.2 MB Hermes bundle.
 - Full mobile `npx jest --runInBand --coverage --testTimeout=60000`: **38 suites / 677 tests passed**, 31 more tests than M3.
 - UC3 domain/offline/API coverage: **100%** statements, branches, functions and lines. Full configured mobile coverage: 99.86% statements, 99.79% branches, 100% functions and lines. Native boundary behaviour is tested through mocks and remains subject to device acceptance.
 - Existing Alerts VirtualizedList act warning and an Expo Go notification warning appeared in the passing router suite. These are test-environment warnings; the phone uses a standalone build.
@@ -37,7 +38,7 @@ New tests cover native persistence and photo cleanup, corruption/write failures,
 
 ## Build and phone acceptance
 
-A replacement standalone preview APK is required to install this JavaScript implementation. No native packages or plugins were added in M4.
+Implementation commit: `9f188b7`. Standalone Android preview build [`99b3fa18-f3b8-425d-83a8-7f08868aeff6`](https://expo.dev/accounts/pawan-menukas-team/projects/safezone/builds/99b3fa18-f3b8-425d-83a8-7f08868aeff6) was accepted by EAS on 9 October. This records submission, not successful cloud compilation or device acceptance. The profile embeds `http://192.168.8.191:4000` and reuses the existing package/signing identity. No native packages or plugins were added in M4.
 
 Pending owner/device checks:
 
