@@ -1,6 +1,6 @@
 # M2 mobile online report submission — 9 October 2026
 
-Branch: `feat/uc3-mobile-reporting`. No subagents used. M2 implementation and automated checks are complete; The Android cloud build has been submitted; cloud completion and physical-phone acceptance remain open. M3 has not started.
+Branch: `feat/uc3-mobile-reporting`. No subagents used. The first M2 Android build completed and was installed; phone testing exposed a photo upload compatibility defect. M2 remains open pending acceptance of the corrected APK. M3 has not started.
 
 ## Implemented
 
@@ -8,7 +8,7 @@ Branch: `feat/uc3-mobile-reporting`. No subagents used. M2 implementation and au
 - Reused the existing Safe Zone paper/navy/copper tokens and shared screen, field, banner and button components. Added English, Sinhala and Tamil messages.
 - Location requests foreground permission and a high-accuracy GPS fix, times out after 10 seconds, and ignores stale results after retry, pin or unmount. Last-known/Colombo coordinates only centre the future manual map; they never silently become report evidence. The manual map remains M6.
 - Native image capture uses quality 0.6; gallery selection uses quality 1 so oversized-photo validation remains demonstrable. Cancellation preserves an existing attachment.
-- Multipart fields and response classification are pure TypeScript. The native transport uses the shared cookie/refresh/CSRF client and lets React Native supply its multipart boundary.
+- Multipart fields and response classification are pure TypeScript. The native transport uses the shared cookie/refresh/CSRF client and lets Expo supply its multipart boundary.
 - The screen reports delivery only for acknowledged CREATED, ALREADY_RECEIVED or UPDATED_EXISTING responses containing a report id. Network failures retain the form and show an honest retry message. Retries preserve client id, capture time and any explicit duplicate choice. Overlapping taps cannot send twice. Authentication failure expires the foreground session.
 - Duplicate reports offer explicit update/separate-report actions. Malformed duplicate responses without a valid existing report id are retryable rather than presenting an unusable choice; this is a deliberate hardening of the example plan.
 
@@ -21,7 +21,7 @@ Tests ran red before implementation for multipart/classifier/uploader, the locat
 - Full configured mobile coverage: 99.84% statements, 99.76% branches, 100% functions and lines; remaining gaps are existing registration validation.
 - Root `npx eslint mobile` and mobile `npm run typecheck`: passed.
 - Prettier applied to changed source/tests/messages.
-- Native adapter tests exercise the installed React Native FormData implementation, not Node's incompatible web file handling.
+- Native adapter tests now exercise the installed Expo FormData patch and fetch multipart encoder, with native file byte access mocked at the filesystem boundary.
 
 ## Local API smoke test
 
@@ -49,4 +49,14 @@ Android JavaScript export also passed: Metro bundled 1,421 modules into a 3.1 MB
 
 ## Android preview build
 
-EAS accepted standalone Android preview build `b2150ea1-8cdf-4abc-b78d-4898e2ca4c7a` from source commit `4eccee4`. [Build progress and APK download](https://expo.dev/accounts/pawan-menukas-team/projects/safezone/builds/b2150ea1-8cdf-4abc-b78d-4898e2ca4c7a). Initial status was `NEW`; completion and installation have not yet been confirmed. The APK uses the existing app identity/signing credentials and the verified laptop API URL. No Git push was made.
+EAS completed standalone Android preview build `b2150ea1-8cdf-4abc-b78d-4898e2ca4c7a` from source commit `4eccee4`. The user installed it and encountered the unconfirmed-delivery message when submitting. The phone browser successfully reached the configured API health endpoint (`status: ok`).
+
+## Photo upload correction
+
+SDK 57 installs `expo/fetch` as the default native fetch. Its multipart encoder rejects legacy React Native `{uri, name, type}` attachments with `Unsupported FormDataPart implementation` before sending the request. The previous native FormData-only test and Node Blob API smoke test did not exercise this encoder.
+
+A regression using the installed Expo FormData patch and multipart converter reproduced this failure with a photo; the same request without a photo passed. The transport now appends an `expo-file-system` `File` for each local attachment, allowing Expo to read its bytes. Cookie authentication, CSRF headers and runtime-managed multipart boundaries are preserved. The regression verifies multipart fields, filename, MIME type and exact photo bytes.
+
+Checked the installed SDK 57 runtime, FormData/converter source and File typings, plus the [FileSystem upload documentation](https://docs.expo.dev/versions/latest/sdk/filesystem/#uploading-files-using-expofetch) (recommended version 57.0.7). The explicit v57 documentation URL was unavailable through the documentation fetcher.
+
+Correction checks: lint and TypeScript passed. The full mobile run passed 592 of 593 tests (28 suites); one existing registration-screen test exceeded its 20-second timeout. Rerunning that suite with a 60-second limit passed all 23 tests in 7 seconds. The new upload regression passed both photo/no-photo cases. Coverage remained 99.84% statements / 99.76% branches / 100% functions and lines, with the UC3 core at 100% on all four measures.

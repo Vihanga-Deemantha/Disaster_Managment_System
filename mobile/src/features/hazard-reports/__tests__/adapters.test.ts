@@ -16,6 +16,23 @@ jest.mock('expo-location', () => ({
   getLastKnownPositionAsync: jest.fn(),
   Accuracy: { High: 4 },
 }));
+jest.mock('expo-file-system', () => ({
+  File: class {
+    uri: string;
+    constructor(uri: string) {
+      this.uri = uri;
+    }
+    get name() {
+      return this.uri.split('/').pop();
+    }
+    get type() {
+      return 'image/jpeg';
+    }
+    async bytes() {
+      return new Uint8Array([255, 216, 255, 217]);
+    }
+  },
+}));
 const asset = {
   uri: 'file:///photo.jpg',
   fileName: 'source.jpg',
@@ -88,37 +105,53 @@ describe('UC-3 native capture adapters', () => {
 describe('UC-3 multipart transport with the shared session client', () => {
   const originalFormData = globalThis.FormData;
   beforeEach(() => {
-    // Jest otherwise supplies Node's web FormData, which stringifies native file descriptors.
     globalThis.FormData = jest.requireActual<{ default: typeof FormData }>(
       'react-native/Libraries/Network/FormData',
     ).default;
+    jest.requireActual('expo/src/winter/FormData').installFormDataPatch(globalThis.FormData);
   });
   afterEach(() => {
     globalThis.FormData = originalFormData;
   });
-  it('sends native file parts with cookies and CSRF headers, leaving the boundary to React Native', async () => {
-    let init: RequestInit | undefined;
-    const fetchImpl = (async (_url, options) => {
-      init = options;
-      return {
-        status: 201,
-        json: async () => ({ outcome: 'CREATED', report: { id: 'r-1' } }),
-      } as Response;
-    }) as typeof fetch;
-    const api = createApiClient({ baseUrl: 'http://test', fetchImpl });
-    const result = await createSubmitTransport(api)([
-      ['hazardType', 'FLOOD'],
-      ['photo', { uri: asset.uri, name: 'photo.jpg', type: 'image/jpeg' }],
-    ]);
-    expect(result.status).toBe(201);
-    expect(init?.credentials).toBe('include');
-    expect(init?.headers).toEqual({ Accept: 'application/json', 'X-Requested-With': 'SafeZone' });
-    const form = init?.body as unknown as { getParts(): unknown[] };
-    expect(form.getParts()).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ fieldName: 'hazardType', string: 'FLOOD' }),
-        expect.objectContaining({ fieldName: 'photo', uri: asset.uri, name: 'photo.jpg' }),
-      ]),
-    );
-  });
+  it.each([true, false])(
+    'encodes the request with Expo fetch (photo: %s), cookies and CSRF headers',
+    async (withPhoto) => {
+      let init: RequestInit | undefined;
+      let encoded = '';
+      const fetchImpl = (async (_url, options) => {
+        init = options;
+        const { body } = await jest
+          .requireActual('expo/src/winter/fetch/convertFormData')
+          .convertFormDataAsync(options?.body, 'test-boundary');
+        encoded = Array.from(body as Uint8Array, (byte) => String.fromCharCode(byte)).join('');
+        return {
+          status: 201,
+          json: async () => ({ outcome: 'CREATED', report: { id: 'r-1' } }),
+        } as Response;
+      }) as typeof fetch;
+      const api = createApiClient({ baseUrl: 'http://test', fetchImpl });
+      const result = await createSubmitTransport(api)([
+        ['hazardType', 'FLOOD'],
+        ...(withPhoto
+          ? [
+              ['photo', { uri: asset.uri, name: 'photo.jpg', type: 'image/jpeg' }] as [
+                string,
+                { uri: string; name: string; type: string },
+              ],
+            ]
+          : []),
+      ]);
+      expect(result.status).toBe(201);
+      expect(init?.credentials).toBe('include');
+      expect(init?.headers).toEqual({ Accept: 'application/json', 'X-Requested-With': 'SafeZone' });
+      expect(encoded).toContain('name="hazardType"\r\n\r\nFLOOD');
+      if (withPhoto) {
+        expect(encoded).toContain('name="photo"; filename="photo.jpg"');
+        expect(encoded).toContain('content-type: image/jpeg');
+        expect(encoded).toContain(String.fromCharCode(255, 216, 255, 217));
+      } else {
+        expect(encoded).not.toContain('name="photo"');
+      }
+    },
+  );
 });
