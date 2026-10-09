@@ -146,7 +146,7 @@ export const en = {
   'district.RATNAPURA': 'Ratnapura',
   'district.TRINCOMALEE': 'Trincomalee',
   'district.VAVUNIYA': 'Vavuniya',
-  'hazard.OTHER': 'Hazard',
+  'hazard.OTHER': 'Other',
   'tabs.report': 'Report',
   'tabs.myReports': 'My reports',
   'tabs.alerts': 'Alerts',
@@ -212,6 +212,72 @@ export const en = {
   'month.10': 'Oct',
   'month.11': 'Nov',
   'month.12': 'Dec',
+  'hazard.ROAD_BLOCKAGE': 'Road blockage',
+  'reports.title': 'Report a hazard',
+  'reports.intro': 'Help officers understand what is happening near you.',
+  'reports.hazard': 'What happened?',
+  'reports.description': 'Description (optional)',
+  'reports.descriptionHint': 'Describe what you can see. Keep yourself safe.',
+  'reports.photo.title': 'Photo evidence (optional)',
+  'reports.photo.hint': 'JPEG, PNG or WebP · up to 5 MB',
+  'reports.photo.camera': 'Take photo',
+  'reports.photo.gallery': 'Choose from gallery',
+  'reports.photo.remove': 'Remove photo',
+  'reports.photo.preview': 'Attached hazard photo',
+  'reports.photo.denied':
+    'Camera permission was denied. Allow access in phone settings or choose from the gallery.',
+  'reports.photo.unavailable': 'We could not open the photo. Try again or continue without it.',
+  'reports.location.title': 'Report location',
+  'reports.location.locating': 'Finding your location…',
+  'reports.location.gps': 'Current GPS location',
+  'reports.location.denied':
+    'Location permission is needed. Allow access in phone settings, then try again.',
+  'reports.location.timeout':
+    'Finding your location took too long. Move to an open area and try again.',
+  'reports.location.unavailable':
+    'Location is unavailable. Turn on location services and try again.',
+  'reports.location.manual': 'Location adjusted by you.',
+  'reports.location.retry': 'Find location again',
+  'reports.submit': 'Submit report',
+  'reports.submitting': 'Sending report…',
+  'reports.sent': 'Report sent',
+  'reports.sentHint':
+    'An officer will review your report. Submitting a report does not issue a public warning.',
+  'reports.another': 'Report another hazard',
+  'reports.retry':
+    'We could not confirm delivery. Your form is still here. Check your connection and tap Submit report again.',
+  'reports.refused': 'The report was not accepted. Check the details and try again.',
+  'reports.authRequired': 'Your session ended. Sign in again before submitting.',
+  'reports.duplicate':
+    'You recently reported a similar hazard here. Update your earlier report, or send this as a separate report.',
+  'reports.duplicate.update': 'Update earlier report',
+  'reports.duplicate.new': 'Send a separate report',
+  'reports.HAZARD_TYPE_REQUIRED': 'Choose a hazard type.',
+  'reports.LOCATION_REQUIRED': 'Wait for your location before submitting.',
+  'reports.LOCATION_INVALID': 'The location is invalid. Find your location again.',
+  'reports.LOCATION_OUTSIDE_SRI_LANKA': 'The report location must be in Sri Lanka.',
+  'reports.DESCRIPTION_TOO_LONG': 'Keep the description to 500 characters or fewer.',
+  'reports.PHOTO_TYPE': 'Choose a JPEG, PNG or WebP photo.',
+  'reports.PHOTO_TOO_LARGE':
+    'This photo is larger than 5 MB. Choose a smaller photo or take a new one.',
+  'reports.PHOTO_EMPTY': 'This photo is empty or unreadable. Choose another photo.',
+  'reports.savedOffline':
+    'Saved on this phone. Safe Zone will try sending this report when the connection returns.',
+  'reports.storageError':
+    'Could not save this report on your phone. Your form is still here. Free some storage and try again.',
+  'reports.notificationsReason':
+    'Allow notifications so we can tell you when your saved reports are sent.',
+  'reports.enableNotifications': 'Enable delivery notifications',
+  'reports.notifications.GRANTED': 'Delivery notifications are enabled.',
+  'reports.notifications.DENIED':
+    'Notifications are not allowed. Enable them in your phone settings under Apps → Safe Zone → Notifications. Saved reports can still be sent.',
+  'reports.notifications.UNAVAILABLE':
+    'Could not check notification permission. Try again. Your saved report is safe.',
+  'reports.backgroundRestricted':
+    'Background sending is unavailable. Saved reports will be sent when you open Safe Zone and a connection is available.',
+  'reports.syncTitle': 'Safe Zone report delivery',
+  'reports.syncSent': 'Saved reports sent: {count}.',
+  'reports.syncSignIn': 'Sign in to send your saved reports ({count}).',
 } as const;
 
 export type MessageKey = keyof typeof en;

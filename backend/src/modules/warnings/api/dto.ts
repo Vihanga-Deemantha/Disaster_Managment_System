@@ -39,6 +39,7 @@ export interface WarningDto {
   rejectedAt?: string;
   rejectionReason?: string;
   sourceClusterId?: string;
+  sourceReportId?: string;
   updatedAt: string;
   version: number;
 }
@@ -91,6 +92,7 @@ export function toWarningDto(warning: Warning): WarningDto {
     rejectedAt: iso(state.rejectedAt),
     rejectionReason: state.rejectionReason,
     sourceClusterId: state.sourceClusterId,
+    sourceReportId: state.sourceReportId,
     updatedAt: state.updatedAt.toISOString(),
     version: state.version,
   });

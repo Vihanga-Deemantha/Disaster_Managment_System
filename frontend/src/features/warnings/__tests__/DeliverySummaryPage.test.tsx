@@ -13,6 +13,7 @@ vi.mock('react-leaflet', async () => (await import('../testing/mockMap')).reactL
 
 afterEach(() => {
   resetBrowserOnline();
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllEnvs();
 });
@@ -33,11 +34,10 @@ const channel = (name: string) => screen.getByText(name).closest('li') as HTMLEl
 /** "61 / 61": the big figure under "Citizens Reached". */
 const reachedFigure = () => screen.getByText('Citizens Reached').nextElementSibling;
 
-/** Moves the (faked) interval timer on, then lets the real network round trip finish. */
+/** Advances only the polling interval. Tests await network/render completion explicitly. */
 const tick = (ms: number) =>
   act(async () => {
     vi.advanceTimersByTime(ms);
-    await new Promise((resolve) => setTimeout(resolve, 150));
   });
 
 /** Everyone reached, but 8 pushes failed: SMS got through to them (A1). */
@@ -357,6 +357,8 @@ describe('UC-1 A1, E3: Retry failed', () => {
 describe('UC-1 E3: the page updates itself while retries are due', () => {
   it('asks again every ten seconds while citizens are waiting to be retried, and stops when none are', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const intervals = vi.spyOn(globalThis, 'setInterval');
+    const cleared = vi.spyOn(globalThis, 'clearInterval');
     let calls = 0;
     server.use(
       http.get('/api/warnings/:id/delivery', () => {
@@ -372,13 +374,20 @@ describe('UC-1 E3: the page updates itself while retries are due', () => {
     renderWarnings('/warnings/W-102/delivery');
     expect(await screen.findByText(/updates by itself/)).toBeInTheDocument();
     expect(calls).toBe(1);
+    const pollingIndex = intervals.mock.calls.findIndex(([, delay]) => delay === REFRESH_MS);
+    expect(pollingIndex).toBeGreaterThanOrEqual(0);
+    const pollingTimer = intervals.mock.results[pollingIndex].value;
 
     await tick(REFRESH_MS - 1);
     expect(calls).toBe(1);
     await tick(1);
-    expect(calls).toBe(2);
+    await waitFor(() => expect(calls).toBe(2));
     await waitFor(() => expect(screen.queryByText(/updates by itself/)).not.toBeInTheDocument());
     expect(screen.getByRole('status')).toHaveTextContent('Warning Issued Successfully');
+
+    // The updated DOM can precede React's passive-effect cleanup. Wait for the interval to be
+    // removed before jumping another thirty seconds, rather than racing cleanup on a busy CI host.
+    await waitFor(() => expect(cleared).toHaveBeenCalledWith(pollingTimer));
 
     await tick(REFRESH_MS * 3);
     expect(calls).toBe(2);

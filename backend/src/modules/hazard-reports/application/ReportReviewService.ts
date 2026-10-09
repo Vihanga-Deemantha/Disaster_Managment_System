@@ -114,7 +114,24 @@ export class ReportReviewService {
   async verify(reportId: string, officer: ReviewOfficer): Promise<ReviewResult> {
     const report = await this.loadReport(reportId);
     report.verify(officer.userId, this.deps.clock.now());
-    return this.settle(report, officer, 'hazard-report.verified');
+    const result = await this.settle(report, officer, 'hazard-report.verified');
+    const cluster = result.cluster.cluster.snapshot();
+    await this.deps.events.publish({
+      type: 'HazardReportApproved',
+      reportId: report.id,
+      hazardType: report.snapshot().hazardType,
+      proposedSeverity: cluster.band === 'HIGH' ? 'HIGH' : 'MEDIUM',
+      targetArea: {
+        type: 'DISTRICT',
+        id: cluster.district,
+        name: DISTRICT_LABELS[cluster.district],
+        district: cluster.district,
+      },
+      approvedBy: officer.userId,
+      approvedByRole: officer.role,
+      occurredAt: this.deps.clock.now().toISOString(),
+    });
+    return result;
   }
 
   /** UC-3 A2: rejected reports stay for audit but leave the score; an emptied cluster closes. */
@@ -131,6 +148,7 @@ export class ReportReviewService {
     const now = clock.now();
     // Build the event first: if it cannot be built, nothing has changed yet.
     const event = toEvent(scored.cluster, scored.escalation, officer.userId, now);
+    event.requestedByRole = officer.role;
     scored.cluster.markEscalated(officer.userId, now);
     await clusters.save(scored.cluster);
     await events.publish(event);

@@ -279,7 +279,7 @@ export const ta: Messages = {
 
   // UC-1 Issue Warning
   'warnings.list.intro':
-    'கடமை அதிகாரிகள் சமர்ப்பித்த எச்சரிக்கைக் கோரிக்கைகளை மதிப்பாய்வு செய்யுங்கள்.',
+    'அங்கீகரிக்கப்பட்ட அறிக்கைகள் மற்றும் அதிகாரிகள் சமர்ப்பித்த எச்சரிக்கைக் கோரிக்கைகளை மதிப்பாய்வு செய்யுங்கள்.',
   'warnings.list.stat.pending': 'ஒப்புதலுக்காகக் காத்திருப்பவை',
   'warnings.list.stat.urgent': 'உயர் முன்னுரிமை',
   'warnings.list.filterLabel': 'எச்சரிக்கைகளைக் காட்டு',
@@ -747,7 +747,8 @@ export const ta: Messages = {
   'hazardReports.report.backToCluster': 'குழுவுக்குத் திரும்பவும்',
   'hazardReports.verify.button': 'அறிக்கையை உறுதிசெய்யவும்',
   'hazardReports.verify.confirmTitle': 'இந்த அறிக்கையை உறுதிசெய்யவா?',
-  'hazardReports.verify.confirmBody': 'இது உண்மையானதாகக் கணக்கிடப்படும்; பின்னர் மாற்ற முடியாது.',
+  'hazardReports.verify.confirmBody':
+    'இது அறிக்கையை அங்கீகரித்து DMC அங்கீகாரத்திற்கான கோரிக்கையை உருவாக்கும். DMC அதிகாரி எச்சரிக்கையை வெளியிடும் வரை அறிவிப்புகள் அனுப்பப்படாது.',
   'hazardReports.verify.confirm': 'உறுதிசெய்யவும்',
   'hazardReports.verify.done': 'உறுதிசெய்யப்பட்டது. குழுவின் மதிப்பெண் இப்போது {score} ({band}).',
   'hazardReports.reject.button': 'அறிக்கையை நிராகரிக்கவும்',
@@ -790,6 +791,13 @@ export const ta: Messages = {
   'error.CLUSTER_NOT_FOUND': 'இந்தக் குழுவைக் கண்டுபிடிக்க முடியவில்லை.',
   'error.REPORT_ALREADY_REVIEWED': 'இந்த அறிக்கை ஏற்கனவே மதிப்பாய்வு செய்யப்பட்டுள்ளது.',
   'error.ESCALATION_NOT_ALLOWED': 'இந்தக் குழுவை இன்னும் மேல்நிலைக்கு அனுப்ப முடியாது.',
+  'warnings.hazard.ROAD_BLOCKAGE': 'வீதி தடை',
+  'warnings.hazard.OTHER': 'பிற',
+  'warnings.review.sourceReport': 'மூல அறிக்கை',
+  'warnings.review.openReport': 'அங்கீகரிக்கப்பட்ட அறிக்கையைப் பார்க்க',
+  'hazardReports.approval.pending':
+    'எச்சரிக்கை கோரிக்கை DMC அங்கீகாரத்திற்காக அனுப்பப்பட்டது. அறிவிப்புகள் அனுப்பப்படவில்லை.',
+  'hazardReports.approval.openQueue': 'நிலுவையிலுள்ள அங்கீகாரங்களைத் திறக்க',
   'resources.nav.overview': 'மேலோட்டம்',
   'resources.nav.requests': 'கோரிக்கைகள் மற்றும் பதில்கள்',
   'resources.nav.deployments': 'பணியமர்த்தல்கள்',

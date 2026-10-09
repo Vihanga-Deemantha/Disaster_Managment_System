@@ -47,6 +47,7 @@ export interface WarningDoc {
   rejectedAt?: Date;
   rejectionReason?: string;
   sourceClusterId?: string;
+  sourceReportId?: string;
   updatedAt: Date;
   version: number;
 }
@@ -119,6 +120,7 @@ const warningSchema = new Schema<WarningDoc>(
     rejectedAt: Date,
     rejectionReason: String,
     sourceClusterId: String,
+    sourceReportId: String,
     updatedAt: { type: Date, required: true },
     version: { type: Number, required: true },
   },

@@ -18,6 +18,7 @@ describe('UC-1 persistence: MongoWarningRepository', () => {
   it('stores a warning and reads back exactly what was stored', async () => {
     const warning = aWarning({
       sourceClusterId: 'cluster-7',
+      sourceReportId: 'report-7',
       targetAreas: [
         aTargetArea({
           areaId: 'basin-kelani',

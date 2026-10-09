@@ -21,6 +21,11 @@ const escalation = (
 });
 
 describe('UC-1 step 23 of UC-3 / D4: EscalationRequestHandler', () => {
+  it('records DMC escalation requests with the actual approving role', async () => {
+    const h = createWarningsHarness();
+    await h.handler.handle(escalation({ requestedByRole: 'DMC_OFFICER' }));
+    expect(h.audit.entries[0]).toMatchObject({ actorRole: 'DMC_OFFICER' });
+  });
   it('UC-3 step 23: a confirmed escalation puts a draft in Pending Approvals, linked to its cluster', async () => {
     const h = createWarningsHarness();
 

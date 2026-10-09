@@ -65,6 +65,8 @@ export const HAZARD_TYPES = [
   'TSUNAMI',
   'DROUGHT',
   'LIGHTNING',
+  'ROAD_BLOCKAGE',
+  'OTHER',
 ] as const;
 export type HazardType = (typeof HAZARD_TYPES)[number];
 

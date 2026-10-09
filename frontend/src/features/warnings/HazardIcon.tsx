@@ -9,6 +9,8 @@ const ICONS: Record<HazardType, IconName> = {
   TSUNAMI: 'waves',
   DROUGHT: 'sun',
   LIGHTNING: 'zap',
+  ROAD_BLOCKAGE: 'alertTriangle',
+  OTHER: 'alertTriangle',
 };
 
 export function HazardIcon({ hazard, size = 18 }: { hazard: HazardType; size?: number }) {

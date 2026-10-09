@@ -215,4 +215,68 @@ export const si: Record<MessageKey, string> = {
   'month.10': 'ඔක්',
   'month.11': 'නොවැ',
   'month.12': 'දෙසැ',
+  'hazard.ROAD_BLOCKAGE': 'මාර්ග අවහිරය',
+  'reports.title': 'උවදුරක් වාර්තා කරන්න',
+  'reports.intro': 'ඔබ අවට සිදුවන දේ නිලධාරීන්ට දැනුම් දෙන්න.',
+  'reports.hazard': 'සිදු වූයේ කුමක්ද?',
+  'reports.description': 'විස්තරය (විකල්ප)',
+  'reports.descriptionHint': 'ඔබ දකින දේ විස්තර කරන්න. ආරක්ෂිතව සිටින්න.',
+  'reports.photo.title': 'ඡායාරූප සාක්ෂි (විකල්ප)',
+  'reports.photo.hint': 'JPEG, PNG හෝ WebP · උපරිම 5 MB',
+  'reports.photo.camera': 'ඡායාරූපයක් ගන්න',
+  'reports.photo.gallery': 'ගැලරියෙන් තෝරන්න',
+  'reports.photo.remove': 'ඡායාරූපය ඉවත් කරන්න',
+  'reports.photo.preview': 'අමුණා ඇති උවදුරේ ඡායාරූපය',
+  'reports.photo.denied': 'කැමරාවට අවසර නැත. දුරකථන සැකසුම්වලින් අවසර දෙන්න හෝ ගැලරියෙන් තෝරන්න.',
+  'reports.photo.unavailable':
+    'ඡායාරූපය විවෘත කළ නොහැකි විය. නැවත උත්සාහ කරන්න හෝ එය නොමැතිව ඉදිරියට යන්න.',
+  'reports.location.title': 'වාර්තාවේ ස්ථානය',
+  'reports.location.locating': 'ඔබේ ස්ථානය සොයමින්…',
+  'reports.location.gps': 'වත්මන් GPS ස්ථානය',
+  'reports.location.denied': 'ස්ථාන අවසරය අවශ්‍යයි. දුරකථන සැකසුම්වලින් අවසර දී නැවත උත්සාහ කරන්න.',
+  'reports.location.timeout':
+    'ස්ථානය සෙවීමට වැඩි කාලයක් ගත විය. විවෘත ප්‍රදේශයකට ගොස් නැවත උත්සාහ කරන්න.',
+  'reports.location.unavailable': 'ස්ථානය ලබාගත නොහැක. ස්ථාන සේවා සක්‍රීය කර නැවත උත්සාහ කරන්න.',
+  'reports.location.manual': 'ඔබ විසින් ස්ථානය වෙනස් කර ඇත.',
+  'reports.location.retry': 'ස්ථානය නැවත සොයන්න',
+  'reports.submit': 'වාර්තාව යවන්න',
+  'reports.submitting': 'වාර්තාව යවමින්…',
+  'reports.sent': 'වාර්තාව යවන ලදී',
+  'reports.sentHint':
+    'නිලධාරියෙකු වාර්තාව සමාලෝචනය කරනු ඇත. වාර්තාවක් යැවීමෙන් මහජන අනතුරු ඇඟවීමක් නිකුත් නොවේ.',
+  'reports.another': 'තවත් උවදුරක් වාර්තා කරන්න',
+  'reports.retry':
+    'යැවීම තහවුරු කළ නොහැකි විය. පෝරමය මෙහි ඇත. සම්බන්ධතාව පරීක්ෂා කර නැවත වාර්තාව යවන්න.',
+  'reports.refused': 'වාර්තාව පිළිගත්තේ නැත. විස්තර පරීක්ෂා කර නැවත උත්සාහ කරන්න.',
+  'reports.authRequired': 'ඔබේ සැසිය අවසන් විය. යැවීමට පෙර නැවත පිවිසෙන්න.',
+  'reports.duplicate':
+    'ඔබ මෑතකදී මෙහි සමාන උවදුරක් වාර්තා කර ඇත. පෙර වාර්තාව යාවත්කාලීන කරන්න හෝ වෙනම වාර්තාවක් යවන්න.',
+  'reports.duplicate.update': 'පෙර වාර්තාව යාවත්කාලීන කරන්න',
+  'reports.duplicate.new': 'වෙනම වාර්තාවක් යවන්න',
+  'reports.HAZARD_TYPE_REQUIRED': 'උවදුරු වර්ගයක් තෝරන්න.',
+  'reports.LOCATION_REQUIRED': 'යැවීමට පෙර ස්ථානය ලැබෙන තෙක් රැඳී සිටින්න.',
+  'reports.LOCATION_INVALID': 'ස්ථානය වලංගු නැත. ස්ථානය නැවත සොයන්න.',
+  'reports.LOCATION_OUTSIDE_SRI_LANKA': 'වාර්තාවේ ස්ථානය ශ්‍රී ලංකාව තුළ විය යුතුය.',
+  'reports.DESCRIPTION_TOO_LONG': 'විස්තරය අක්ෂර 500කට සීමා කරන්න.',
+  'reports.PHOTO_TYPE': 'JPEG, PNG හෝ WebP ඡායාරූපයක් තෝරන්න.',
+  'reports.PHOTO_TOO_LARGE':
+    'ඡායාරූපය 5 MBට වඩා විශාලය. කුඩා ඡායාරූපයක් තෝරන්න හෝ අලුත් එකක් ගන්න.',
+  'reports.PHOTO_EMPTY': 'ඡායාරූපය හිස් හෝ කියවිය නොහැක. වෙනත් එකක් තෝරන්න.',
+  'reports.savedOffline':
+    'මෙම දුරකථනයේ සුරැකිණි. සම්බන්ධතාව යළි ලැබුණු විට Safe Zone මෙම වාර්තාව යැවීමට උත්සාහ කරයි.',
+  'reports.storageError':
+    'දුරකථනයේ වාර්තාව සුරැකිය නොහැකි විය. පෝරමය තවම මෙහි ඇත. ගබඩා ඉඩ නිදහස් කර නැවත උත්සාහ කරන්න.',
+  'reports.notificationsReason':
+    'සුරැකි වාර්තා යැවූ විට ඔබට දැනුම් දීමට දැනුම්දීම් සඳහා අවසර දෙන්න.',
+  'reports.enableNotifications': 'යැවීමේ දැනුම්දීම් සක්‍රිය කරන්න',
+  'reports.notifications.GRANTED': 'යැවීමේ දැනුම්දීම් සක්‍රියයි.',
+  'reports.notifications.DENIED':
+    'දැනුම්දීම් සඳහා අවසර නැත. දුරකථනයේ සැකසුම් යටතේ Apps → Safe Zone → Notifications වෙත ගොස් සක්‍රිය කරන්න. සුරැකි වාර්තා තවමත් යැවිය හැක.',
+  'reports.notifications.UNAVAILABLE':
+    'දැනුම්දීම් අවසරය පරීක්ෂා කළ නොහැකි විය. නැවත උත්සාහ කරන්න. ඔබේ සුරැකි වාර්තාව ආරක්ෂිතයි.',
+  'reports.backgroundRestricted':
+    'පසුබිමෙන් යැවීම ලබාගත නොහැක. සම්බන්ධතාවක් ඇති විට Safe Zone විවෘත කිරීමෙන් සුරැකි වාර්තා යැවේ.',
+  'reports.syncTitle': 'Safe Zone වාර්තා යැවීම',
+  'reports.syncSent': 'යැවූ සුරැකි වාර්තා: {count}.',
+  'reports.syncSignIn': 'සුරැකි වාර්තා ({count}) යැවීමට පුරන්න.',
 };

@@ -6,6 +6,7 @@ import { AlertDeliveryManager } from './application/AlertDeliveryManager';
 import { ChannelSelector } from './application/ChannelSelector';
 import { CitizenAlertInbox } from './application/CitizenAlertInbox';
 import { EscalationRequestHandler } from './application/EscalationRequestHandler';
+import { ReportApprovalHandler } from './application/ReportApprovalHandler';
 import { RetryPolicy } from './application/RetryPolicy';
 import { WarningController } from './application/WarningController';
 import { createSimulatedServices } from './infrastructure/channels';
@@ -40,14 +41,7 @@ export const createWarningsModule: ModuleFactory = (ctx) => {
     maxRetries: retryPolicy.maxRetries,
   });
 
-  // UC-3 step 23: a confirmed escalation becomes a draft in Pending Approvals.
-  new EscalationRequestHandler({
-    warnings,
-    events: ctx.eventBus,
-    audit: ctx.auditLog,
-    clock: ctx.clock,
-    ids: ctx.ids,
-  }).register();
+  registerReportHandoffs(warnings, ctx);
   startAutomaticRetries(controller, ctx);
 
   return {
@@ -57,6 +51,13 @@ export const createWarningsModule: ModuleFactory = (ctx) => {
     devRouter: createWarningsDevRouter(gateway, ctx),
   };
 };
+
+/** UC3 approved reports and explicit cluster escalations both become pending warning drafts. */
+function registerReportHandoffs(warnings: MongoWarningRepository, ctx: ModuleContext): void {
+  const deps = { warnings, events: ctx.eventBus, audit: ctx.auditLog, clock: ctx.clock };
+  new EscalationRequestHandler({ ...deps, ids: ctx.ids }).register();
+  new ReportApprovalHandler(deps).register();
+}
 
 /**
  * UC-1, the citizen's side: `GET /api/me/alerts`, what the mobile app's Alerts tab polls. It reads the

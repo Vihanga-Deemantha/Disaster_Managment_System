@@ -47,7 +47,7 @@ Open <http://localhost:5173> and sign in with one of the [demo logins](#demo-log
 | Role                      | Sign in with                                                                                     | Scope                                |
 | ------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------ |
 | DMC Officer               | `dmc.officer@safezone.lk`                                                                        | national                             |
-| DMC Officer (second)      | `dmc.officer2@safezone.lk`                                                                       | national (for the four-eyes rule)    |
+| DMC Officer (second)      | `dmc.officer2@safezone.lk`                                                                       | national (second DMC account)        |
 | Duty Officer              | `duty.officer@safezone.lk`                                                                       | national                             |
 | District Officer          | `district.gampaha@safezone.lk`, `district.colombo@safezone.lk`, `district.ratnapura@safezone.lk` | own district                         |
 | NGO Manager               | `ngo.manager@safezone.lk`                                                                        | organisation `org-red-cross`         |
@@ -126,8 +126,15 @@ change once thanks to idempotency keys. Signing out (or a different person signi
 `npm run seed` adds 200 demo citizens (phones `0771500001` to `0771500200`, same demo password) and the five pending
 warnings of the wireframe: Gampaha, Ratnapura, the Kalu Ganga basin, the Kelani Ganga basin and Kegalle. Sign in as
 `dmc.officer2@safezone.lk` and open **Pending Approvals**. The Kalu Ganga warning was submitted by
-`dmc.officer@safezone.lk`, so that account cannot approve it (BR2, four eyes). If you seeded before the redesign, run
+`dmc.officer@safezone.lk`; either DMC account can approve and issue it, including the submitter. If you seeded before the redesign, run
 `npm run seed` again (without `--fresh`): it only fills in the submitters' names on the demo warnings.
+
+Approving an individual UC3 report as a Duty Officer or DMC Officer now creates a linked request in
+the DMC **Pending Approvals** queue, including Road blockage and Other reports. Approval sends no
+alerts. A DMC Officer completes the warning text in all three languages, checks severity and the
+proposed district, then uses **Approve & Issue** with password confirmation. Duty Officers cannot
+issue warnings. The same DMC Officer may approve the report and issue its warning; the audit keeps
+both actions. Repeated approval/event delivery does not create another request for the same report.
 
 The screens follow the supplied design. [`docs/design/uc1-pending-approvals-redesign.md`](docs/design/uc1-pending-approvals-redesign.md)
 shows it next to ours, lists every change from it and says why. The sidebar also opens **Issued Warnings** and **Rejected

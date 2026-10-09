@@ -1,6 +1,7 @@
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { configureNotifications } from '@/features/alerts/adapters/ExpoNotifier';
+import { useSyncTriggers } from '@/features/hazard-reports/hooks/useSyncTriggers';
 import { I18nProvider, useT } from '@/shared/i18n/I18nProvider';
 import { session, storage } from '@/shared/runtime';
 import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
@@ -19,6 +20,7 @@ function Screens() {
   const { state } = useSession();
   const loading = state.status === 'loading';
   const signedIn = state.status === 'signedIn';
+  useSyncTriggers(state.status === 'signedIn' ? state.user.userId : undefined);
 
   useEffect(() => {
     if (!loading) SplashScreen.hide();

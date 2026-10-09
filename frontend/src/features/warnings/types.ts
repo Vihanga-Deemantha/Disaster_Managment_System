@@ -40,6 +40,7 @@ export interface WarningDto {
   rejectedAt?: string;
   rejectionReason?: string;
   sourceClusterId?: string;
+  sourceReportId?: string;
   updatedAt: string;
   version: number;
 }

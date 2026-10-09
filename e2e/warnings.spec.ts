@@ -5,7 +5,7 @@ import { DEMO_PASSWORD, dmcHeading, signInAs, waitForServiceWorker } from './sup
  * UC-1 Issue Warning through a real browser, the real API and the seeded database: the five pending
  * warnings of the wireframe and 200 citizens. Each test uses its own warning, so they never meet.
  *   Gampaha: the main flow · Ratnapura: some pushes fail (A1) · Kegalle: every gateway down (E2)
- *   Colombo: rejected (A3) · Kalu Ganga basin: four-eyes (BR2) and offline (BR6)
+ *   Colombo: rejected (A3) · Kalu Ganga basin: offline (BR6)
  */
 const FIRST_OFFICER = 'dmc.officer@safezone.lk'; // submitted the Kalu Ganga warning
 const SECOND_OFFICER = 'dmc.officer2@safezone.lk';
@@ -205,14 +205,60 @@ test.describe('UC-1 Issue Warning', () => {
     );
   });
 
-  test('BR2: the officer who submitted a warning cannot approve it', async ({ page }) => {
-    await signInAndOpen(page, FIRST_OFFICER, 'Flood', 'Kalu Ganga basin');
-
-    const dialog = await confirmIssue(page);
-
-    await expect(dialog.getByRole('alert')).toContainText(
-      'You submitted this warning, so a different DMC Officer must approve it.',
-    );
+  test('DMC approves a citizen report, finds its request, and issues it themselves', async ({
+    page,
+  }) => {
+    const headers = { 'X-Requested-With': 'SafeZone' };
+    const login = await page.request.post('/api/auth/login', {
+      headers,
+      data: { identifier: '0770000001', password: DEMO_PASSWORD },
+    });
+    expect(login.ok()).toBe(true);
+    const submitted = await page.request.post('/api/hazard-reports', {
+      headers,
+      multipart: {
+        clientReportId: 'e2e-approved-individual-report',
+        hazardType: 'ROAD_BLOCKAGE',
+        description: 'Road blocked by fallen trees.',
+        lat: '7.0873',
+        lng: '79.9925',
+        locationSource: 'MANUAL',
+        capturedAt: new Date().toISOString(),
+      },
+    });
+    expect(submitted.status()).toBe(201);
+    const { report } = await submitted.json();
+    const logout = await page.request.post('/api/auth/logout', { headers });
+    expect(logout.ok()).toBe(true);
+    await signInAs(page, FIRST_OFFICER);
+    await expect(dmcHeading(page)).toBeVisible();
+    const approved = await page.request.post(`/api/hazard-reports/${report.id}/verify`, {
+      headers,
+      data: {},
+    });
+    expect(approved.ok()).toBe(true);
+    await page.reload();
+    await reviewLink(page, 'Road blockage', 'Gampaha').click();
+    await expect(page.getByRole('link', { name: 'View approved report' })).toBeVisible();
+    const warningId = page.url().split('/').pop();
+    const review = await (await page.request.get(`/api/warnings/${warningId}`)).json();
+    const updated = await page.request.patch(`/api/warnings/${warningId}`, {
+      headers,
+      data: {
+        expectedVersion: review.warning.version,
+        messages: {
+          SI: 'සිංහල පණිවිඩය',
+          TA: 'தமிழ் செய்தி',
+          EN: 'Road blockage. Follow official instructions.',
+        },
+      },
+    });
+    expect(updated.ok()).toBe(true);
+    await page.reload();
+    await confirmIssue(page);
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Warning Issued', exact: true }),
+    ).toBeVisible();
   });
 
   test('BR6: offline, the list and the warning open from the saved copy, and Approve & Issue is off', async ({

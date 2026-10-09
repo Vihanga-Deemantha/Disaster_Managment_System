@@ -36,6 +36,23 @@ const info = (label: string) =>
   screen.getByText(label, { selector: 'dt' }).nextElementSibling as HTMLElement;
 
 describe('UC-1 step 2: Review Warning (screen 2)', () => {
+  it('links an automatically created request to its approved report and allows the same DMC to issue', async () => {
+    await open(
+      aReview({
+        warning: aWarning({
+          sourceReportId: 'report-7',
+          submittedBy: 'user-1',
+          hazardType: 'ROAD_BLOCKAGE',
+        }),
+      }),
+    );
+    expect(screen.getByRole('link', { name: 'View approved report' })).toHaveAttribute(
+      'href',
+      '/hazard-reports/reports/report-7',
+    );
+    expect(screen.getByRole('heading', { name: 'Road blockage Warning' })).toBeVisible();
+    expect(button('Approve & Issue')).toBeEnabled();
+  });
   it('shows a spinner while it loads, and a way back to the list', async () => {
     serveWarnings();
 

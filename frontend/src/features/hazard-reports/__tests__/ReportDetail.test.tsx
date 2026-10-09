@@ -155,6 +155,21 @@ it.each(
     expect(
       await screen.findByText('Verified. Cluster score is now 87 (High priority).'),
     ).toBeVisible();
+    expect(
+      screen.getByText(
+        'A warning request is now in the DMC Pending Approvals queue. No alerts have been sent.',
+      ),
+    ).toBeVisible();
+    if (role === 'DMC_OFFICER') {
+      expect(screen.getByRole('link', { name: 'Open Pending Approvals' })).toHaveAttribute(
+        'href',
+        '/warnings',
+      );
+    } else {
+      expect(
+        screen.queryByRole('link', { name: 'Open Pending Approvals' }),
+      ).not.toBeInTheDocument();
+    }
     expect(calls).toBe(1);
     expect(screen.queryByRole('button', { name: 'Verify report' })).not.toBeInTheDocument();
     if (status === 'ESCALATION_RECOMMENDED')

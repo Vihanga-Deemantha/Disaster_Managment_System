@@ -75,7 +75,7 @@ describe('UC-1 step 1: Pending Approvals (screen 1)', () => {
       screen.getByRole('heading', { level: 1, name: 'Pending Approvals' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('Review warning requests submitted by Duty Officers.'),
+      screen.getByText('Review warning requests from approved reports and officer submissions.'),
     ).toBeInTheDocument();
     expect(screen.getByText('Loading…')).toBeInTheDocument();
     await screen.findByRole('table');

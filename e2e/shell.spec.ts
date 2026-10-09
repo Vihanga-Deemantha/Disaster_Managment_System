@@ -30,6 +30,7 @@ test('the sidebar, the top bar, the phone menu and the Pending Approvals list', 
       'Dashboard',
       'Review reports',
       'Report history',
+      'Resource Allocation',
       'Impact Analytics',
     ]);
     await expect(pendingLink(page)).toHaveAttribute('aria-current', 'page');

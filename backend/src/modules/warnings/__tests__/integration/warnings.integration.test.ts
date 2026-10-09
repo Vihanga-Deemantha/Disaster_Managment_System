@@ -30,7 +30,7 @@ beforeEach(async () => clearDatabase());
 const withCsrf = <T extends request.Test>(test: T): T =>
   test.set(CSRF_HEADER, CSRF_HEADER_VALUE) as T;
 
-async function startApplication(): Promise<Application> {
+async function startApplication(includeDemoWarnings = true): Promise<Application> {
   const built = await buildApplication(config, nullLogger);
   const seedContext: SeedContext = {
     logger: nullLogger,
@@ -41,7 +41,7 @@ async function startApplication(): Promise<Application> {
     demoPasswordHash: await built.auth.hasher.hash(DEFAULT_DEMO_PASSWORD),
   };
   await seedAuth(seedContext);
-  await seedWarnings(seedContext);
+  if (includeDemoWarnings) await seedWarnings(seedContext);
   return built;
 }
 
@@ -69,6 +69,58 @@ const setGateway = (agent: Agent, channel: string, mode: string) =>
   withCsrf(agent.put(`/api/dev/gateways/${channel}`)).send({ mode });
 
 describe('UC-1 end to end: a DMC Officer reviews, confirms and issues a warning', () => {
+  it.each([
+    ['duty.officer@safezone.lk', 'ROAD_BLOCKAGE'],
+    [FIRST_OFFICER, 'OTHER'],
+  ])(
+    'approved citizen report enters the DMC queue when %s approves %s',
+    async (email, hazardType) => {
+      const { app } = await startApplication(false);
+      const citizen = await signIn(app, '0770000001');
+      const officer = await signIn(app, email);
+      const dmc = email === FIRST_OFFICER ? officer : await signIn(app, FIRST_OFFICER);
+      const submitted = await withCsrf(citizen.post('/api/hazard-reports'))
+        .field('clientReportId', 'integration-report-approval')
+        .field('hazardType', hazardType)
+        .field('description', 'Confirmed hazard evidence')
+        .field('lat', '7.0873')
+        .field('lng', '79.9925')
+        .field('locationSource', 'MANUAL')
+        .field('capturedAt', new Date().toISOString());
+      expect(submitted.status).toBe(201);
+      const reportId = submitted.body.report.id as string;
+      const approved = await withCsrf(officer.post(`/api/hazard-reports/${reportId}/verify`)).send(
+        {},
+      );
+      expect(approved.status).toBe(200);
+      const list = await dmc.get('/api/warnings?status=PENDING_APPROVAL');
+      const warning = list.body.find(
+        (row: { sourceReportId?: string }) => row.sourceReportId === reportId,
+      );
+      expect(warning).toMatchObject({ hazardType, status: 'PENDING_APPROVAL' });
+      expect(await mongoose.connection.collection('alert_notifications').countDocuments()).toBe(0);
+      expect(
+        (await withCsrf(officer.post(`/api/hazard-reports/${reportId}/verify`)).send({})).status,
+      ).toBe(409);
+      expect((await dmc.get('/api/warnings?status=PENDING_APPROVAL')).body).toHaveLength(1);
+      if (email !== FIRST_OFFICER) {
+        expect((await issue(officer, warning.warningId, 'duty-issue-denied')).status).toBe(403);
+      }
+      const updated = await withCsrf(dmc.patch(`/api/warnings/${warning.warningId}`)).send({
+        expectedVersion: warning.version,
+        messages: {
+          SI: 'සිංහල පණිවිඩය',
+          TA: 'தமிழ் செய்தி',
+          EN: 'Confirmed hazard. Follow official instructions.',
+        },
+      });
+      expect(updated.status).toBe(200);
+      const issued = await issue(dmc, warning.warningId, 'report-approval-issue-key');
+      expect(issued.status).toBe(200);
+      expect(issued.body.warning.status).toBe('ISSUED');
+      expect(issued.body.result.targeted).toBeGreaterThan(0);
+    },
+  );
   it('UC-1 steps 1 to 14: lists the five pending warnings, estimates the audience, issues, and tells UC-4', async () => {
     const { app, ctx } = await startApplication();
     const issued: WarningIssued[] = [];
@@ -159,7 +211,7 @@ describe('UC-1 end to end: a DMC Officer reviews, confirms and issues a warning'
     );
   });
 
-  it('UC-1 BR2: the officer who submitted the Kalu Ganga warning cannot approve it; the other one can', async () => {
+  it('DMC policy: the submitting DMC can issue; another officer cannot issue it twice', async () => {
     const { app } = await startApplication();
     const submitter = await signIn(app, FIRST_OFFICER);
     const reviewer = await signIn(app, SECOND_OFFICER);
@@ -167,10 +219,10 @@ describe('UC-1 end to end: a DMC Officer reviews, confirms and issues a warning'
     const refused = await issue(submitter, 'warning-demo-kalutara', 'integration-key-0004');
     const allowed = await issue(reviewer, 'warning-demo-kalutara', 'integration-key-0005');
 
-    expect(refused.status).toBe(403);
-    expect(refused.body.error.code).toBe('SELF_APPROVAL_FORBIDDEN');
-    expect(allowed.status).toBe(200);
-    expect(allowed.body.result.targeted).toBeGreaterThan(0);
+    expect(refused.status).toBe(200);
+    expect(refused.body.result.targeted).toBeGreaterThan(0);
+    expect(allowed.status).toBe(409);
+    expect(allowed.body.error.code).toBe('WARNING_NOT_PENDING');
   });
 
   it('UC-1 BR1: keeps out the signed-out, and a citizen who is signed in', async () => {

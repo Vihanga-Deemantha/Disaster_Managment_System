@@ -371,18 +371,13 @@ describe('UC-1 E1: validation', () => {
 });
 
 describe('UC-1 BR2 and BR5: who may issue, and only once', () => {
-  it('UC-1 BR2: the officer who submitted the warning cannot approve it, and nothing happens', async () => {
+  it('DMC policy: the submitting DMC officer can issue their own warning', async () => {
     const h = createWarningsHarness({ recipients: [aRecipient()] });
     await h.add(aWarning({ submittedBy: OFFICER }));
 
-    await expect(issue(h, OFFICER)).rejects.toMatchObject({
-      code: 'SELF_APPROVAL_FORBIDDEN',
-      kind: 'FORBIDDEN',
-    });
-
-    expect(h.warnings.stored('W-1')).toMatchObject({ version: 1, status: 'PENDING_APPROVAL' });
-    expect(h.gateways.SMS.calls).toHaveLength(0);
-    expect(h.audit.entries).toEqual([]);
+    await issue(h, OFFICER);
+    expect(h.warnings.stored('W-1')).toMatchObject({ status: 'ISSUED', approvedBy: OFFICER });
+    expect(h.gateways.SMS.calls).toHaveLength(1);
   });
 
   it('UC-1 BR2: a second DMC Officer can issue what the first one submitted', async () => {

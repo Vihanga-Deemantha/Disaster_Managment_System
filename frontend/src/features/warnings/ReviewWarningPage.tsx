@@ -50,6 +50,16 @@ function WarningInformation({ warning }: { warning: WarningDto }) {
           {relativeTime(submitted, Date.now(), HTML_LANG[language])}
         </span>
       </InfoRow>
+      {warning.sourceReportId && (
+        <InfoRow label={t('warnings.review.sourceReport')} icon="fileText">
+          <Link
+            to={`/hazard-reports/reports/${warning.sourceReportId}`}
+            className="text-accent-700 underline"
+          >
+            {t('warnings.review.openReport')}
+          </Link>
+        </InfoRow>
+      )}
     </WarningFacts>
   );
 }

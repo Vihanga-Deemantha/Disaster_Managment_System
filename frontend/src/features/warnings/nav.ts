@@ -28,8 +28,10 @@ export function usePendingCount(): number | undefined {
   });
   useEffect(() => {
     refreshers.add(reload);
+    window.addEventListener('safezone:warning-request-created', reload);
     return () => {
       refreshers.delete(reload);
+      window.removeEventListener('safezone:warning-request-created', reload);
     };
   }, [reload]);
   return data?.length;
