@@ -5,5 +5,11 @@ export const resourcesNav: NavItem = {
   id: 'resources',
   labelKey: 'nav.resources',
   to: '/resources',
-  roles: ['DISTRICT_OFFICER', 'NGO_MANAGER', 'ARMED_FORCES_LIAISON', 'GOVERNMENT_AGENCY_OFFICER'],
+  roles: [
+    'DISTRICT_OFFICER',
+    'DMC_OFFICER',
+    'NGO_MANAGER',
+    'ARMED_FORCES_LIAISON',
+    'GOVERNMENT_AGENCY_OFFICER',
+  ],
 };

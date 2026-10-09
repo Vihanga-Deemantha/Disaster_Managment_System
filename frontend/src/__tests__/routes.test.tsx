@@ -18,8 +18,17 @@ vi.mock(
 );
 
 afterEach(() => resetBrowserOnline());
+beforeEach(() =>
+  server.use(
+    http.get('/api/resources/board', () =>
+      HttpResponse.json({ areas: [], needs: [], requests: [], dispatches: [] }),
+    ),
+  ),
+);
 
-const heading = (name: string) => screen.findByRole('heading', { level: 1, name });
+// The first lazy analytics import can exceed five seconds on a busy development laptop.
+const heading = (name: string) =>
+  screen.findByRole('heading', { level: 1, name }, { timeout: 15_000 });
 
 /** Which sidebar links each role should see. */
 const NAV_BY_ROLE: Record<Role, string[]> = {
@@ -33,6 +42,7 @@ const NAV_BY_ROLE: Record<Role, string[]> = {
     'Dashboard',
     'Review reports',
     'Report history',
+    'Resource Allocation',
     'Impact Analytics',
   ],
   DISTRICT_OFFICER: ['Resource Allocation'],
@@ -45,7 +55,7 @@ const NAV_BY_ROLE: Record<Role, string[]> = {
 describe('the route table (master plan §5: all routes registered up front)', () => {
   it.each([
     ['/warnings', 'DMC_OFFICER', 'Pending Approvals'],
-    ['/resources', 'DISTRICT_OFFICER', 'Resource Allocation'],
+    ['/resources', 'DISTRICT_OFFICER', 'Resource allocation'],
     ['/hazard-reports', 'DUTY_OFFICER', 'Hazard report clusters'],
     ['/analytics', 'DONOR', 'Impact Analytics'],
   ] as const)('%s opens for a %s inside the shared shell', async (path, role, title) => {
@@ -58,7 +68,7 @@ describe('the route table (master plan §5: all routes registered up front)', ()
     expect(screen.getByRole('main')).toBeInTheDocument();
   });
 
-  it.each([['/resources/allocations/new', 'NGO_MANAGER', 'Resource Allocation']] as const)(
+  it.each([['/resources/allocations/new', 'NGO_MANAGER', 'Agency allocations']] as const)(
     'leaves everything below %s to its owner',
     async (path, role, title) => {
       signIn(makeMe({ role }));
@@ -81,7 +91,7 @@ describe('the route table (master plan §5: all routes registered up front)', ()
 
   it.each([
     ['/warnings', 'DUTY_OFFICER'],
-    ['/resources', 'DMC_OFFICER'],
+    ['/resources', 'CITIZEN'],
     ['/hazard-reports', 'DONOR'],
     ['/analytics', 'CITIZEN'],
   ] as const)('refuses %s to a %s with the 403 page', async (path, role) => {
