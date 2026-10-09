@@ -4,6 +4,7 @@ import { MongoResourceStore } from '../infrastructure/MongoResourceStore';
 import type { Records } from '../application/ports';
 import { NotFoundError } from '@shared/errors';
 import { DEMO_ORGANIZATIONS } from '@shared/auth/seed/demoAccounts';
+import { fieldInventory, fieldNeeds } from './fieldResources';
 
 /**
  * UC-2 demo data: organisations (reuse the ids in `DEMO_ORGANIZATIONS` from shared/auth/seed so the
@@ -14,8 +15,12 @@ export const seedResources = async (ctx: Pick<SeedContext, 'clock'>): Promise<vo
   const now = ctx.clock.now();
   for (const district of ['GAMPAHA', 'COLOMBO', 'RATNAPURA'] as const) {
     await seedDistrict(store, district, now);
+    for (const need of fieldNeeds(district))
+      await insertMissing(store, 'needs', need.requirementId, need);
   }
   await seedInventory(store, now);
+  for (const item of fieldInventory(now))
+    await insertMissing(store, 'inventory', item.resourceId, item);
 };
 async function seedInventory(store: MongoResourceStore, now: Date): Promise<void> {
   const organizations = [
