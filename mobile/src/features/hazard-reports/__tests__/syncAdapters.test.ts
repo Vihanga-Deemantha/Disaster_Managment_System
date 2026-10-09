@@ -96,6 +96,21 @@ describe('UC-3 sync native boundaries', () => {
     unsubscribe();
     expect(stop).toHaveBeenCalledTimes(1);
   });
+  it('provides both offline and online changes for status banners', () => {
+    let listener!: (state: unknown) => void;
+    const off = jest.fn();
+    jest.mocked(NetInfo.addEventListener).mockImplementation((callback) => {
+      listener = callback as typeof listener;
+      return off;
+    });
+    const states: boolean[] = [];
+    const unsubscribe = new NetInfoConnectivityMonitor().onChange((value) => states.push(value));
+    listener({ isConnected: false, isInternetReachable: false });
+    listener({ isConnected: true, isInternetReachable: true });
+    expect(states).toEqual([false, true]);
+    unsubscribe();
+    expect(off).toHaveBeenCalledTimes(1);
+  });
   it('sends sync confirmations only with existing notification permission, without prompting in the background', async () => {
     const kv = { get: async () => 'EN', set: async () => undefined, remove: async () => undefined };
     const notifier = new ExpoSyncNotifier(kv);

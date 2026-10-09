@@ -278,6 +278,43 @@ export const en = {
   'reports.syncTitle': 'Safe Zone report delivery',
   'reports.syncSent': 'Saved reports sent: {count}.',
   'reports.syncSignIn': 'Sign in to send your saved reports ({count}).',
+  'reports.mine.title': 'My reports',
+  'reports.mine.intro': 'Track delivery and officer review of your hazard reports.',
+  'reports.mine.loading': 'Loading your reports…',
+  'reports.mine.empty': 'You have not reported anything yet.',
+  'reports.mine.noCached':
+    'No reports are saved on this phone. Connect to load your submitted reports.',
+  'reports.mine.offline':
+    'You are offline. Reports are saved on this phone and sent later. Showing saved status.',
+  'reports.mine.error':
+    'Could not refresh your reports. Showing the last saved status. Try again when connected.',
+  'reports.mine.storageError':
+    'Could not read saved reports on this phone. Your saved data has not been replaced. Try again.',
+  'reports.mine.refresh': 'Refresh reports',
+  'reports.mine.savedHint': 'Open My reports to check delivery and review status.',
+  'reports.mine.status.PENDING_SYNC': 'Pending sync',
+  'reports.mine.status.SENDING': 'Sending…',
+  'reports.mine.status.NEEDS_CHOICE': 'Needs your choice',
+  'reports.mine.status.NOT_SENT': 'Not sent',
+  'reports.mine.status.PENDING_REVIEW': 'Pending review',
+  'reports.mine.status.VERIFIED': 'Verified',
+  'reports.mine.status.REJECTED': 'Rejected',
+  'reports.mine.withoutPhoto': 'Send without photo',
+  'reports.mine.discard': 'Discard',
+  'reports.mine.discardPrompt':
+    'Discard this saved report? It will be removed from this phone and will not be sent.',
+  'reports.mine.confirmDiscard': 'Discard saved report',
+  'reports.mine.discarded': 'Saved report discarded.',
+  'reports.mine.actionError':
+    'Could not complete that action. Your saved report is still available. Try again.',
+  'reports.mine.lastSync': 'Last sync {time} · {trigger} · {sent} sent, {waiting} waiting',
+  'reports.mine.trigger.OS_TASK': 'by the system in the background',
+  'reports.mine.trigger.RECONNECT': 'when the connection returned',
+  'reports.mine.trigger.APP_FOREGROUND': 'when the app opened',
+  'reports.mine.trigger.MANUAL': 'when you refreshed',
+  'reports.mine.debug': 'Run background sync now',
+  'reports.mine.debugFailed':
+    'The background test worker is unavailable. Use a development build to test it.',
 } as const;
 
 export type MessageKey = keyof typeof en;

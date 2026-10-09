@@ -4,16 +4,19 @@
 
 The authoritative phase table is [IMPLEMENTATION_PLAN.md](../../../IMPLEMENTATION_PLAN.md). The task examples below describe the original plan; their historical unchecked steps are not a current progress report.
 
-| Phase | Progress                                                                             |
-| ----- | ------------------------------------------------------------------------------------ |
-| M0    | DONE — foundation and installed standalone APK accepted                              |
-| M1    | DONE — validators and journal core                                                   |
-| M2    | DONE — corrected photo upload accepted on the phone                                  |
-| M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                       |
-| M4    | WIP — offline save/login/reconnect accepted on phone; closed-app OS delivery pending |
-| M5–M7 | TODO — offline screens, recovery and device acceptance                               |
+| Phase | Progress                                                                                    |
+| ----- | ------------------------------------------------------------------------------------------- |
+| M0    | DONE — foundation and installed standalone APK accepted                                     |
+| M1    | DONE — validators and journal core                                                          |
+| M2    | DONE — corrected photo upload accepted on the phone                                         |
+| M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                              |
+| M4    | WIP — offline save/login/reconnect accepted on phone; closed-app OS delivery pending        |
+| M5    | WIP — reporter history/offline status and recovery UI implemented; phone acceptance pending |
+| M6–M7 | TODO — manual location/photo recovery and device acceptance                                 |
 
 See `evidence/m0` through `evidence/m4` for verification details. M4 device acceptance is tracked separately from automated implementation checks.
+
+M5 implementation and installation checks are recorded in `evidence/m5/README.md`. Its history cache is scoped per owner; queue subscriptions and server reads are coordinated by a single controller. After an offline save, the form retains its existing retry behaviour and offers **Report another hazard** explicitly, rather than automatically clearing the form.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development` or
 > `superpowers:executing-plans`. Steps use checkbox (`- [ ]`) syntax. Read `IMPLEMENTATION_PLAN.md` (decisions, REST

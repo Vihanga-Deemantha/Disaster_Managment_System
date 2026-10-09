@@ -12,6 +12,7 @@ import { HazardTiles } from '../components/HazardTiles';
 import { LocationField } from '../components/LocationField';
 import { PhotoField } from '../components/PhotoField';
 import { SubmissionFeedback } from '../components/SubmissionFeedback';
+import { OfflineBanner } from '../components/OfflineBanner';
 import { reportDependencies, type ReportDependencies } from '../composition';
 import { DESCRIPTION_MAX_CHARS } from '../domain/reportRules';
 import type { ReportDraft } from '../domain/types';
@@ -64,6 +65,33 @@ function DescriptionField({
   );
 }
 
+function SentConfirmation({ onAnother }: { onAnother: () => void }) {
+  const t = useT();
+  return (
+    <Screen edges={['right', 'bottom', 'left']}>
+      <Banner tone="success">{t('reports.sent')}</Banner>
+      <AppText>{t('reports.sentHint')}</AppText>
+      <AppText>{t('reports.mine.savedHint')}</AppText>
+      <Button title={t('reports.another')} onPress={onAnother} />
+    </Screen>
+  );
+}
+function SavedActions({
+  outcome,
+  onAnother,
+}: {
+  outcome?: SubmissionOutcome;
+  onAnother: () => void;
+}) {
+  const t = useT();
+  if (outcome?.kind !== 'SAVED_OFFLINE') return null;
+  return (
+    <>
+      <AppText>{t('reports.mine.savedHint')}</AppText>
+      <Button title={t('reports.another')} variant="secondary" onPress={onAnother} />
+    </>
+  );
+}
 /** Every submission is journaled before sending; the sync engine owns delivery and retries. */
 export function ReportHazardForm({ ownerId, deps, onSessionExpired }: Props) {
   const t = useT();
@@ -81,24 +109,15 @@ export function ReportHazardForm({ ownerId, deps, onSessionExpired }: Props) {
     setFields((previous) => ({ ...previous, ...patch }));
     submission.reset();
   }
+  function another(): void {
+    setFields({ description: '' });
+    submission.reset();
+  }
   useEffect(() => {
     if (submission.outcome?.kind === 'AUTH_REQUIRED')
       void onSessionExpired?.().catch(() => undefined);
   }, [submission.outcome, onSessionExpired]);
-  if (isDelivered(submission.outcome))
-    return (
-      <Screen edges={['right', 'bottom', 'left']}>
-        <Banner tone="success">{t('reports.sent')}</Banner>
-        <AppText>{t('reports.sentHint')}</AppText>
-        <Button
-          title={t('reports.another')}
-          onPress={() => {
-            setFields({ description: '' });
-            submission.reset();
-          }}
-        />
-      </Screen>
-    );
+  if (isDelivered(submission.outcome)) return <SentConfirmation onAnother={another} />;
   const locationErrors = invalidLocations(checked);
   return (
     <Screen edges={['right', 'bottom', 'left']}>
@@ -106,6 +125,7 @@ export function ReportHazardForm({ ownerId, deps, onSessionExpired }: Props) {
         {t('reports.title')}
       </AppText>
       <AppText color={colors.inkSoft}>{t('reports.intro')}</AppText>
+      <OfflineBanner connectivity={deps.connectivity} />
       <View style={styles.card}>
         <HazardTiles
           value={fields.hazardType}
@@ -137,6 +157,7 @@ export function ReportHazardForm({ ownerId, deps, onSessionExpired }: Props) {
         onChoice={(choice) => void submission.submit(draft, choice)}
         onEnableNotifications={deps.enableNotifications}
       />
+      <SavedActions outcome={submission.outcome} onAnother={another} />
       {submission.problems.map((problem) => (
         <Banner key={problem} tone="warning">
           {t(`reports.${problem}`)}
