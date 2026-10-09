@@ -13,7 +13,7 @@ The authoritative phase table is [IMPLEMENTATION_PLAN.md](../../../IMPLEMENTATIO
 | M4    | WIP — offline save/login/reconnect accepted on phone; closed-app OS delivery pending       |
 | M5    | DONE — owner accepted reporter history, offline/reconnect status and notification feedback |
 | M6    | DONE — automated checks passed; owner accepted manual pin and photo recovery on the phone  |
-| M7    | TODO — device sync acceptance                                                              |
+| M7    | WIP — physical sync acceptance started; device setup and T1–T8 results pending             |
 
 See `evidence/m0` through `evidence/m4` for verification details. M4 device acceptance is tracked separately from automated implementation checks.
 
@@ -1750,6 +1750,8 @@ pin."
 ---
 
 ## Phase M7 – Sync acceptance tests
+
+**9 Oct:** acceptance preparation started using the installed M6 standalone APK. API health is confirmed. The owner reports Oppo F11 Pro / Android 11 and has deferred USB testing; T1–T8 physical outcomes remain pending. Track results in `evidence/m7/README.md`. Existing automated coverage does not substitute for these device checks.
 
 - [ ] Run T1–T8 from `D-offline-sync-design.md` §11 on the real phone. Record the screen for T2, T3, T4.
 - [ ] Note the phone model, Android version and the result of each test in the report (prototype constraints
