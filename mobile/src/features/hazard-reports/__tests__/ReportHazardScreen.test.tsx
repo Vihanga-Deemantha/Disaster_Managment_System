@@ -1,0 +1,153 @@
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { aMe, renderWithApp } from '@/shared/testing/renderWithApp';
+import { en } from '@/shared/i18n/messages.en';
+import { ReportHazardForm } from '../screens/ReportHazardScreen';
+import { FixedClock, SequentialIds } from '../testing/fakes';
+import type { QueuedReport, UploadOutcome } from '../offline/types';
+import type { PhotoPickResult } from '../adapters/ExpoPhotoPicker';
+
+jest.mock('../composition', () => ({ reportDependencies: {} }));
+function setup(outcome: UploadOutcome = { kind: 'DELIVERED', via: 'CREATED', reportId: 'r-1' }) {
+  const calls: QueuedReport[] = [];
+  const deps = {
+    clock: new FixedClock(),
+    ids: new SequentialIds(),
+    location: {
+      requestPermission: async () => true,
+      current: async () => ({ lat: 6.5854, lng: 79.9607 }),
+      lastKnown: async () => undefined,
+    },
+    photos: {
+      pick: async (): Promise<PhotoPickResult> => ({
+        kind: 'PICKED',
+        photo: { uri: 'file:///photo.jpg', mimeType: 'image/jpeg', fileSize: 100 },
+      }),
+    },
+    uploader: {
+      upload: async (entry: QueuedReport) => {
+        calls.push(entry);
+        return outcome;
+      },
+    },
+  };
+  return { calls, deps };
+}
+describe('UC-3 steps 1–7: Report form', () => {
+  it('expires a refused session and never treats authentication failure as delivery', async () => {
+    const h = setup({ kind: 'AUTH_REQUIRED' });
+    const expire = jest.fn(async () => undefined);
+    await renderWithApp(
+      <ReportHazardForm ownerId="user-1" deps={h.deps} onSessionExpired={expire} />,
+    );
+    fireEvent.press(screen.getByRole('radio', { name: 'Flood' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeEnabled(),
+    );
+    fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] }));
+    await screen.findByText(en['reports.authRequired']);
+    expect(expire).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(en['reports.sent'])).toBeNull();
+  });
+  it('rejects a GPS fix outside Sri Lanka and explains why Submit is disabled', async () => {
+    const h = setup();
+    h.deps.location.current = async () => ({ lat: 0, lng: 0 });
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    await screen.findByText(en['reports.LOCATION_OUTSIDE_SRI_LANKA']);
+    fireEvent.press(screen.getByRole('radio', { name: 'Flood' }));
+    expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeDisabled();
+  });
+  it('shows denied camera access and cancellation preserves an attached image', async () => {
+    const h = setup();
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.gallery'] }));
+    await screen.findByLabelText(en['reports.photo.preview']);
+    h.deps.photos.pick = async () => ({ kind: 'CANCELLED' });
+    await act(async () =>
+      fireEvent.press(screen.getByRole('button', { name: en['reports.photo.gallery'] })),
+    );
+    expect(screen.getByLabelText(en['reports.photo.preview'])).toBeTruthy();
+    h.deps.photos.pick = async () => ({ kind: 'DENIED' });
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.camera'] }));
+    await screen.findByText(en['reports.photo.denied']);
+  });
+  it('requires hazard and location, submits a validated photo and description, and confirms delivery', async () => {
+    const h = setup();
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />, { signedInAs: aMe() });
+    expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeDisabled();
+    fireEvent.press(screen.getByRole('radio', { name: 'Flood' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeEnabled(),
+    );
+    fireEvent.changeText(screen.getByLabelText(en['reports.description']), ' Water rising ');
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.camera'] }));
+    await screen.findByLabelText(en['reports.photo.preview']);
+    fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] }));
+    await screen.findByText(en['reports.sent']);
+    expect(h.calls[0]).toMatchObject({
+      ownerId: 'user-1',
+      description: 'Water rising',
+      photo: { uri: 'file:///photo.jpg' },
+      location: { source: 'GPS' },
+    });
+    fireEvent.press(screen.getByRole('button', { name: en['reports.another'] }));
+    expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeDisabled();
+  });
+  it('keeps the form on connection failure and shows an honest retry message', async () => {
+    const h = setup({ kind: 'RETRY' });
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(screen.getByRole('radio', { name: 'Other' }));
+    fireEvent.changeText(screen.getByLabelText(en['reports.description']), 'Tree down');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeEnabled(),
+    );
+    fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] }));
+    await screen.findByText(en['reports.retry']);
+    expect(screen.getByDisplayValue('Tree down')).toBeTruthy();
+    expect(screen.queryByText(en['reports.sent'])).toBeNull();
+  });
+  it('does not use a fallback coordinate as report evidence after permission denial', async () => {
+    const h = setup();
+    h.deps.location.requestPermission = async () => false;
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(screen.getByRole('radio', { name: 'Flood' }));
+    await screen.findByText(en['reports.location.denied']);
+    expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeDisabled();
+    expect(h.calls).toEqual([]);
+  });
+  it('rejects an oversized gallery image, supports removal, and counts Unicode characters', async () => {
+    const h = setup();
+    h.deps.photos.pick = async () => ({
+      kind: 'PICKED',
+      photo: { uri: 'file:///large.jpg', mimeType: 'image/jpeg', fileSize: 6 * 1024 * 1024 },
+    });
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.gallery'] }));
+    await screen.findByText(en['reports.PHOTO_TOO_LARGE']);
+    expect(screen.queryByLabelText(en['reports.photo.preview'])).toBeNull();
+    h.deps.photos.pick = async () => ({
+      kind: 'PICKED',
+      photo: { uri: 'file:///ok.jpg', mimeType: 'image/jpeg', fileSize: 100 },
+    });
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.gallery'] }));
+    await screen.findByLabelText(en['reports.photo.preview']);
+    fireEvent.press(screen.getByRole('button', { name: en['reports.photo.remove'] }));
+    expect(screen.queryByLabelText(en['reports.photo.preview'])).toBeNull();
+    fireEvent.changeText(screen.getByLabelText(en['reports.description']), '🌧'.repeat(501));
+    expect(screen.getByText('501 / 500')).toBeTruthy();
+    expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeDisabled();
+  });
+  it('offers an explicit choice for a suspected duplicate instead of reporting success', async () => {
+    const h = setup({ kind: 'DUPLICATE_SUSPECTED', existingReportId: 'old' });
+    await renderWithApp(<ReportHazardForm ownerId="user-1" deps={h.deps} />);
+    fireEvent.press(screen.getByRole('radio', { name: 'Flood' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: en['reports.submit'] })).toBeEnabled(),
+    );
+    await act(async () =>
+      fireEvent.press(screen.getByRole('button', { name: en['reports.submit'] })),
+    );
+    expect(screen.getByText(en['reports.duplicate'])).toBeTruthy();
+    expect(screen.getByRole('button', { name: en['reports.duplicate.update'] })).toBeTruthy();
+    expect(screen.queryByText(en['reports.sent'])).toBeNull();
+  });
+});
