@@ -1,6 +1,6 @@
 # M6 — manual location and photo recovery
 
-Status: implemented locally; automated checks passed, standalone APK and phone acceptance pending.
+Status: implemented locally; automated checks passed, standalone APK submitted; phone acceptance pending.
 
 ## Behaviour
 
@@ -22,7 +22,7 @@ Validation on 9 Oct:
 - Full suite: **47 suites / 736 tests passed** with coverage. UC3 API, domain (including the map bridge parser) and offline core each retain **100% statements, branches, functions and lines**.
 - Embedded JavaScript tests verify read-only versus editable taps, dragging and tile failures. The routing suite uses a WebView test double because Jest cannot load native modules.
 - Android export passed: 1,486 modules, 3.3 MB Hermes bundle. No native dependency or app configuration changes were needed.
-- Standalone preview build submission is next; phone acceptance remains pending.
+- Standalone Android preview APK submitted to EAS: [M6 build](https://expo.dev/accounts/pawan-menukas-team/projects/safezone/builds/a1688c84-60d1-40a7-8f35-0b286600f803). Submission status: `NEW`; this records submission, not completed compilation. API endpoint: `http://192.168.8.191:4000` (health checked before submission). Phone acceptance remains pending.
 
 ## Phone acceptance still required
 

@@ -12,7 +12,7 @@ The authoritative phase table is [IMPLEMENTATION_PLAN.md](../../../IMPLEMENTATIO
 | M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                             |
 | M4    | WIP — offline save/login/reconnect accepted on phone; closed-app OS delivery pending       |
 | M5    | DONE — owner accepted reporter history, offline/reconnect status and notification feedback |
-| M6    | WIP — manual location/photo recovery verified; standalone APK and phone acceptance pending |
+| M6    | WIP — automated checks passed; preview APK submitted, phone acceptance pending             |
 | M7    | TODO — device sync acceptance                                                              |
 
 See `evidence/m0` through `evidence/m4` for verification details. M4 device acceptance is tracked separately from automated implementation checks.
@@ -1717,7 +1717,7 @@ _Submit_ shows a busy state and ignores a second press while a submission is in 
 
 ## Phase M6 – Manual pin and photo recovery
 
-**9 Oct implementation:** manual map taps/dragging, explicit GPS adjustment, permission settings, genuine last-known confirmation, map failure/reload feedback, and invalid-photo retake/continue controls are implemented. Mobile lint/typecheck, 47 suites / 736 tests with coverage, and Android export passed. Standalone preview build and physical acceptance remain open; see `evidence/m6/README.md`. The offline map message preserves confirmed coordinates and never claims that an unconfirmed last-known point has been used. M6.1 and M6.2 are committed together as one phase.
+**9 Oct implementation:** manual map taps/dragging, explicit GPS adjustment, permission settings, genuine last-known confirmation, map failure/reload feedback, and invalid-photo retake/continue controls are implemented. Mobile lint/typecheck, 47 suites / 736 tests with coverage, and Android export passed. Standalone preview build submitted; physical acceptance remains open; see `evidence/m6/README.md`. The offline map message preserves confirmed coordinates and never claims that an unconfirmed last-known point has been used. M6.1 and M6.2 are committed together as one phase.
 
 ### Task M6.1: `MapPin` (E1)
 
@@ -1738,14 +1738,14 @@ pin."
 
 - [ ] On the phone: deny the location permission → manual pin → Submit → the web report detail says "Pinned on the map
       by the reporter". Then allow it → GPS pin → _Adjust pin_ → source becomes MANUAL.
-- [ ] Commit `feat(mobile): manual location pin (E1)`.
+- [x] Manual location pin (E1) committed in phase commit `6dc454e`.
 
 ### Task M6.2: Photo recovery (E2)
 
 - [x] In `PhotoField`, a photo failing `validatePickedPhoto` is **not** attached; show the reason ("Use a JPEG, PNG or
       WebP photo" / "This photo is larger than 5 MB") with _Retake_ and _Continue without photo_.
 - [ ] On the phone: pick the > 5 MB gallery image kept for the demo → message → _Continue without photo_ → Submit works.
-- [ ] Commit `feat(mobile): invalid photo recovery (E2)`.
+- [x] Invalid photo recovery (E2) committed in phase commit `6dc454e`.
 
 ---
 
