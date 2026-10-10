@@ -1,7 +1,7 @@
 import type { ReportModel } from '../domain/types';
 
 const number = (value: number) => value.toLocaleString('en-US');
-const label = (value: unknown) => String(value ?? '').replace(/_/g, ' ');
+const label = (value: string | null | undefined) => (value ?? '').replace(/_/g, ' ');
 const escape = (value: string) => value.replace(/[^\x20-\x7e]/g, '?').replace(/[\\()]/g, '\\$&');
 function wrap(value: string, width: number, size: number): string[] {
   const limit = Math.max(1, Math.floor(width / (size * 0.56)));

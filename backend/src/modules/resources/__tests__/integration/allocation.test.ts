@@ -11,6 +11,11 @@ import { seedResources } from '../../seed';
 import { AllocationService } from '../../application/AllocationService';
 import { DispatchService } from '../../application/DispatchService';
 import { seedScenarios } from '../../seed/scenarios';
+import { simulatorRouter, localSimulatorOnly } from '../../api/simulator.http';
+import { ResourceStatusService } from '../../application/ResourceStatusService';
+import type { Request, Response, NextFunction } from 'express';
+import { resourceRouter } from '../../api/resources.http';
+import type { AuthContext } from '@shared/auth';
 
 const store = new MongoResourceStore();
 let h: ReturnType<typeof createModuleHarness>;
@@ -21,6 +26,272 @@ const needId = 'gampaha-flood-area-WATER';
 const itemId = 'red-cross-WATER';
 const base = '/api/resources';
 const body = { requirementId: needId, resourceId: itemId, quantity: 100 };
+
+it('limits officer demo responses to local officers in the request district', async () => {
+  const demo = createModuleHarness(
+    (ctx) => ({
+      name: 'resources',
+      mountPath: base,
+      router: resourceRouter(
+        ctx,
+        new AllocationService({
+          uow: new MongoResourceUnitOfWork(),
+          clock: ctx.clock,
+          ids: ctx.ids,
+          events: ctx.eventBus,
+        }),
+        store,
+      ),
+    }),
+    { config: { env: 'development', isProduction: false } },
+  );
+  const created = await allocate();
+  const route = `${base}/dev/requests/${created.body.requestId}/respond`;
+  let responseKey = 0;
+  const respond = (data: object, user: Partial<AuthContext> = district, host = 'localhost') =>
+    demo
+      .as(user)
+      .post(route)
+      .set('Host', host)
+      .set('Idempotency-Key', `officer-demo-response-${++responseKey}`)
+      .send(data);
+  expect((await respond({ quantity: 100 }, { ...district, district: 'COLOMBO' })).status).toBe(403);
+  expect((await respond({ quantity: 100 }, district, 'example.com')).status).toBe(403);
+  expect((await respond({ quantity: 0 })).status).toBe(400);
+  const accepted = await respond({ quantity: 60 });
+  expect(accepted.status).toBe(200);
+  expect(await store.get('requests', created.body.requestId)).toMatchObject({
+    status: 'CONFIRMED',
+  });
+  expect(await store.get('inventory', itemId)).toMatchObject({ availableQty: 440, reservedQty: 0 });
+});
+
+describe('local resource simulator', () => {
+  const path = '/api/resources/dev/simulator';
+  let demo: ReturnType<typeof createModuleHarness>;
+  let key = 0;
+  const stock = {
+    resourceType: 'RELIEF_SUPPLY',
+    category: 'WATER',
+    unit: 'litres',
+    name: 'Test stock',
+    district: 'GAMPAHA',
+    organizationId: 'org-test',
+    organizationName: 'Test owner',
+    organizationType: 'NGO',
+    quantity: 10,
+    location: { lat: 7, lng: 80 },
+  };
+  const post = (route: string, data: object) =>
+    demo
+      .as()
+      .post(path + route)
+      .set('Host', 'localhost')
+      .set('Idempotency-Key', `simulator-${++key}`)
+      .send(data);
+  beforeEach(() => {
+    demo = createModuleHarness(
+      (ctx) => {
+        const uow = new MongoResourceUnitOfWork();
+        return {
+          name: 'resources',
+          mountPath: path,
+          router: simulatorRouter(ctx, {
+            store,
+            uow,
+            service: new AllocationService({
+              uow,
+              clock: ctx.clock,
+              ids: ctx.ids,
+              events: ctx.eventBus,
+            }),
+            status: new ResourceStatusService({ uow, clock: ctx.clock, ids: ctx.ids }),
+          }),
+        };
+      },
+      { config: { env: 'development', isProduction: false } },
+    );
+  });
+  it('filters state by district, including empty and invalid districts', async () => {
+    const state = await demo
+      .as()
+      .get(path + '/state')
+      .set('Host', 'localhost');
+    expect(state.status).toBe(200);
+    expect(state.body.areas.length).toBeGreaterThan(0);
+    const empty = await demo
+      .as()
+      .get(path + '/state?district=JAFFNA')
+      .set('Host', 'localhost');
+    expect(empty.body).toMatchObject({ areas: [], needs: [], requests: [], dispatches: [] });
+    expect(
+      (
+        await demo
+          .as()
+          .get(path + '/state?district=invalid')
+          .set('Host', 'localhost')
+      ).status,
+    ).toBe(400);
+    const created = await allocate();
+    await answer(created.body.requestId, { quantity: 100 });
+    const populated = await demo
+      .as()
+      .get(path + '/state')
+      .set('Host', 'localhost');
+    expect(populated.body.requests).toHaveLength(1);
+    expect(populated.body.dispatches).toHaveLength(1);
+  });
+  it.each([
+    { ...stock },
+    { ...stock, resourceType: 'RESCUE_TEAM', quantity: 1, teamType: 'ARMY', teamSize: 5 },
+    { ...stock, resourceType: 'SHELTER', capacity: 20 },
+    { ...stock, resourceType: 'SHELTER', capacity: 20, occupancy: 5 },
+  ])('creates and audits $resourceType inventory', async (input) => {
+    const result = await post('/inventory', input);
+    expect(result.status).toBe(201);
+    expect(await store.get('inventory', result.body.resourceId)).toMatchObject({
+      resourceType: input.resourceType,
+      reservedQty: 0,
+      availableQty:
+        input.resourceType === 'SHELTER'
+          ? 20 - ('occupancy' in input ? input.occupancy! : 0)
+          : input.quantity,
+    });
+    expect(
+      await mongoose.connection
+        .collection('audit_logs')
+        .countDocuments({ action: 'resources.demo-inventory-added' }),
+    ).toBe(1);
+  });
+  it.each([
+    { resourceType: 'RESCUE_TEAM' },
+    { resourceType: 'RESCUE_TEAM', teamType: 'ARMY' },
+    { resourceType: 'RESCUE_TEAM', teamType: 'ARMY', teamSize: 5 },
+    { resourceType: 'SHELTER' },
+    { resourceType: 'SHELTER', capacity: 2, occupancy: 3 },
+    { quantity: 0 },
+    { location: { lat: 91, lng: 80 } },
+  ])('rejects invalid stock %j without saving', async (changes) => {
+    const before = (await store.list('inventory')).length;
+    expect((await post('/inventory', { ...stock, ...changes })).status).toBe(400);
+    expect(await store.list('inventory')).toHaveLength(before);
+  });
+  it('creates an area and requirements, rejecting missing areas and fractional team places', async () => {
+    const area = await post('/areas', {
+      name: 'Test area',
+      district: 'GAMPAHA',
+      priority: 2,
+      location: stock.location,
+      disasterEventId: 'event-test',
+      incidentId: 'incident-test',
+      hazardType: 'FLOOD',
+    });
+    expect(area.status).toBe(201);
+    const need = {
+      areaId: area.body.areaId,
+      resourceType: 'RELIEF_SUPPLY',
+      category: 'WATER',
+      unit: 'litres',
+      quantity: 2.5,
+    };
+    const result = await post('/requirements', need);
+    expect(result.status).toBe(201);
+    expect(await store.get('needs', result.body.requirementId)).toMatchObject({
+      requiredQty: 2.5,
+      pendingQty: 0,
+    });
+    expect((await post('/requirements', { ...need, resourceType: 'SHELTER' })).status).toBe(400);
+    expect(
+      (await post('/requirements', { ...need, resourceType: 'SHELTER', quantity: 2 })).status,
+    ).toBe(201);
+    expect((await post('/requirements', { ...need, areaId: 'missing' })).status).toBe(404);
+    expect((await post('/areas', { name: '' })).status).toBe(400);
+  });
+  it('refreshes availability and changes shelter and team status through owner services', async () => {
+    const shelter = await post('/inventory', { ...stock, resourceType: 'SHELTER', capacity: 20 });
+    expect(
+      (await post(`/inventory/${shelter.body.resourceId}/occupancy`, { occupancy: 5 })).body
+        .currentOccupancy,
+    ).toBe(5);
+    expect(
+      (await post(`/inventory/${shelter.body.resourceId}/occupancy`, { occupancy: 21 })).status,
+    ).toBe(409);
+    const team = await post('/inventory', {
+      ...stock,
+      resourceType: 'RESCUE_TEAM',
+      quantity: 1,
+      teamType: 'ARMY',
+      teamSize: 5,
+    });
+    expect(
+      (await post(`/inventory/${team.body.resourceId}/team-status`, { status: 'UNAVAILABLE' })).body
+        .status,
+    ).toBe('UNAVAILABLE');
+    const refreshed = await post(`/inventory/${team.body.resourceId}/refresh`, {});
+    expect(refreshed.body).toEqual({ refreshed: true });
+    expect(await store.get('partners', stock.organizationId)).toMatchObject({ mode: 'OK' });
+    expect((await post('/inventory/missing/refresh', {})).status).toBe(404);
+    expect((await post('/inventory/missing/occupancy', { occupancy: 0 })).status).toBe(404);
+    expect((await post('/inventory/missing/team-status', { status: 'AVAILABLE' })).status).toBe(
+      404,
+    );
+  });
+  it.each([
+    ['red-cross-WATER', { quantity: 60 }],
+    ['army-WATER', { reason: 'Unavailable' }],
+    ['irrigation-WATER', { quantity: 100 }],
+  ])('simulates the owning role for %s responses', async (resourceId, response) => {
+    const created = await h
+      .as(district)
+      .post(base + '/allocation-requests')
+      .set('Idempotency-Key', 'sim-owner')
+      .send({ ...body, resourceId });
+    expect((await post(`/requests/${created.body.requestId}/respond`, response)).status).toBe(200);
+    expect((await post('/requests/missing/respond', response)).status).toBe(404);
+  });
+  it('rejects remote hosts and origins and permits local origins', async () => {
+    expect(
+      (
+        await demo
+          .as()
+          .get(path + '/state')
+          .set('Host', 'example.com')
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await demo
+          .as()
+          .get(path + '/state')
+          .set('Host', 'localhost')
+          .set('Origin', 'https://example.com')
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await demo
+          .as()
+          .get(path + '/state')
+          .set('Host', 'localhost')
+          .set('Origin', 'http://localhost:5173')
+      ).status,
+    ).toBe(200);
+    for (const remoteAddress of [undefined, '203.0.113.1']) {
+      const req = { socket: { remoteAddress }, hostname: 'localhost' } as Request;
+      expect(() => localSimulatorOnly(req, {} as Response, jest.fn() as NextFunction)).toThrow(
+        'localhost',
+      );
+    }
+  });
+  it('does not expose routes outside development', async () => {
+    const disabled = createModuleHarness((ctx) => ({
+      name: 'resources',
+      mountPath: path,
+      router: simulatorRouter(ctx, {} as Parameters<typeof simulatorRouter>[1]),
+    }));
+    expect((await disabled.as().get(path + '/state')).status).toBe(404);
+  });
+});
 it('UC-2 steps 9–14/E1: sends scoped in-app notifications for requests, responses, arrivals and expiry', async () => {
   const created = await allocate();
   expect((await h.as(owner).get(`${base}/notifications`)).body[0].message).toMatch(/requested/);

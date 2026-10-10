@@ -19,6 +19,53 @@ const model = new ImpactReportBuilder('report-1', input, options, '2026-10-08T04
   .build();
 
 describe('Formatted impact exports', () => {
+  it('CSV serializes object cells and escapes their embedded quotes', () => {
+    expect(csvCell({ note: 'A "quoted" value' })).toBe('"{""note"":""A \\""quoted\\"" value""}"');
+    expect(csvCell(null)).toBe('"null"');
+  });
+  it('PDF shows organisation scope without an event and handles zero denominators', () => {
+    const pages = reportPages({
+      ...model,
+      filter: { ...input, eventId: undefined, organizationId: 'red-cross' },
+      sections: {
+        alerts: [{ ...alert, targeted: 0, reached: 0 }],
+        occupancy: [{ ...occupancy, capacity: 0, occupancy: 0 }],
+        distribution: [],
+      },
+    }).join('\n');
+    expect(pages).toContain('Organisation scope: red-cross');
+    expect(pages).not.toContain('(Event:');
+    expect(pages).toContain('0 targeted | 0 reached | 0.0% reach');
+    expect(pages.match(/\(0\.0%\)/g)).toHaveLength(2);
+    expect(pages).toContain('No supplies recorded');
+    expect(pages).not.toMatch(/NaN|Infinity/);
+  });
+  it.each([24, 35])('PDF paginates a %i-line title and keeps following sections', (lines) => {
+    const pages = reportPages({
+      ...model,
+      title: Array.from({ length: lines }, (_, i) => `Title line ${i + 1}`).join('\n'),
+      filter: { ...input, eventId: undefined },
+      sections: {},
+    });
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages[0]).toContain('(Title line 1)');
+    expect(pages.join('\n')).toContain(`(Title line ${lines})`);
+    expect(pages.at(-1)).toContain('(Report verification)');
+    expect(pages.join('\n')).toContain('(Report overview)');
+    for (const page of pages) expect(page).toContain('(SAFE ZONE)');
+  });
+  it('PDF hard-wraps a long unbroken cell across pages without losing text', () => {
+    const name = 'X'.repeat(4000) + 'END';
+    const pages = reportPages({
+      ...model,
+      sections: { occupancy: [{ ...occupancy, shelterName: name }] },
+    });
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.join('\n')).toContain('Shelter capacity & occupancy \\(continued\\)');
+    const chunks = [...pages.join('\n').matchAll(/\((X+(?:END)?)\) Tj/g)].map((match) => match[1]);
+    expect(chunks.join('')).toBe(name);
+    expect(pages.at(-1)).toContain('(Report verification)');
+  });
   it('CSV has a BOM, one rectangular header and flattened channel columns', async () => {
     const csv = (await new CsvReportExporter().export(model)).toString();
     expect(csv.charCodeAt(0)).toBe(0xfeff);
@@ -102,12 +149,15 @@ describe('Formatted impact exports', () => {
     expect(pages).toContain('No supplies recorded');
     expect(pages).not.toMatch(/NaN|Infinity/);
   });
-  it('PDF renders a missing legacy supply label as an empty cell', () => {
-    const legacy = { ...dispatch, supplyCategory: undefined } as unknown as typeof dispatch;
-    const pages = reportPages({ ...model, sections: { distribution: [legacy] } }).join('\n');
-    expect(pages).toContain('Relief resource allocations');
-    expect(pages).not.toContain('undefined');
-  });
+  it.each([undefined, null])(
+    'PDF renders legacy supply label %s as an empty cell',
+    (supplyCategory) => {
+      const legacy = { ...dispatch, supplyCategory } as unknown as typeof dispatch;
+      const pages = reportPages({ ...model, sections: { distribution: [legacy] } }).join('\n');
+      expect(pages).toContain('Relief resource allocations');
+      expect(pages).not.toContain('undefined');
+    },
+  );
   it.each([24, 26, 60])(
     'PDF paginates a %s-line title without losing verification details',
     (lines) => {
