@@ -63,10 +63,10 @@ describe('UC-4 projection repositories', () => {
     expect((await store.reports('ngo')).map((r) => r.reportId)).toEqual(['r1']);
     expect(await store.reports('other')).toEqual([]);
   });
-  it('UC-4 seed: six months, richest districts, real demo organisation IDs and empty Jaffna', async () => {
+  it('UC-4 seed: six months, ten districts, real demo organisation IDs and empty Jaffna', async () => {
     const store = new MongoAnalyticsStore();
     await seedAnalyticsStore(store, new Date('2026-10-07T09:00:00Z'));
-    expect(await store.list()).toHaveLength(12);
+    expect(await store.list()).toHaveLength(60);
     const filter = AnalyticsFilter.create(
       {
         district: 'ALL',
@@ -78,8 +78,11 @@ describe('UC-4 projection repositories', () => {
       [],
       new Date('2026-10-07'),
     );
-    expect(await store.distributionByDistrict(filter)).toHaveLength(14);
-    expect(await store.countReach(filter)).toHaveLength(14);
+    const allocations = await store.distributionByDistrict(filter);
+    expect(allocations).toHaveLength(70);
+    expect(allocations.every((row) => row.organizationId === 'org-red-cross')).toBe(true);
+    expect(new Set(allocations.map((row) => row.district)).size).toBe(10);
+    expect(await store.countReach(filter)).toHaveLength(70);
     expect(
       await store.distributionByDistrict(
         AnalyticsFilter.create({ ...filter.value, district: 'JAFFNA' }, [], new Date('2026-10-07')),
