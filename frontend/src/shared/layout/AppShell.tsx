@@ -12,6 +12,7 @@ import { Alert } from '@/shared/ui/Alert';
 import { Button } from '@/shared/ui/Button';
 import { Dialog } from '@/shared/ui/Dialog';
 import { Icon } from '@/shared/ui/Icon';
+import { FlaskConical } from 'lucide-react';
 import { activeNavItem, visibleGroups, type NavGroup, type NavItem } from './navigation';
 
 /** "DMC Officer (demo)" becomes "DO": the first letters of the first two words, for the round avatar. */
@@ -179,6 +180,17 @@ function Sidebar({
           </div>
         ))}
       </nav>
+      {import.meta.env.DEV && (
+        <a
+          href="/resource-simulator"
+          target="_blank"
+          rel="noreferrer"
+          className="mx-4 mb-3 flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs text-navy-100/70 transition hover:bg-white/5 hover:text-white"
+        >
+          <FlaskConical size={14} aria-hidden="true" />
+          Simulated UI
+        </a>
+      )}
       <UserBlock user={user} onSignOut={onSignOut} />
     </aside>
   );

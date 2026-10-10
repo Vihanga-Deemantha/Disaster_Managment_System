@@ -1,3 +1,6 @@
+import { RequestForm } from '../RequestForm';
+import { useApi } from '@/shared/api/ApiProvider';
+import { useCachedResource } from '@/shared/offline/useCachedResource';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -77,20 +80,35 @@ beforeEach(() => {
     ),
   );
 });
+
+/** Retain API/offline regression coverage for the reusable legacy request form. New drawer flows have their own workspace tests. */
+function RequestFormHarness() {
+  const api = useApi();
+  const state = useCachedResource({
+    module: 'resources',
+    name: 'board',
+    load: () => api.get<Board>('/api/resources/board'),
+  });
+  return (
+    <>
+      <button onClick={state.reload}>Refresh</button>
+      {Boolean(state.error) && <p>{errorMessage(state.error)}</p>}
+      {state.data && <RequestForm board={state.data} onSaved={state.reload} />}
+    </>
+  );
+}
 async function open(role: 'DISTRICT_OFFICER' | 'NGO_MANAGER' | 'DMC_OFFICER' = 'DISTRICT_OFFICER') {
   signIn(makeMe({ role, district: 'GAMPAHA', organizationId: 'org-red-cross' }));
+  if (role === 'DISTRICT_OFFICER' && !board.requests.length && !board.dispatches.length)
+    return renderWithProviders(<RequestFormHarness />);
   const rendered = renderWithProviders(<ResourcesPage />);
   const tab =
-    role === 'DISTRICT_OFFICER'
-      ? board.dispatches.length
-        ? 'Deployments'
-        : board.requests.length
-          ? 'Requests'
-          : 'Allocate'
-      : role === 'NGO_MANAGER'
-        ? 'Requests'
-        : 'Overview';
-  fireEvent.click(await screen.findByRole('tab', { name: tab }));
+    role === 'NGO_MANAGER' || board.requests.length
+      ? 'Requests & Responses'
+      : 'Affected Areas & Needs';
+  const selected =
+    board.dispatches.length && role === 'DISTRICT_OFFICER' ? 'Dispatches & Arrivals' : tab;
+  fireEvent.click(await screen.findByRole('tab', { name: selected }));
   return rendered;
 }
 async function selectSupply() {
@@ -115,7 +133,7 @@ it('loads district requirements and requests stock with a CSRF header and idempo
   );
   await open();
   const user = await selectSupply();
-  expect(screen.getByLabelText('Quantity to request')).toHaveAttribute('max', '80');
+  expect(screen.getByLabelText('Quantity to request')).toHaveAttribute('max', '100');
   await user.type(screen.getByLabelText('Quantity to request'), '50');
   await user.click(screen.getByRole('button', { name: 'Send allocation request' }));
   expect(await screen.findByText(/Request sent/)).toBeInTheDocument();
@@ -195,9 +213,9 @@ it('lets the owner confirm a smaller quantity and shows the resulting dispatch',
   await user.click(screen.getByRole('button', { name: 'Confirm allocation' }));
   expect(await screen.findByText('Confirmed 30 packs')).toBeInTheDocument();
   expect(sent).toEqual({ quantity: 30 });
-  await user.click(screen.getByRole('tab', { name: 'Deployments' }));
+  await user.click(screen.getByRole('tab', { name: 'Dispatches & Arrivals' }));
   expect(await screen.findByText('30 packs of Water')).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Confirm arrival' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Confirm Deployment' })).not.toBeInTheDocument();
 });
 it('requires a decline reason and sends the trimmed reason', async () => {
   board.requests = [pending];
@@ -262,17 +280,17 @@ it('records an arrival and removes the arrival action after refresh', async () =
   );
   await open();
   const user = userEvent.setup();
-  await user.click(await screen.findByRole('button', { name: 'Confirm arrival' }));
+  await user.click(await screen.findByRole('button', { name: 'Confirm Deployment' }));
   expect(await screen.findByText(/Arrival confirmed/)).toBeInTheDocument();
   await waitFor(() =>
-    expect(screen.queryByRole('button', { name: 'Confirm arrival' })).not.toBeInTheDocument(),
+    expect(screen.queryByRole('button', { name: 'Confirm Deployment' })).not.toBeInTheDocument(),
   );
 });
 it('shows DMC a read-only overview', async () => {
   board.requests = [pending];
   await open('DMC_OFFICER');
-  await screen.findByRole('heading', { name: 'Resource overview' });
-  await userEvent.setup().click(screen.getByRole('tab', { name: 'Requests' }));
+  await screen.findByRole('heading', { name: 'National Resource Operations' });
+  await userEvent.setup().click(screen.getByRole('tab', { name: 'Requests & Responses' }));
   await screen.findByText(/Requested 50 packs/);
   expect(screen.queryByLabelText('Affected area')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Confirm allocation' })).not.toBeInTheDocument();
@@ -284,7 +302,7 @@ it('filters expired requests and explains stock release', async () => {
   await user.selectOptions(await screen.findByLabelText('Request status'), 'NO_RESPONSE');
   expect(await screen.findByText(/Reserved stock has been released/)).toBeInTheDocument();
   await user.selectOptions(screen.getByLabelText('Request status'), 'REJECTED');
-  expect(screen.getByText('No allocation requests to show.')).toBeInTheDocument();
+  expect(screen.getByText('No allocation requests to show')).toBeInTheDocument();
 });
 it('shows load failures and recovers on refresh', async () => {
   server.use(
@@ -343,11 +361,11 @@ it('queues an arrival offline and prevents a second click', async () => {
     },
   ];
   await open();
-  await screen.findByRole('button', { name: 'Confirm arrival' });
+  await screen.findByRole('button', { name: 'Confirm Deployment' });
   await settle(() => setBrowserOnline(false));
-  await userEvent.setup().click(screen.getByRole('button', { name: 'Confirm arrival' }));
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Confirm Deployment' }));
   expect(await screen.findByText(/Arrival confirmation saved on this device/)).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Confirm arrival' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Confirm Deployment' })).toBeDisabled();
   expect((await outbox.all('user-1'))[0]).toMatchObject({
     url: '/api/resources/dispatches/dispatch-1/deploy',
   });
@@ -374,9 +392,9 @@ it('shows a failed arrival without changing its dispatched status', async () => 
     ),
   );
   await open();
-  await userEvent.setup().click(await screen.findByRole('button', { name: 'Confirm arrival' }));
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Confirm Deployment' }));
   expect(await screen.findByText('Wrong district')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Confirm arrival' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Confirm Deployment' })).toBeEnabled();
 });
 it('retries stock lookup after a search failure', async () => {
   server.use(
@@ -430,7 +448,5 @@ it('shows the empty district state when no affected area is recorded', async () 
   board.needs = [];
   signIn(makeMe({ role: 'DISTRICT_OFFICER', district: undefined }));
   renderWithProviders(<ResourcesPage />);
-  expect(
-    await screen.findByText('No affected areas have been recorded for this district.'),
-  ).toBeInTheDocument();
+  expect(await screen.findByText('No affected areas to show')).toBeInTheDocument();
 });

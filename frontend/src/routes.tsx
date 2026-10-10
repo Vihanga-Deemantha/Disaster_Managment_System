@@ -49,6 +49,16 @@ export const routes: RouteObject[] = [
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
+  ...(import.meta.env.DEV
+    ? [
+        {
+          path: '/resource-simulator',
+          lazy: async () => ({
+            Component: (await import('@/features/resources/ResourceSimulator')).ResourceSimulator,
+          }),
+        },
+      ]
+    : []),
   {
     element: (
       <RequireAuth>

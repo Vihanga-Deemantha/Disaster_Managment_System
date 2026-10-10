@@ -5,6 +5,9 @@ export interface Area {
   district: District;
   priority: number;
   disasterEventId: string;
+  location?: { lat: number; lng: number };
+  incidentId?: string;
+  hazardType?: string;
 }
 export interface Need {
   resourceType?: 'RELIEF_SUPPLY' | 'RESCUE_TEAM' | 'SHELTER';
@@ -17,6 +20,7 @@ export interface Need {
   pendingQty: number;
 }
 export interface Supply {
+  distanceKm?: number;
   resourceType?: 'RELIEF_SUPPLY' | 'RESCUE_TEAM' | 'SHELTER';
   name?: string;
   district?: District;
@@ -50,14 +54,23 @@ export interface Allocation {
   reason?: string;
 }
 export interface Dispatch {
+  resourceId?: string;
+  organizationName?: string;
+  resourceName?: string;
+  teamSize?: number;
+  driverName?: string;
   dispatchId: string;
   requestId: string;
   requirementId: string;
   areaId: string;
   quantity: number;
-  status: 'DISPATCHED' | 'DEPLOYED';
+  status: 'DISPATCHED' | 'DEPLOYED' | 'DISTRIBUTION_PENDING' | 'REASSIGNED';
   dispatchedAt: string;
   deployedAt?: string;
+  reason?: string;
+  previousDispatchId?: string;
+  replacementDispatchId?: string;
+  history?: { action: string; actorId: string; at: string; reason?: string }[];
 }
 export interface Board {
   areas: Area[];

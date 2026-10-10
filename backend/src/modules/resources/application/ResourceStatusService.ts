@@ -20,7 +20,7 @@ export class ResourceStatusService {
       if (!(team instanceof RescueTeam))
         throw new ConflictError('WRONG_RESOURCE_TYPE', 'Choose a rescue team.');
       const inTransit = (await store.list('dispatches')).some(
-        (d) => d.resourceId === id && d.status === 'DISPATCHED',
+        (d) => d.resourceId === id && ['DISPATCHED', 'DISTRIBUTION_PENDING'].includes(d.status),
       );
       if (team.reservedQty > 0 || inTransit)
         throw new ConflictError(

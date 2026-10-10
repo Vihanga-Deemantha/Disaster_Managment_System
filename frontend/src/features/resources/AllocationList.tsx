@@ -1,11 +1,16 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { useApi } from '@/shared/api/ApiProvider';
 import { useOnlineStatus } from '@/shared/offline/useOnlineStatus';
+import { useAuth } from '@/shared/auth/AuthContext';
 import { Button } from '@/shared/ui/Button';
 import { TextField, TextAreaField } from '@/shared/ui/Field';
 import { Card } from '@/shared/ui/Card';
 import { Alert } from '@/shared/ui/Alert';
 import { ResponseDeadline } from './ResponseDeadline';
+import { RequestDemoExpiry } from './DemoControls';
+import { DemoOwnerResponse } from './SimulatorResponse';
+import { Badge, EmptyState, OperationalStatus } from './ResourceUI';
+import { Inbox, PackageCheck, FlaskConical } from 'lucide-react';
 import {
   describeAllocation,
   dateLabel,
@@ -15,15 +20,7 @@ import {
   type Board,
 } from './types';
 export function StatusBadge({ status }: { status: string }) {
-  const color =
-    status === 'PENDING'
-      ? 'bg-warning-100 text-warning-600'
-      : status === 'REJECTED' || status === 'NO_RESPONSE'
-        ? 'bg-danger-100 text-danger-600'
-        : 'bg-success-100 text-success-600';
-  return (
-    <span className={`rounded-full px-3 py-1 text-xs font-bold ${color}`}>{label(status)}</span>
-  );
+  return <OperationalStatus status={status} />;
 }
 export function AllocationList({
   board,
@@ -37,11 +34,35 @@ export function AllocationList({
   onSaved: () => void;
 }) {
   const [filter, setFilter] = useState('ALL');
+  const [simulate, setSimulate] = useState(true);
+  const { user } = useAuth();
+  const demo = import.meta.env.DEV && user?.role === 'DISTRICT_OFFICER';
   const requests = board.requests
     .filter((r) => filter === 'ALL' || r.status === filter)
     .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt));
   return (
     <section className="space-y-4">
+      {demo && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-paper p-4">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold text-navy-900">
+              <FlaskConical size={16} aria-hidden="true" />
+              Evaluator demonstration
+            </p>
+            <p className="mt-1 text-xs text-ink-soft">
+              Simulated owner responses update this local development database.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm font-medium text-accent-700">
+            <input
+              type="checkbox"
+              checked={simulate}
+              onChange={(e) => setSimulate(e.target.checked)}
+            />
+            Simulate Resource Owner
+          </label>
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-extrabold text-navy-900">
           {owner ? 'Agency request inbox' : 'Allocation requests'}
@@ -63,12 +84,18 @@ export function AllocationList({
         </label>
       </div>
       {requests.length === 0 && (
-        <Card>
-          <p className="text-sm text-ink-soft">No allocation requests to show.</p>
-        </Card>
+        <EmptyState
+          icon={Inbox}
+          title="No allocation requests to show"
+          detail="Send an allocation from an affected area. Owner responses and deadlines will appear here."
+        />
       )}
       {requests.map((request) => (
-        <RequestCard key={request.requestId} {...{ request, board, owner, fresh, onSaved }} />
+        <RequestCard
+          key={request.requestId}
+          {...{ request, board, owner, fresh, onSaved }}
+          simulate={demo && simulate}
+        />
       ))}
     </section>
   );
@@ -79,16 +106,18 @@ function RequestCard({
   owner,
   fresh,
   onSaved,
+  simulate,
 }: {
   request: Allocation;
   board: Board;
   owner: boolean;
   fresh: boolean;
   onSaved: () => void;
+  simulate: boolean;
 }) {
   const description = describeAllocation(board, request.requirementId);
   return (
-    <Card>
+    <Card className="border-line-soft bg-white shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-bold text-navy-900">
@@ -105,17 +134,11 @@ function RequestCard({
         Sent {dateLabel(request.createdAt)} · Respond by {dateLabel(request.respondBy)}
       </p>
       {request.status === 'PENDING' && <ResponseDeadline deadline={request.respondBy} />}
-      {request.confirmedQty !== undefined && (
-        <p className="mt-2 text-sm font-bold text-success-600">
-          Confirmed {request.confirmedQty} {description.unit}
-        </p>
+      <RequestDemoExpiry request={request} fresh={fresh} onSaved={onSaved} />
+      {simulate && request.status === 'PENDING' && (
+        <DemoOwnerResponse request={request} fresh={fresh} onSaved={onSaved} />
       )}
-      {request.reason && <p className="mt-2 text-sm text-ink-soft">Reason: {request.reason}</p>}
-      {request.status === 'NO_RESPONSE' && (
-        <p className="mt-2 text-sm text-ink-soft">
-          Response deadline passed. Reserved stock has been released.
-        </p>
-      )}
+      <RequestOutcome request={request} unit={description.unit} />
       {owner && request.status === 'PENDING' && (
         <OwnerResponse request={request} fresh={fresh} onSaved={onSaved} />
       )}
@@ -217,5 +240,34 @@ function ResponseHint() {
       Confirm the full quantity or a smaller amount. Unconfirmed stock returns to available
       inventory.
     </p>
+  );
+}
+
+function RequestOutcome({ request, unit }: { request: Allocation; unit: string }) {
+  return (
+    <>
+      {request.confirmedQty !== undefined && (
+        <p className="mt-2 text-sm font-bold text-success-600">
+          Confirmed {request.confirmedQty} {unit}
+        </p>
+      )}
+      {request.confirmedQty !== undefined && request.confirmedQty < request.requestedQty && (
+        <div className="mt-3">
+          <Badge
+            tone="amber"
+            icon={PackageCheck}
+            title="The owner confirmed less than requested. The unconfirmed remainder returns to the allocation gap."
+          >
+            Partial fulfillment approved
+          </Badge>
+        </div>
+      )}
+      {request.reason && <p className="mt-2 text-sm text-ink-soft">Reason: {request.reason}</p>}
+      {request.status === 'NO_RESPONSE' && (
+        <p className="mt-2 text-sm text-ink-soft">
+          Response deadline passed. Reserved stock has been released.
+        </p>
+      )}
+    </>
   );
 }
