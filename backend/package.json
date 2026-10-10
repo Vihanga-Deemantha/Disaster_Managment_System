@@ -13,6 +13,7 @@
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "seed": "tsx src/seed/index.ts",
+    "seed:resources-demo": "tsx src/modules/resources/seed/simulate.ts",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:mutation": "stryker run"

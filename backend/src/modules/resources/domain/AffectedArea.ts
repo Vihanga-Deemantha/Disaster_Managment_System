@@ -1,6 +1,7 @@
 import type { District } from '@shared/contracts/enums';
 import { ValidationError } from '@shared/errors';
 import type { ResourceRequirement } from './ResourceRequirement';
+import type { GeoPoint } from '@shared/geo/GeoPoint';
 
 export interface AreaProps {
   areaId: string;
@@ -8,6 +9,9 @@ export interface AreaProps {
   district: District;
   priority: number;
   disasterEventId: string;
+  location?: GeoPoint;
+  incidentId?: string;
+  hazardType?: string;
 }
 
 /** UC-2 CD-04, steps 2–4: a prioritised area belonging to one disaster event. */

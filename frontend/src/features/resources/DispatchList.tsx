@@ -1,31 +1,38 @@
 import { useState } from 'react';
 import { useOfflineWrite } from '@/shared/offline/useOfflineWrite';
 import { Card } from '@/shared/ui/Card';
-import { Button } from '@/shared/ui/Button';
 import { Alert } from '@/shared/ui/Alert';
 import { StatusBadge } from './AllocationList';
+import { DispatchActions } from './DispatchActions';
+import { Badge, DistrictButton, EmptyState } from './ResourceUI';
+import { PackageCheck, Truck, Users, ArrowRight } from 'lucide-react';
 import { describeAllocation, dateLabel, errorMessage, type Board, type Dispatch } from './types';
 export function DispatchList({
   board,
   officer,
   onSaved,
+  onDeployed,
 }: {
   board: Board;
   officer: boolean;
   onSaved: () => void;
+  onDeployed?: () => void;
 }) {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-extrabold text-navy-900">Dispatches & arrivals</h2>
       {board.dispatches.length === 0 && (
-        <Card>
-          <p className="text-sm text-ink-soft">
-            Dispatches appear here after an owner confirms an allocation.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Truck}
+          title="No active deliveries"
+          detail="Dispatches appear here after an owner confirms an allocation."
+        />
       )}
       {board.dispatches.map((dispatch) => (
-        <DispatchCard key={dispatch.dispatchId} {...{ board, dispatch, officer, onSaved }} />
+        <DispatchCard
+          key={dispatch.dispatchId}
+          {...{ board, dispatch, officer, onSaved, onDeployed }}
+        />
       ))}
     </section>
   );
@@ -35,11 +42,13 @@ function DispatchCard({
   dispatch,
   officer,
   onSaved,
+  onDeployed,
 }: {
   board: Board;
   dispatch: Dispatch;
   officer: boolean;
   onSaved: () => void;
+  onDeployed?: () => void;
 }) {
   const write = useOfflineWrite();
   const [busy, setBusy] = useState(false);
@@ -64,6 +73,7 @@ function DispatchCard({
           : 'Arrival confirmed. Deployment has been recorded.',
       );
       onSaved();
+      if (!result.queued) onDeployed?.();
     } catch (failure) {
       setError(errorMessage(failure));
     } finally {
@@ -71,7 +81,7 @@ function DispatchCard({
     }
   }
   return (
-    <Card>
+    <Card className="border-line-soft bg-white shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-bold text-navy-900">
@@ -81,17 +91,68 @@ function DispatchCard({
         </div>
         <StatusBadge status={dispatch.status} />
       </div>
+      <DispatchMetadata dispatch={dispatch} />
+      {error && <Alert tone="danger">{error}</Alert>}
+      {notice && <Alert tone="success">{notice}</Alert>}
+
+      <DeliveryHistory dispatch={dispatch} />
+      {officer && dispatch.status === 'DISPATCHED' && (
+        <DistrictButton className="mt-4" disabled={saved || busy} onClick={() => void arrive()}>
+          <PackageCheck size={17} aria-hidden="true" />
+          {busy ? 'Confirming…' : 'Confirm Deployment'}
+        </DistrictButton>
+      )}
+      {officer && <DispatchActions {...{ board, dispatch, onSaved }} />}
+    </Card>
+  );
+}
+function DeliveryHistory({ dispatch }: { dispatch: Dispatch }) {
+  if (!dispatch.history) return null;
+  return (
+    <details className="my-3 text-xs text-ink-soft">
+      <summary className="cursor-pointer">Delivery history</summary>
+      <ol className="mt-2 space-y-2">
+        {dispatch.history.map((entry, index) => (
+          <li key={index}>
+            {entry.action} · {dateLabel(entry.at)}
+            {entry.reason ? ` · ${entry.reason}` : ''}
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+function DispatchMetadata({ dispatch }: { dispatch: Dispatch }) {
+  return (
+    <>
       <p className="my-3 text-xs text-ink-soft">
         Dispatched {dateLabel(dispatch.dispatchedAt)}
         {dispatch.deployedAt && ` · Arrived ${dateLabel(dispatch.deployedAt)}`}
       </p>
-      {error && <Alert tone="danger">{error}</Alert>}
-      {notice && <Alert tone="success">{notice}</Alert>}
-      {officer && dispatch.status === 'DISPATCHED' && (
-        <Button className="mt-3" loading={busy} disabled={saved} onClick={() => void arrive()}>
-          Confirm arrival
-        </Button>
+      <p className="my-3 flex items-center gap-2 text-sm text-ink-soft">
+        <Users size={16} aria-hidden="true" />
+        {dispatch.organizationName ?? 'Owning agency'} ·{' '}
+        {dispatch.resourceName ?? 'Transport / team details not recorded'}
+        {teamLabel(dispatch.teamSize)}
+      </p>
+      <p className="text-xs text-ink-soft">Driver: {dispatch.driverName ?? 'Not recorded'}</p>
+      {dispatch.previousDispatchId && (
+        <div className="my-3">
+          <Badge
+            tone="indigo"
+            icon={ArrowRight}
+            title={dispatch.reason ?? 'Redirected from a lower-priority response site'}
+          >
+            Reassigned to higher-priority zone
+          </Badge>
+        </div>
       )}
-    </Card>
+      {dispatch.reason && <p className="my-2 text-sm text-ink-soft">Reason: {dispatch.reason}</p>}
+    </>
   );
+}
+
+function teamLabel(size?: number) {
+  return size ? ` · ${size} members` : '';
 }

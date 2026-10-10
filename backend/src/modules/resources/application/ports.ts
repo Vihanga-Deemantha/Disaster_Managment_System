@@ -5,6 +5,7 @@ import type { RequirementProps } from '../domain/ResourceRequirement';
 import type { ResourceProps } from '../domain/Resource';
 import type { District, OrganizationType } from '@shared/contracts/enums';
 import type { TeamType } from '../domain/types';
+import type { DispatchProps } from '../domain/ResourceDispatch';
 
 export interface Inventory extends ResourceProps {
   category: string;
@@ -29,24 +30,14 @@ export interface RequestRecord extends AllocationRequestProps {
   requestedBy: string;
   createdAt: Date;
 }
-export interface Dispatch {
-  dispatchId: string;
-  requestId: string;
-  requirementId: string;
-  resourceId: string;
-  areaId: string;
-  district: District;
-  quantity: number;
-  status: 'DISPATCHED' | 'DEPLOYED';
-  dispatchedAt: Date;
-  deployedAt?: Date;
-}
+export type Dispatch = DispatchProps;
 export interface Records {
   areas: AreaProps;
   needs: Need;
   inventory: Inventory;
   requests: RequestRecord;
   dispatches: Dispatch;
+  partners: { organizationId: string; mode: 'OK' | 'STALE' | 'DOWN'; updatedAt: Date };
   occupancyLogs: { shelterId: string; recordedAt: Date; occupancy: number };
   notifications: {
     notificationId: string;
