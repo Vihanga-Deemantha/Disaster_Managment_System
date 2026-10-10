@@ -5,6 +5,11 @@ import { MongoResourceStore, MongoResourceUnitOfWork } from './infrastructure/Mo
 import { ResourceStatusService } from './application/ResourceStatusService';
 import { addResourceStatusRoutes } from './api/resourceStatus.http';
 import { ExpiryScheduler } from './infrastructure/ExpiryScheduler';
+import { DispatchService } from './application/DispatchService';
+import { addDispatchRoutes } from './api/dispatch.http';
+import { addPartnerDemoRoutes } from './api/partnerDemo.http';
+import { Router } from 'express';
+import { simulatorRouter } from './api/simulator.http';
 
 /** UC-2 adapters are composed here; allocation rules depend only on injected ports. */
 export const createResourcesModule: ModuleFactory = (ctx) => {
@@ -20,17 +25,25 @@ export const createResourcesModule: ModuleFactory = (ctx) => {
       expire: () => service.expirePending(),
       onError: (error) => ctx.logger.error('Allocation expiry failed', { error: String(error) }),
     }).start();
-  const router = resourceRouter(ctx, service, store);
-  addResourceStatusRoutes(
+  const status = new ResourceStatusService({
+    uow: new MongoResourceUnitOfWork(),
+    clock: ctx.clock,
+    ids: ctx.ids,
+  });
+  const router = Router();
+  if (ctx.config.env === 'development')
+    router.use(
+      '/dev/simulator',
+      simulatorRouter(ctx, { service, status, store, uow: new MongoResourceUnitOfWork() }),
+    );
+  router.use(resourceRouter(ctx, service, store));
+  addDispatchRoutes(
     router,
     ctx,
-    new ResourceStatusService({
-      uow: new MongoResourceUnitOfWork(),
-      clock: ctx.clock,
-      ids: ctx.ids,
-    }),
-    store,
+    new DispatchService({ uow: new MongoResourceUnitOfWork(), clock: ctx.clock, ids: ctx.ids }),
   );
+  addPartnerDemoRoutes(router, ctx, new MongoResourceUnitOfWork());
+  addResourceStatusRoutes(router, ctx, status, store);
   return {
     name: 'resources',
     mountPath: '/api/resources',

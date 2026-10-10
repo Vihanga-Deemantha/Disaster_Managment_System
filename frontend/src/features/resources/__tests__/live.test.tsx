@@ -12,6 +12,18 @@ import { signIn, resetBrowserOnline, setBrowserOnline, settle } from '@/shared/t
 import { server } from '@/shared/testing/server';
 
 beforeEach(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value: function () {
+      this.setAttribute('open', '');
+    },
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    configurable: true,
+    value: function () {
+      this.removeAttribute('open');
+    },
+  });
   resetBrowserOnline();
   signIn(makeMe({ role: 'DISTRICT_OFFICER', district: 'GAMPAHA' }));
   server.use(
@@ -50,24 +62,23 @@ it('ticks the deadline every second, polls every thirty seconds, and clears time
   );
   vi.useRealTimers();
 });
-it('routes each resource workspace section separately and blocks owners from allocating', async () => {
-  renderWithProviders(
-    <MemoryRouter initialEntries={['/resources/overview']}>
-      <ResourcesPage />
-    </MemoryRouter>,
-  );
-  await screen.findByText(/No open incident groups/);
-  const user = userEvent.setup();
-  await user.click(screen.getByRole('tab', { name: 'Allocate' }));
-  expect(await screen.findByRole('heading', { name: 'Request resources' })).toBeInTheDocument();
-  await user.click(screen.getByRole('tab', { name: 'Requests' }));
-  expect(await screen.findByText('No allocation notifications yet.')).toBeInTheDocument();
-  await user.click(screen.getByRole('tab', { name: 'Teams & Shelters' }));
-  expect(await screen.findByText(/No rescue teams or shelters/)).toBeInTheDocument();
-  await user.click(screen.getByRole('tab', { name: 'Deployments' }));
-  expect(
-    await screen.findByRole('heading', { name: 'Deployment tracking', level: 1 }),
-  ).toBeInTheDocument();
+it('routes each sidebar section without duplicate officer tabs', async () => {
+  const screens = [
+    ['/resources/overview', /Gampaha district situation/],
+    ['/resources/allocate', /Affected areas & resource needs/],
+    ['/resources/requests', /Allocation requests/],
+    ['/resources/deployments', /Dispatches & arrivals/i],
+  ];
+  for (const [route, heading] of screens) {
+    const view = renderWithProviders(
+      <MemoryRouter initialEntries={[route as string]}>
+        <ResourcesPage />
+      </MemoryRouter>,
+    );
+    await screen.findByRole('heading', { name: heading });
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    view.unmount();
+  }
 });
 it('uses the role default for an unknown subroute and refuses an owner allocation route', async () => {
   signIn(makeMe({ role: 'NGO_MANAGER', organizationId: 'org-red-cross' }));
@@ -92,10 +103,10 @@ it('opens the base route for DMC and labels its explicit overview correctly', as
       <ResourcesPage />
     </MemoryRouter>,
   );
-  await screen.findByRole('heading', { name: 'Resource overview', level: 1 });
-  await userEvent.setup().click(screen.getByRole('tab', { name: 'Overview' }));
+  await screen.findByRole('heading', { name: 'National Resource Operations', level: 1 });
+  await userEvent.setup().click(screen.getByRole('tab', { name: 'Affected Areas & Needs' }));
   expect(
-    await screen.findByRole('heading', { name: 'Resource overview', level: 1 }),
+    await screen.findByRole('heading', { name: 'National Resource Operations', level: 1 }),
   ).toBeInTheDocument();
 });
 it('starts allocation from an affected area in the overview', async () => {
@@ -128,11 +139,10 @@ it('starts allocation from an affected area in the overview', async () => {
     ),
   );
   renderWithProviders(<ResourcesPage />);
-  await userEvent
-    .setup()
-    .click(await screen.findByRole('button', { name: 'Allocate to this area' }));
-  expect(await screen.findByLabelText('Affected area')).toHaveValue('a1');
-  expect(screen.getByRole('option', { name: /Water/ })).toBeInTheDocument();
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Allocate Resources' }));
+  expect(
+    await screen.findByRole('dialog', { name: 'Multi-Agency Stock Matcher' }),
+  ).toBeInTheDocument();
 });
 it('shows persisted notifications and retains a clearly marked offline copy', async () => {
   server.use(

@@ -7,7 +7,15 @@ import { AllocationRequest } from '../domain/AllocationRequest';
 import { ResourceRequirement } from '../domain/ResourceRequirement';
 import { assertResourceQuantity, recordArrival, resourceStock } from './resourceStock';
 import { assertQuantity } from '../domain/quantity';
-import type { Inventory, ResourceStore, ResourceUnitOfWork, RequestRecord, Records } from './ports';
+import { assertFresh, partialQuantity } from './availability';
+import type {
+  Inventory,
+  ResourceStore,
+  ResourceUnitOfWork,
+  RequestRecord,
+  Records,
+  Need,
+} from './ports';
 
 export interface AllocationDeps {
   uow: ResourceUnitOfWork;
@@ -18,34 +26,27 @@ export interface AllocationDeps {
 export class AllocationService {
   constructor(private readonly deps: AllocationDeps) {}
 
-  async request(auth: AuthContext, requirementId: string, resourceId: string, quantity: number) {
-    assertQuantity(quantity, 'quantity');
+  async request(
+    auth: AuthContext,
+    requirementId: string,
+    resourceId: string,
+    requestedQty: number,
+    acceptPartial = false,
+  ) {
+    assertQuantity(requestedQty, 'quantity');
     const requestId = this.deps.ids.next();
     return this.deps.uow.run(async (store) => {
       const need = await store.get('needs', requirementId);
       const area = await store.get('areas', need.areaId);
       assertDistrict(auth, area.district);
       const item = await store.get('inventory', resourceId);
-      assertMatch(item, need);
-      assertOutstanding(new ResourceRequirement(need).outstanding() - need.pendingQty, quantity);
-      assertResourceQuantity(item, quantity);
-      if (item.resourceType === 'SHELTER' && item.district !== area.district)
-        throw new ConflictError('RESOURCE_MISMATCH', 'Choose a shelter in the affected district.');
+      validateRequest(item, need, requestedQty, area.district);
+      await assertFresh(store, item, this.deps.clock.now());
       const stock = resourceStock(item);
+      const quantity = partialQuantity(item, requestedQty, acceptPartial);
       stock.reserve(quantity);
       const now = this.deps.clock.now();
-      const request: RequestRecord = {
-        requestId,
-        requirementId,
-        resourceId,
-        organizationId: item.organizationId,
-        requestedQty: quantity,
-        status: 'PENDING',
-        district: area.district,
-        requestedBy: auth.userId,
-        createdAt: now,
-        respondBy: new Date(now.getTime() + 30 * 60_000),
-      };
+      const request = pendingRequest(auth, need, item, requestId, { quantity, now });
       await store.save('inventory', resourceId, { ...item, ...stock.snapshot() });
       await store.save('needs', requirementId, { ...need, pendingQty: need.pendingQty + quantity });
       await store.save('requests', requestId, request);
@@ -144,6 +145,17 @@ export class AllocationService {
       for (const record of due) await this.expire(store, record);
     });
   }
+  /** Development demo only: exercise E1 without waiting thirty minutes. */
+  async expireDemo(auth: AuthContext, id: string) {
+    await this.deps.uow.run(async (store) => {
+      const record = await store.get('requests', id);
+      assertDistrict(auth, record.district);
+      if (record.status !== 'PENDING')
+        throw new ConflictError('ILLEGAL_TRANSITION', 'Only pending requests can expire.');
+      await this.expire(store, { ...record, respondBy: this.deps.clock.now() });
+      await this.audit(store, auth, 'resources.demo-expiry', id);
+    });
+  }
   private async expire(store: ResourceStore, record: RequestRecord) {
     const request = new AllocationRequest(record);
     request.markNoResponse(this.deps.clock.now());
@@ -222,6 +234,33 @@ export class AllocationService {
       message: `${item.organizationName} ${status.toLowerCase()} your request for ${item.category}.`,
     });
   }
+}
+function pendingRequest(
+  auth: AuthContext,
+  need: Need,
+  item: Inventory,
+  requestId: string,
+  input: { quantity: number; now: Date },
+): RequestRecord {
+  return {
+    requestId,
+    requirementId: need.requirementId,
+    resourceId: item.resourceId,
+    organizationId: item.organizationId,
+    requestedQty: input.quantity,
+    status: 'PENDING',
+    district: auth.district!,
+    requestedBy: auth.userId,
+    createdAt: input.now,
+    respondBy: new Date(input.now.getTime() + 30 * 60_000),
+  };
+}
+function validateRequest(item: Inventory, need: Need, requestedQty: number, district: string) {
+  assertMatch(item, need);
+  assertOutstanding(new ResourceRequirement(need).outstanding() - need.pendingQty, requestedQty);
+  assertResourceQuantity(item, requestedQty);
+  if (item.resourceType === 'SHELTER' && item.district !== district)
+    throw new ConflictError('RESOURCE_MISMATCH', 'Choose a shelter in the affected district.');
 }
 export function assertDistrict(auth: AuthContext, district: string): void {
   if (auth.role !== 'DISTRICT_OFFICER' || auth.district !== district) {

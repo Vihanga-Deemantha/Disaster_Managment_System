@@ -1,34 +1,36 @@
-import { useApi } from '@/shared/api/ApiProvider';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useInRouterContext, useLocation, useNavigate } from 'react-router';
+import { Activity, CheckCircle2, MapPin, RefreshCw, Truck } from 'lucide-react';
+import { useApi } from '@/shared/api/ApiProvider';
 import { useAuth } from '@/shared/auth/AuthContext';
 import { useCachedResource, type CachedResource } from '@/shared/offline/useCachedResource';
-import type { MeResponse } from '@contracts/auth';
 import { LastSynced } from '@/shared/offline/LastSynced';
 import { useDocumentTitle } from '@/shared/layout/useDocumentTitle';
-import { PageHeader } from '@/shared/ui/PageHeader';
-import { Card } from '@/shared/ui/Card';
-import { Button } from '@/shared/ui/Button';
 import { Alert } from '@/shared/ui/Alert';
-import { RequestForm } from './RequestForm';
+import { AreaRequirements } from './AreaRequirements';
 import { AllocationList } from './AllocationList';
 import { DispatchList } from './DispatchList';
 import { DistrictSituation } from './DistrictSituation';
 import { FieldResources } from './FieldResources';
-import { useResourcePolling } from './liveUpdates';
+import { PartnerDemoControls } from './DemoControls';
+import { StockMatcher } from './StockMatcher';
+import { ResourceMetrics } from './ResourceMetrics';
 import { Notifications } from './Notifications';
-import { errorMessage, label, remaining, type Board } from './types';
+import { useResourcePolling } from './liveUpdates';
+import { errorMessage, label, type Board } from './types';
+
 export function ResourcesPage() {
   return useInRouterContext() ? <RoutedResources /> : <ResourceWorkspace />;
 }
 function RoutedResources() {
   const location = useLocation();
   const navigate = useNavigate();
-  const segment = location.pathname.split('/')[2];
-  const tab = ['overview', 'allocate', 'requests', 'deployments', 'field'].includes(segment ?? '')
-    ? segment
-    : undefined;
-  return <ResourceWorkspace routeTab={tab} onNavigate={(next) => navigate(`/resources/${next}`)} />;
+  return (
+    <ResourceWorkspace
+      routeTab={location.pathname.split('/')[2]}
+      onNavigate={(next) => navigate('/resources/' + next)}
+    />
+  );
 }
 function ResourceWorkspace({
   routeTab,
@@ -37,35 +39,321 @@ function ResourceWorkspace({
   routeTab?: string;
   onNavigate?: (tab: string) => void;
 }) {
+  const {
+    board,
+    officer,
+    owner,
+    tab,
+    selectTab,
+    areaId,
+    setArea,
+    toast,
+    setToast,
+    saved,
+    district,
+    fresh,
+  } = useWorkspace(routeTab, onNavigate);
+  const showTabs = workspaceUsesTabs(officer, onNavigate);
+  return (
+    <div className="resource-command space-y-6">
+      <WorkspaceHeader
+        officer={officer}
+        owner={owner}
+        district={district}
+        refreshing={board.loading}
+        onRefresh={board.reload}
+      >
+        <LastSynced syncedAt={board.syncedAt} />
+      </WorkspaceHeader>
+      {board.data && <ResourceMetrics board={board.data} />}
+      <WorkspaceToast message={toast} onDismiss={() => setToast('')} />
+      {showTabs && (
+        <WorkspaceTabs officer={officer} owner={owner} selected={tab} onSelect={selectTab} />
+      )}
+      <BoardFlags board={board} />
+      {board.data && (
+        <div
+          id="resource-panel"
+          role={showTabs ? 'tabpanel' : 'region'}
+          aria-label="Resource workspace content"
+        >
+          <WorkspaceContent
+            tab={tab}
+            officer={officer}
+            owner={owner}
+            board={board.data}
+            fresh={fresh}
+            district={district}
+            onAllocate={setArea}
+            onSaved={board.reload}
+            onDeployed={() =>
+              saved('Deployment confirmed. Delivered fulfillment has been updated.')
+            }
+          />
+        </div>
+      )}
+      {areaId && board.data && (
+        <StockMatcher
+          key={areaId}
+          board={board.data}
+          areaId={areaId}
+          onClose={() => setArea('')}
+          onSaved={() =>
+            saved('Allocation request saved. Track agency responses in Requests & Responses.')
+          }
+          onViewRequests={() => {
+            setArea('');
+            selectTab('requests');
+          }}
+        />
+      )}
+    </div>
+  );
+}
+function WorkspaceHeader({
+  officer,
+  owner,
+  district,
+  refreshing,
+  onRefresh,
+  children,
+}: {
+  officer: boolean;
+  owner: boolean;
+  district: string;
+  refreshing: boolean;
+  onRefresh: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <header className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 className="text-2xl font-extrabold tracking-tight text-navy-900">
+          {officer
+            ? 'Resource allocation'
+            : owner
+              ? 'Resource Owner Response Workspace'
+              : 'National Resource Operations'}
+        </h1>
+        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-soft">
+          <MapPin size={14} aria-hidden="true" />
+          {officer
+            ? label(district) + ' District · Emergency resource allocation'
+            : 'Agency requests and operational deliveries'}
+        </p>
+      </div>
+      <div className="flex items-center gap-3 text-xs text-ink-soft">
+        {children}
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={refreshing}
+          aria-label="Refresh resource workspace"
+          className="flex min-h-10 items-center gap-2 rounded-lg border border-line bg-white px-3 text-xs font-semibold disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
+          Refresh
+        </button>
+      </div>
+    </header>
+  );
+}
+function WorkspaceTabs({
+  officer,
+  owner,
+  selected,
+  onSelect,
+}: {
+  officer: boolean;
+  owner: boolean;
+  selected: string;
+  onSelect: (tab: string) => void;
+}) {
+  const tabs = [
+    ...(!owner ? [{ id: 'overview', name: 'Affected Areas & Needs', icon: MapPin }] : []),
+    { id: 'requests', name: 'Requests & Responses', icon: Activity },
+    { id: 'deployments', name: 'Dispatches & Arrivals', icon: Truck },
+    ...(!officer ? [{ id: 'field', name: 'Teams & Shelters', icon: MapPin }] : []),
+  ];
+  return (
+    <div
+      role="tablist"
+      aria-label="Resource workspace"
+      className="flex gap-1 overflow-x-auto rounded-xl border border-line-soft bg-white p-1.5"
+    >
+      {tabs.map(({ id, name, icon: Icon }) => (
+        <button
+          type="button"
+          role="tab"
+          key={id}
+          id={'resource-tab-' + id}
+          aria-selected={selected === id}
+          aria-controls="resource-panel"
+          onClick={() => onSelect(id)}
+          className={
+            'flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ' +
+            (selected === id
+              ? 'bg-accent-600 text-white shadow-sm'
+              : 'text-ink-soft hover:bg-paper')
+          }
+        >
+          <Icon size={16} aria-hidden="true" />
+          {name}
+        </button>
+      ))}
+    </div>
+  );
+}
+function WorkspaceContent({
+  tab,
+  officer,
+  owner,
+  board,
+  fresh,
+  district,
+  onAllocate,
+  onSaved,
+  onDeployed,
+}: {
+  tab: string;
+  officer: boolean;
+  owner: boolean;
+  board: Board;
+  fresh: boolean;
+  district: string;
+  onAllocate: (id: string) => void;
+  onSaved: () => void;
+  onDeployed: () => void;
+}) {
+  if (tab === 'requests')
+    return (
+      <div className="space-y-5">
+        <AllocationList board={board} owner={owner} fresh={fresh} onSaved={onSaved} />
+        <details className="rounded-2xl border border-line-soft bg-white p-5">
+          <summary className="cursor-pointer text-sm font-semibold text-navy-900">
+            Operational notifications
+          </summary>
+          <div className="mt-4">
+            <Notifications />
+          </div>
+        </details>
+      </div>
+    );
+  if (tab === 'deployments')
+    return (
+      <DispatchList board={board} officer={officer} onSaved={onSaved} onDeployed={onDeployed} />
+    );
+  if (tab === 'field') return <FieldPanel officer={officer} owner={owner} />;
+  return <AreaWorkspace {...{ tab, officer, owner, board, district, onAllocate }} />;
+}
+function AreaWorkspace({
+  tab,
+  officer,
+  owner,
+  board,
+  district,
+  onAllocate,
+}: {
+  tab: string;
+  officer: boolean;
+  owner: boolean;
+  board: Board;
+  district: string;
+  onAllocate: (id: string) => void;
+}) {
+  if (owner)
+    return <Alert tone="warning">Only the assigned District Officer can allocate resources.</Alert>;
+  if (tab === 'overview' && officer)
+    return <DistrictSituation district={district} board={board} onAllocate={onAllocate} />;
+  return <AreaRequirements board={board} onAllocate={officer ? onAllocate : undefined} />;
+}
+function useWorkspace(routeTab?: string, onNavigate?: (tab: string) => void) {
   const api = useApi();
   const { user } = useAuth();
-  const view = resourceView(user);
-  const title = resourceHeading(routeTab, view);
-  const [selectedTab, setTab] = useState<string | null>(null);
-  const [allocationArea, setAllocationArea] = useState('');
-  const tab = workspaceTab(routeTab, selectedTab, view.mode);
+  const { officer, owner } = resourceMode(user?.role);
+  const [selectedTab, setTab] = useState('');
+  const [areaId, setArea] = useState('');
+  const [toast, setToast] = useState('');
+  const tab = workspaceTab(routeTab, selectedTab || (owner ? 'requests' : 'allocate'));
   const selectTab = onNavigate ?? setTab;
-  function allocateArea(areaId: string) {
-    setAllocationArea(areaId);
-    selectTab('allocate');
-  }
-  useDocumentTitle(title);
   const board = useCachedResource({
     module: 'resources',
     name: 'board',
     load: () => api.get<Board>('/api/resources/board'),
   });
   useResourcePolling(board.reload);
+  useDocumentTitle(workspaceTitle(officer, owner));
+  function saved(message: string) {
+    setToast(message);
+    board.reload();
+  }
+  return {
+    board,
+    officer,
+    owner,
+    tab,
+    selectTab,
+    areaId,
+    setArea,
+    toast,
+    setToast,
+    saved,
+    district: user?.district ?? '',
+    fresh: boardFresh(board),
+  };
+}
+
+function resourceMode(role?: string) {
+  return {
+    officer: role === 'DISTRICT_OFFICER',
+    owner: Boolean(role) && role !== 'DISTRICT_OFFICER' && role !== 'DMC_OFFICER',
+  };
+}
+
+function workspaceTab(route: string | undefined, selected: string) {
+  return ['overview', 'allocate', 'requests', 'deployments', 'field'].includes(route ?? '')
+    ? route!
+    : selected;
+}
+
+function workspaceTitle(officer: boolean, owner: boolean) {
+  if (officer) return 'Resource allocation';
+  return owner ? 'Resource Owner Response Workspace' : 'National Resource Operations';
+}
+
+function boardFresh(board: CachedResource<Board>): boolean {
+  return !board.fromCache && !board.error && !board.loading;
+}
+
+function WorkspaceToast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  const toast = message;
+  const setToast = onDismiss;
   return (
-    <div className="space-y-6">
-      <PageHeader title={title} subtitle={view.subtitle}>
-        <LastSynced syncedAt={board.syncedAt} />
-        <Button variant="secondary" disabled={board.loading} onClick={board.reload}>
-          Refresh
-        </Button>
-      </PageHeader>
-      <ResourceTabs mode={view.mode} selected={tab} onSelect={selectTab} />
-      <DistrictOverview tab={tab} user={user} />
+    <>
+      {toast && (
+        <div
+          role="status"
+          className="flex items-center gap-3 rounded-xl border border-accent-100 bg-accent-50 p-4 text-sm font-medium text-navy-900"
+        >
+          <CheckCircle2 size={18} aria-hidden="true" />
+          {toast}
+          <button
+            type="button"
+            aria-label="Dismiss notification"
+            className="ml-auto px-2"
+            onClick={() => setToast()}
+          >
+            ×
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function BoardFlags({ board }: { board: ReturnType<typeof useWorkspace>['board'] }) {
+  return (
+    <>
       {board.loading && (
         <p role="status" className="text-sm text-ink-soft">
           Refreshing resource allocations…
@@ -74,250 +362,23 @@ function ResourceWorkspace({
       {Boolean(board.error) && <Alert tone="danger">{errorMessage(board.error)}</Alert>}
       {board.fromCache && (
         <Alert tone="warning">
-          Showing the last saved resource board. Requests and arrival confirmations can be saved for
-          sync; owner responses require a fresh connection.
+          Saved resource board. Requests and arrivals can be queued offline; owner responses need a
+          fresh connection.
         </Alert>
       )}
-      <div id="resource-panel" role="tabpanel" aria-labelledby={`resource-tab-${tab}`}>
-        {board.data && (
-          <BoardContent
-            data={board.data}
-            state={board}
-            mode={view.mode}
-            tab={tab}
-            areaId={allocationArea}
-            onAllocate={allocateArea}
-          />
-        )}
-      </div>
+    </>
+  );
+}
+
+function FieldPanel({ officer, owner }: { officer: boolean; owner: boolean }) {
+  return (
+    <div className="space-y-5">
+      {import.meta.env.DEV && !owner && !officer && <PartnerDemoControls />}
+      <FieldResources owner={owner} />
     </div>
   );
 }
-function workspaceTab(routeTab: string | undefined, selected: string | null, mode: string) {
-  return routeTab ?? selected ?? (mode === 'owner' ? 'requests' : 'overview');
-}
-function resourceHeading(tab: string | undefined, view: { mode: string; title: string }) {
-  switch (tab) {
-    case 'overview':
-      return view.mode === 'officer' ? 'District overview' : 'Resource overview';
-    case 'allocate':
-      return 'Allocate resources';
-    case 'requests':
-      return 'Requests & responses';
-    case 'deployments':
-      return 'Deployment tracking';
-    case 'field':
-      return 'Teams & shelters';
-    default:
-      return view.title;
-  }
-}
-function DistrictOverview({ tab, user }: { tab: string; user: MeResponse | null }) {
-  return tab === 'overview' && user?.role === 'DISTRICT_OFFICER' ? (
-    <DistrictSituation district={user.district ?? ''} />
-  ) : null;
-}
-function ResourceTabs({
-  mode,
-  selected,
-  onSelect,
-}: {
-  mode: string;
-  selected: string;
-  onSelect: (tab: string) => void;
-}) {
-  const tabs = [
-    ...(mode !== 'owner' ? [['overview', 'Overview']] : []),
-    ...(mode === 'officer' ? [['allocate', 'Allocate']] : []),
-    ['requests', 'Requests'],
-    ['deployments', 'Deployments'],
-    ['field', 'Teams & Shelters'],
-  ];
-  return (
-    <div
-      role="tablist"
-      aria-label="Resource workspace"
-      className="flex flex-wrap gap-1 rounded-xl border border-line-soft bg-white p-1.5"
-    >
-      {tabs.map(([id, name]) => (
-        <button
-          type="button"
-          role="tab"
-          key={id}
-          id={`resource-tab-${id}`}
-          aria-selected={selected === id}
-          aria-controls="resource-panel"
-          onClick={() => onSelect(id!)}
-          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${selected === id ? 'bg-navy-900 text-white' : 'text-ink-soft hover:bg-paper hover:text-navy-900'}`}
-        >
-          {name}
-        </button>
-      ))}
-    </div>
-  );
-}
-function resourceView(user: MeResponse | null) {
-  if (user?.role === 'DISTRICT_OFFICER')
-    return {
-      mode: 'officer',
-      title: 'Resource allocation',
-      subtitle: `${label(user.district ?? '')} district · Coordinate supplies, rescue teams and shelter places across agencies.`,
-    };
-  if (user?.role === 'DMC_OFFICER')
-    return {
-      mode: 'observer',
-      title: 'Resource overview',
-      subtitle: 'Monitor requests and deployments across districts.',
-    };
-  return {
-    mode: 'owner',
-    title: 'Agency allocations',
-    subtitle: 'Respond to requests for your organization and follow their deployments.',
-  };
-}
-function BoardContent({
-  data,
-  state,
-  mode,
-  tab,
-  areaId,
-  onAllocate,
-}: {
-  data: Board;
-  state: CachedResource<Board>;
-  mode: string;
-  tab: string;
-  areaId: string;
-  onAllocate: (areaId: string) => void;
-}) {
-  const officer = mode === 'officer';
-  if (tab === 'overview')
-    return (
-      <div className="space-y-5">
-        <Summary board={data} />
-        <OverviewNeeds board={data} officer={officer} onAllocate={onAllocate} />
-      </div>
-    );
-  if (tab === 'field') return <FieldResources owner={mode === 'owner'} />;
-  if (tab === 'allocate')
-    return <AllocatePanel board={data} officer={officer} onSaved={state.reload} areaId={areaId} />;
-  if (tab === 'requests')
-    return (
-      <div className="space-y-5">
-        <Notifications />
-        <AllocationList
-          board={data}
-          owner={mode === 'owner'}
-          fresh={!state.fromCache && !state.error && !state.loading}
-          onSaved={state.reload}
-        />
-      </div>
-    );
-  return <DispatchList board={data} officer={officer} onSaved={state.reload} />;
-}
-function AllocatePanel({
-  board,
-  officer,
-  onSaved,
-  areaId,
-}: {
-  board: Board;
-  officer: boolean;
-  onSaved: () => void;
-  areaId: string;
-}) {
-  return officer ? (
-    <RequestForm board={board} onSaved={onSaved} initialAreaId={areaId} />
-  ) : (
-    <Alert tone="warning">Only the assigned District Officer may request resources.</Alert>
-  );
-}
-function OverviewNeeds({
-  board,
-  officer,
-  onAllocate,
-}: {
-  board: Board;
-  officer: boolean;
-  onAllocate: (areaId: string) => void;
-}) {
-  return <Needs board={board} onAllocate={officer ? onAllocate : undefined} />;
-}
-function Summary({ board }: { board: Board }) {
-  const stats = [
-    ['Affected areas', board.areas.length],
-    ['Awaiting owner', board.requests.filter((r) => r.status === 'PENDING').length],
-    ['In transit', board.dispatches.filter((d) => d.status === 'DISPATCHED').length],
-    ['Arrived', board.dispatches.filter((d) => d.status === 'DEPLOYED').length],
-  ];
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {stats.map(([name, count]) => (
-        <Card key={name} className="border-t-2 border-t-accent-400">
-          <p className="text-sm text-ink-soft">{name}</p>
-          <p className="mt-2 text-3xl font-extrabold text-navy-900">{count}</p>
-        </Card>
-      ))}
-    </div>
-  );
-}
-function Needs({ board, onAllocate }: { board: Board; onAllocate?: (areaId: string) => void }) {
-  return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-extrabold text-navy-900">Area requirements</h2>
-      {board.areas.length === 0 && (
-        <Card>No affected areas have been recorded for this district.</Card>
-      )}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {board.areas.map((area) => (
-          <Card key={area.areaId}>
-            <p className="mb-3 text-xs text-ink-soft">
-              {
-                board.needs.filter((need) => need.areaId === area.areaId && remaining(need) > 0)
-                  .length
-              }{' '}
-              outstanding requirements
-            </p>
-            <details>
-              <summary className="cursor-pointer font-bold text-navy-900">
-                {area.name}{' '}
-                <span className="ml-2 text-xs font-normal text-ink-soft">
-                  Priority {area.priority} · View requirements
-                </span>
-              </summary>
-              <p className="mb-4 mt-3 text-xs text-ink-soft">{label(area.district)} district</p>
-              <div className="space-y-4">
-                {board.needs
-                  .filter((n) => n.areaId === area.areaId)
-                  .map((need) => (
-                    <div key={need.requirementId}>
-                      <div className="flex justify-between gap-3 text-sm">
-                        <strong>{label(need.category)}</strong>
-                        <span>
-                          {need.fulfilledQty} / {need.requiredQty} {need.unit}
-                        </span>
-                      </div>
-                      <progress
-                        aria-label={`${label(need.category)} fulfilled in ${area.name}`}
-                        value={need.fulfilledQty}
-                        max={need.requiredQty}
-                        className="mt-2 h-2 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-line-soft [&::-webkit-progress-value]:bg-accent-500 [&::-moz-progress-bar]:bg-accent-500"
-                      />
-                      <p className="text-xs text-ink-soft">
-                        {remaining(need)} to request · {need.pendingQty} awaiting confirmation
-                      </p>
-                    </div>
-                  ))}
-              </div>
-            </details>
-            {onAllocate && (
-              <Button className="mt-4" variant="secondary" onClick={() => onAllocate(area.areaId)}>
-                Allocate to this area
-              </Button>
-            )}
-          </Card>
-        ))}
-      </div>
-    </section>
-  );
+
+function workspaceUsesTabs(officer: boolean, navigate?: (tab: string) => void) {
+  return !officer || !navigate;
 }

@@ -9,6 +9,8 @@ import {
 } from '../../infrastructure/MongoResourceStore';
 import { seedResources } from '../../seed';
 import { AllocationService } from '../../application/AllocationService';
+import { DispatchService } from '../../application/DispatchService';
+import { seedScenarios } from '../../seed/scenarios';
 
 const store = new MongoResourceStore();
 let h: ReturnType<typeof createModuleHarness>;
@@ -83,11 +85,284 @@ beforeEach(async () => {
     'dispatches',
     'occupancyLogs',
     'notifications',
+    'partners',
   ]) {
     await mongoose.connection.collection(`resource_${name}`).deleteMany({});
   }
   await mongoose.connection.collection('audit_logs').deleteMany({});
   await seedResources({ clock: h.clock });
+});
+
+it('UC-2 A1: requests partial stock only with consent, leaves the shortfall open and rechecks freshness', async () => {
+  const item = await store.get('inventory', itemId);
+  await store.save('inventory', itemId, { ...item, availableQty: 15 });
+  const rejected = await allocate(100);
+  expect(rejected.status).toBe(409);
+  expect(rejected.body.error.details).toEqual({ available: 15, shortfall: 85 });
+  expect((await store.get('needs', needId)).pendingQty).toBe(0);
+  const accepted = await h
+    .as(district)
+    .post(`${base}/allocation-requests`)
+    .set('Idempotency-Key', 'partial-yes')
+    .send({ ...body, acceptPartial: true });
+  expect(accepted.status).toBe(201);
+  expect(accepted.body.requestedQty).toBe(15);
+  expect((await store.get('inventory', itemId)).reservedQty).toBe(15);
+  expect((await store.get('needs', needId)).pendingQty).toBe(15);
+  expect((await allocate(1, 'empty-stock')).status).toBe(409);
+});
+async function priorityDestination() {
+  const source = await store.get('areas', 'gampaha-flood-area');
+  await store.save('areas', source.areaId, { ...source, priority: 3 });
+  await store.save('areas', 'urgent-area', {
+    ...source,
+    areaId: 'urgent-area',
+    name: 'Urgent evacuation point',
+    priority: 1,
+    location: { lat: 7.1, lng: 80 },
+  });
+  const need = await store.get('needs', needId);
+  await store.save('needs', 'urgent-water', {
+    ...need,
+    requirementId: 'urgent-water',
+    areaId: 'urgent-area',
+  });
+}
+function changeDelivery(id: string, action: string, data: object = {}, key = action) {
+  return h
+    .as(district)
+    .post(`${base}/dispatches/${id}/${action}`)
+    .set('Idempotency-Key', `change-${key}`)
+    .send(data);
+}
+it('UC-2 A3/A5: retains stock through failure, reschedules, reassigns atomically and deploys only the replacement', async () => {
+  await priorityDestination();
+  const request = await allocate(100);
+  const confirmed = await answer(request.body.requestId, { quantity: 100 });
+  const id = confirmed.body.dispatchId;
+  expect(
+    (await changeDelivery(id, 'distribution-failed', { reason: 'Access road flooded' })).body
+      .status,
+  ).toBe('DISTRIBUTION_PENDING');
+  expect((await changeDelivery(id, 'deploy')).status).toBe(409);
+  expect((await changeDelivery(id, 'reschedule')).body.status).toBe('DISPATCHED');
+  expect((await changeDelivery(id, 'reschedule', {}, 'repeat-reschedule')).status).toBe(409);
+  const reassigned = await changeDelivery(id, 'reassign', {
+    targetAreaId: 'urgent-area',
+    reason: 'Higher priority evacuation',
+  });
+  expect(reassigned.status).toBe(200);
+  expect((await store.get('needs', needId)).fulfilledQty).toBe(0);
+  expect((await store.get('needs', 'urgent-water')).fulfilledQty).toBe(100);
+  expect(await store.get('inventory', itemId)).toMatchObject({ availableQty: 400, reservedQty: 0 });
+  expect(await store.get('dispatches', id)).toMatchObject({
+    status: 'REASSIGNED',
+    replacementDispatchId: reassigned.body.dispatchId,
+  });
+  expect(reassigned.body.history[0].action).toBe('reassigned-from');
+  expect((await changeDelivery(id, 'deploy', {}, 'old-arrival')).status).toBe(409);
+  expect(
+    (await changeDelivery(reassigned.body.dispatchId, 'deploy', {}, 'new-arrival')).status,
+  ).toBe(200);
+  expect(h.events.ofType('AllocationDeployed')[0].affectedAreaId).toBe('urgent-area');
+  expect(
+    (
+      await changeDelivery(
+        reassigned.body.dispatchId,
+        'distribution-failed',
+        { reason: 'Late failure' },
+        'late',
+      )
+    ).status,
+  ).toBe(409);
+  expect(
+    (
+      await changeDelivery(
+        id,
+        'reassign',
+        { targetAreaId: 'urgent-area', reason: 'Again' },
+        'repeat-reassign',
+      )
+    ).status,
+  ).toBe(409);
+  expect(
+    (await h.as(owner).get(`${base}/notifications`)).body.some((n: { message: string }) =>
+      n.message.includes('reassigned'),
+    ),
+  ).toBe(true);
+  expect(
+    (await changeDelivery(id, 'distribution-failed', { reason: ' ' }, 'empty-reason')).status,
+  ).toBe(400);
+});
+it('UC-2 A3/BR1: refuses wrong district, event, priority or matching need without moving fulfilment', async () => {
+  await priorityDestination();
+  const created = await allocate(100);
+  const confirmed = await answer(created.body.requestId, { quantity: 100 });
+  const id = confirmed.body.dispatchId;
+  const target = await store.get('areas', 'urgent-area');
+  const attempt = (key: string) =>
+    changeDelivery(id, 'reassign', { targetAreaId: 'urgent-area', reason: 'Priority' }, key);
+  await store.save('areas', target.areaId, { ...target, priority: 3 });
+  expect((await attempt('equal')).body.error.code).toBe('REASSIGN_NOT_HIGHER_PRIORITY');
+  await store.save('areas', target.areaId, { ...target, district: 'COLOMBO' });
+  expect((await attempt('other-district')).status).toBe(403);
+  await store.save('areas', target.areaId, { ...target, disasterEventId: 'other-event' });
+  expect((await attempt('other-event')).status).toBe(409);
+  await store.save('areas', target.areaId, target);
+  const need = await store.get('needs', 'urgent-water');
+  await store.save('needs', need.requirementId, { ...need, pendingQty: 150 });
+  expect((await attempt('reserved-need')).status).toBe(409);
+  await store.save('needs', need.requirementId, { ...need, category: 'MEDICAL' });
+  expect((await attempt('no-matching-need')).status).toBe(409);
+  expect((await store.get('needs', needId)).fulfilledQty).toBe(100);
+  expect(
+    (
+      await h
+        .as(owner)
+        .post(`${base}/dispatches/${id}/reschedule`)
+        .set('Idempotency-Key', 'owner-change')
+        .send({})
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await request(h.app)
+        .post(`${base}/dispatches/${id}/reassign`)
+        .set('X-Requested-With', 'SafeZone')
+        .send({})
+    ).status,
+  ).toBe(401);
+  expect((await changeDelivery(id, 'reschedule', { reason: 'extra' }, 'extra')).status).toBe(400);
+  expect((await changeDelivery('absent', 'reschedule', {}, 'not-found')).status).toBe(404);
+});
+it('UC-2 E3: simulates stale/down partner feeds, blocks direct requests, restores data and estimates distance', async () => {
+  await priorityDestination();
+  const path = `${base}/dev/partners/org-red-cross/mode`;
+  const mode = (value: string) =>
+    h.as().put(path).set('Idempotency-Key', `uc2-feed-${value}`).send({ mode: value });
+  expect((await mode('STALE')).status).toBe(200);
+  expect((await allocate()).body.error.code).toBe('AVAILABILITY_UNKNOWN');
+  expect(
+    (await h.as(district).get(`${base}/requirements/${needId}/resources`)).body.resources[0].status,
+  ).toBe('UNKNOWN');
+  expect((await mode('DOWN')).status).toBe(200);
+  expect((await allocate(10, 'down')).status).toBe(409);
+  expect((await mode('OK')).status).toBe(200);
+  expect((await allocate(10, 'restored')).status).toBe(201);
+  const search = await h.as(district).get(`${base}/requirements/urgent-water/resources`);
+  expect(search.body.resources[0].distanceKm).toEqual(expect.any(Number));
+  expect(
+    (await h.as().get(`${base}/notifications`)).body.some((n: { message: string }) =>
+      n.message.includes('partner feed'),
+    ),
+  ).toBe(true);
+  const item = await store.get('inventory', itemId);
+  await store.save('inventory', itemId, {
+    ...item,
+    lastSyncedAt: new Date(h.clock.now().getTime() - 24 * 60 * 60_000),
+  });
+  expect((await allocate(10, 'naturally-stale')).body.error.code).toBe('AVAILABILITY_UNKNOWN');
+  expect(
+    (await h.as(district).put(path).set('Idempotency-Key', 'district-feed').send({ mode: 'OK' }))
+      .status,
+  ).toBe(403);
+  expect((await mode('INVALID')).status).toBe(400);
+  expect(
+    (
+      await h
+        .as()
+        .put(`${base}/dev/partners/missing/mode`)
+        .set('Idempotency-Key', 'missing-partner')
+        .send({ mode: 'OK' })
+    ).status,
+  ).toBe(404);
+  const production = createModuleHarness(createResourcesModule, {
+    config: { env: 'production', isProduction: true },
+  });
+  expect((await production.as().put(path).send({ mode: 'OK' })).status).toBe(404);
+});
+it('UC-2 E1: demo expiry is scoped, releases pending stock and is absent in production', async () => {
+  const created = await allocate(100);
+  const path = `${base}/dev/requests/${created.body.requestId}/expire`;
+  expect(
+    (
+      await h
+        .as({ role: 'DISTRICT_OFFICER', district: 'COLOMBO' })
+        .post(path)
+        .set('Idempotency-Key', 'wrong-expiry')
+        .send({})
+    ).status,
+  ).toBe(403);
+  expect(
+    (await h.as(district).post(path).set('Idempotency-Key', 'demo-expiry').send({})).status,
+  ).toBe(200);
+  expect(await store.get('inventory', itemId)).toMatchObject({ availableQty: 500, reservedQty: 0 });
+  expect(
+    (await h.as(district).post(path).set('Idempotency-Key', 'repeat-expiry').send({})).status,
+  ).toBe(409);
+  const production = createModuleHarness(createResourcesModule, {
+    config: { env: 'production', isProduction: true },
+  });
+  expect((await production.as(district).post(path).send({})).status).toBe(404);
+});
+it('UC-2 simulations: seeds all variant states once and preserves existing inventory and allocations', async () => {
+  const existing = await allocate(25);
+  const stock = await store.get('inventory', itemId);
+  await seedScenarios(new MongoResourceUnitOfWork(), h.clock.now());
+  await seedScenarios(new MongoResourceUnitOfWork(), h.clock.now());
+  expect(await store.get('inventory', itemId)).toEqual(stock);
+  expect((await store.get('requests', existing.body.requestId)).status).toBe('PENDING');
+  const board = await h.as(district).get(`${base}/board`);
+  expect(board.body.requests).toHaveLength(8);
+  expect(board.body.dispatches).toHaveLength(5);
+  expect(board.body.dispatches.map((d: { status: string }) => d.status)).toEqual(
+    expect.arrayContaining(['DISTRIBUTION_PENDING', 'REASSIGNED', 'DISPATCHED']),
+  );
+  const need = await store.get('needs', 'uc2-demo-gampaha-local-WATER');
+  expect(need).toMatchObject({ fulfilledQty: 50, pendingQty: 20 });
+  expect((await store.get('needs', 'uc2-demo-gampaha-priority-WATER')).fulfilledQty).toBe(20);
+  const query = await h.as(district).get(`${base}/requirements/${need.requirementId}/resources`);
+  expect(
+    query.body.resources.find(
+      (i: { resourceId: string }) => i.resourceId === 'uc2-demo-gampaha-stale',
+    ).status,
+  ).toBe('UNKNOWN');
+  expect((await store.get('inventory', 'uc2-demo-gampaha-partial')).availableQty).toBe(15);
+});
+it('UC-2 A3/BR5: a persistence failure rolls back both destination quantities and dispatch records', async () => {
+  await priorityDestination();
+  const created = await allocate(100);
+  const confirmed = await answer(created.body.requestId, { quantity: 100 });
+  const service = new DispatchService({
+    clock: h.clock,
+    ids: h.ids,
+    uow: {
+      run: (work) =>
+        new MongoResourceUnitOfWork().run((transaction) =>
+          work({
+            get: transaction.get.bind(transaction),
+            list: transaction.list.bind(transaction),
+            audit: transaction.audit.bind(transaction),
+            save: async (kind, id, value) => {
+              if (id === 'urgent-water') throw new Error('Injected persistence failure');
+              await transaction.save(kind, id, value);
+            },
+          }),
+        ),
+    },
+  });
+  await expect(
+    service.reassign(
+      { ...district, userId: 'officer', sessionId: 'session', authenticatedAt: h.clock.now() },
+      confirmed.body.dispatchId,
+      'urgent-area',
+      'Emergency',
+    ),
+  ).rejects.toThrow('Injected persistence failure');
+  expect((await store.get('needs', needId)).fulfilledQty).toBe(100);
+  expect((await store.get('needs', 'urgent-water')).fulfilledQty).toBe(0);
+  expect((await store.get('dispatches', confirmed.body.dispatchId)).status).toBe('DISPATCHED');
+  expect(await store.list('dispatches')).toHaveLength(1);
 });
 
 it('UC-2 A4: allocates an army team through its liaison and restores availability after its assignment', async () => {

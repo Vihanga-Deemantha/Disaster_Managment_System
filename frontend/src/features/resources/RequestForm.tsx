@@ -6,6 +6,7 @@ import { SelectField, TextField } from '@/shared/ui/Field';
 import { Button } from '@/shared/ui/Button';
 import { Alert } from '@/shared/ui/Alert';
 import { Card } from '@/shared/ui/Card';
+import { ApiError } from '@/shared/api/errors';
 import { errorMessage, label, remaining, type Board, type Need, type Supply } from './types';
 export function RequestForm({
   board,
@@ -85,13 +86,21 @@ function useSupplyRequest(need: Need, onSaved: () => void) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [partial, setPartial] = useState<{ available: number; shortfall: number } | null>(null);
   const supply = stock.data?.resources.find((s) => s.resourceId === resourceId);
-  const maximum = Math.min(remaining(need), supply?.availableQty ?? 0);
+  const maximum = remaining(need);
   const wholeUnits = need.resourceType === 'RESCUE_TEAM' || need.resourceType === 'SHELTER';
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (!supply || Number(quantity) <= 0 || Number(quantity) > maximum) {
+  async function submit(e?: FormEvent, acceptPartial = false) {
+    e?.preventDefault();
+    if (invalidSelection(supply, Number(quantity), maximum)) {
       setError('Choose available stock and a quantity within the remaining need.');
+      return;
+    }
+    if (needsPartial(supply!, Number(quantity), acceptPartial)) {
+      setPartial({
+        available: supply!.availableQty,
+        shortfall: Number(quantity) - supply!.availableQty,
+      });
       return;
     }
     setBusy(true);
@@ -102,7 +111,7 @@ function useSupplyRequest(need: Need, onSaved: () => void) {
         module: 'resources',
         method: 'POST',
         url: '/api/resources/allocation-requests',
-        body: { requirementId: need.requirementId, resourceId, quantity: Number(quantity) },
+        body: requestBody(need.requirementId, resourceId, Number(quantity), acceptPartial),
       });
       setNotice(
         result.queued
@@ -110,10 +119,13 @@ function useSupplyRequest(need: Need, onSaved: () => void) {
           : 'Request sent. The resource owner has 30 minutes to respond.',
       );
       setQuantity('');
+      setPartial(null);
       stock.reload();
       onSaved();
     } catch (failure) {
-      setError(errorMessage(failure));
+      const shortfall = stockShortfall(failure);
+      if (shortfall) setPartial(shortfall);
+      else setError(errorMessage(failure));
     } finally {
       setBusy(false);
     }
@@ -131,49 +143,18 @@ function useSupplyRequest(need: Need, onSaved: () => void) {
     submit,
     setResource,
     setQuantity,
+    partial,
+    setPartial,
   };
 }
 function SupplyFields({ state }: { state: ReturnType<typeof useSupplyRequest> }) {
-  const {
-    stock,
-    resourceId,
-    quantity,
-    busy,
-    notice,
-    error,
-    supply,
-    maximum,
-    wholeUnits,
-    submit,
-    setResource,
-    setQuantity,
-  } = state;
+  const { stock, quantity, busy, notice, error, supply, maximum, wholeUnits, submit, setQuantity } =
+    state;
   const quantityInput = quantityAttributes(wholeUnits);
   return (
     <form onSubmit={submit} className="mt-5 space-y-4">
       <StockStatus stock={stock} />
-      <SelectField
-        label="Resource owner"
-        required
-        value={resourceId}
-        disabled={busy || !stock.data}
-        onChange={(e) => {
-          setResource(e.target.value);
-          setQuantity('');
-        }}
-      >
-        <option value="">Select an agency</option>
-        {stock.data?.resources.map((s) => (
-          <option
-            key={s.resourceId}
-            value={s.resourceId}
-            disabled={s.status !== 'AVAILABLE' || s.availableQty <= 0}
-          >
-            {s.organizationName}
-            {s.name ? ` · ${s.name}` : ''} · {s.availableQty} {s.unit} available
-          </option>
-        ))}
-      </SelectField>
+      <SupplySelection state={state} />
       {supply && (
         <div className="rounded-xl bg-paper p-4 text-sm">
           <strong>{supply.organizationName}</strong>
@@ -181,6 +162,7 @@ function SupplyFields({ state }: { state: ReturnType<typeof useSupplyRequest> })
             {supply.availableQty} {supply.unit} available · {supply.reservedQty} reserved · up to{' '}
             {maximum} can be requested.
           </p>
+          <SupplyDistance supply={supply} />
         </div>
       )}
       <TextField
@@ -191,14 +173,125 @@ function SupplyFields({ state }: { state: ReturnType<typeof useSupplyRequest> })
         required
         disabled={!supply || busy}
         value={quantity}
-        onChange={(e) => setQuantity(e.target.value)}
+        onChange={(e) => {
+          setQuantity(e.target.value);
+          state.setPartial(null);
+        }}
       />
       {error && <Alert tone="danger">{error}</Alert>}
       {notice && <Alert tone="success">{notice}</Alert>}
+      {state.partial && <PartialPrompt state={state} />}
       <Button type="submit" loading={busy} disabled={!supply || maximum <= 0}>
         Send allocation request
       </Button>
     </form>
+  );
+}
+function requestBody(
+  requirementId: string,
+  resourceId: string,
+  quantity: number,
+  acceptPartial: boolean,
+) {
+  return { requirementId, resourceId, quantity, ...(acceptPartial ? { acceptPartial: true } : {}) };
+}
+function SupplySelection({ state }: { state: ReturnType<typeof useSupplyRequest> }) {
+  return (
+    <SelectField
+      label="Resource owner"
+      required
+      value={state.resourceId}
+      disabled={state.busy || !state.stock.data}
+      onChange={(e) => {
+        state.setResource(e.target.value);
+        state.setQuantity('');
+        state.setPartial(null);
+      }}
+    >
+      <option value="">Select an agency</option>
+      <SupplyOptions supplies={state.stock.data?.resources ?? []} />
+    </SelectField>
+  );
+}
+function invalidSelection(supply: Supply | undefined, quantity: number, maximum: number) {
+  return (
+    !supply ||
+    supply.status !== 'AVAILABLE' ||
+    !Number.isFinite(quantity) ||
+    quantity <= 0 ||
+    quantity > maximum
+  );
+}
+function needsPartial(supply: Supply, quantity: number, acceptPartial: boolean) {
+  return !acceptPartial && quantity > supply.availableQty;
+}
+function stockShortfall(failure: unknown) {
+  if (failure instanceof ApiError && failure.code === 'INSUFFICIENT_QUANTITY') {
+    const available = Number(failure.details.available);
+    const shortfall = Number(failure.details.shortfall);
+    if (Number.isFinite(available) && available > 0 && Number.isFinite(shortfall))
+      return { available, shortfall };
+  }
+  return null;
+}
+function SupplyOptions({ supplies }: { supplies: Supply[] }) {
+  return supplies.map((s) => (
+    <option
+      key={s.resourceId}
+      value={s.resourceId}
+      disabled={s.status !== 'AVAILABLE' || s.availableQty <= 0}
+    >
+      {s.organizationName}
+      {s.name ? ` · ${s.name}` : ''} ·{' '}
+      {s.status === 'UNKNOWN'
+        ? 'Status unknown — partner data is stale'
+        : `${s.availableQty} ${s.unit} available`}
+    </option>
+  ));
+}
+function SupplyDistance({ supply }: { supply: Supply }) {
+  return (
+    <p className="mt-1 text-ink-soft">
+      {label(supply.organizationType)} ·{' '}
+      {supply.distanceKm !== undefined
+        ? `${supply.distanceKm} km away (straight-line estimate)`
+        : 'Distance not available'}
+    </p>
+  );
+}
+function PartialPrompt({ state }: { state: ReturnType<typeof useSupplyRequest> }) {
+  const partial = state.partial!;
+  return (
+    <div
+      role="alertdialog"
+      aria-label="Partial allocation"
+      className="rounded-xl border border-accent-300 bg-paper p-4"
+    >
+      <p className="font-bold text-navy-900">
+        Only {partial.available} available · shortfall {partial.shortfall}.
+      </p>
+      <p className="my-2 text-sm text-ink-soft">
+        Request the available quantity? The rest remains outstanding. Stock is checked again when
+        sent.
+      </p>
+      <div className="flex gap-3">
+        <Button
+          type="button"
+          loading={state.busy}
+          onClick={() => void state.submit(undefined, true)}
+        >
+          Accept partial allocation
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={state.busy}
+          onClick={() => state.setPartial(null)}
+        >
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 }
 function quantityAttributes(wholeUnits: boolean) {
