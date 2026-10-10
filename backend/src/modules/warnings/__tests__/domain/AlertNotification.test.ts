@@ -223,6 +223,53 @@ describe('UC-1 step 12 / CD-11: AlertNotification.recordAttempts', () => {
   });
 });
 
+describe('UC-1 citizen inbox: AlertNotification.deliveredAt', () => {
+  it('is unknown while nothing has got through, whatever was tried', () => {
+    const notification = aNotification();
+    expect(notification.deliveredAt()).toBeUndefined();
+
+    notification.recordAttempts([result('PUSH', 'FAILED'), result('SMS', 'UNAVAILABLE')], NOW, MAX);
+
+    expect(notification.deliveredAt()).toBeUndefined();
+  });
+
+  it('is the time of the delivered attempt, not of a failed one before or after it', () => {
+    const notification = aNotification();
+    notification.recordAttempts([result('PUSH', 'FAILED')], later(MINUTE), MAX);
+    notification.recordAttempts([result('SMS', 'DELIVERED')], later(2 * MINUTE), MAX);
+    notification.recordAttempts([result('PUSH', 'FAILED')], later(3 * MINUTE), MAX);
+
+    expect(notification.deliveredAt()).toEqual(later(2 * MINUTE));
+  });
+
+  it('is the first channel to get through, when the others follow later', () => {
+    const notification = aNotification();
+    notification.recordAttempts([result('SMS', 'DELIVERED')], later(5 * MINUTE), MAX);
+    notification.recordAttempts([result('PUSH', 'DELIVERED')], later(9 * MINUTE), MAX);
+
+    expect(notification.deliveredAt()).toEqual(later(5 * MINUTE));
+  });
+
+  it('is the earliest even when a later channel was recorded first', () => {
+    const props = aNotification().snapshot();
+    props.attempts.push(
+      { channel: 'PUSH', status: 'DELIVERED', attemptedAt: later(8 * MINUTE) },
+      { channel: 'SMS', status: 'DELIVERED', attemptedAt: later(2 * MINUTE) },
+    );
+
+    expect(AlertNotification.restore(props).deliveredAt()).toEqual(later(2 * MINUTE));
+  });
+
+  it('is a copy: changing it cannot change the notification', () => {
+    const notification = aNotification();
+    notification.recordAttempts([result('SMS', 'DELIVERED')], later(MINUTE), MAX);
+
+    notification.deliveredAt()?.setFullYear(1999);
+
+    expect(notification.deliveredAt()).toEqual(later(MINUTE));
+  });
+});
+
 describe('UC-1 E3: AlertNotification.unsettledChannels (what Retry failed re-sends)', () => {
   it('lists every channel whose latest word is not delivered, even after the budget ran out', () => {
     const notification = aNotification();

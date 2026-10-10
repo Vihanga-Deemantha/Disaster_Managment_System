@@ -1,9 +1,12 @@
 import type { ModuleContext, ModuleFactory } from '@shared/module';
 import { createWarningsDevRouter } from './api/dev.http';
+import { createMyAlertsRouter } from './api/myAlerts.http';
 import { createWarningsRouter } from './api/warnings.http';
 import { AlertDeliveryManager } from './application/AlertDeliveryManager';
 import { ChannelSelector } from './application/ChannelSelector';
+import { CitizenAlertInbox } from './application/CitizenAlertInbox';
 import { EscalationRequestHandler } from './application/EscalationRequestHandler';
+import { ReportApprovalHandler } from './application/ReportApprovalHandler';
 import { RetryPolicy } from './application/RetryPolicy';
 import { WarningController } from './application/WarningController';
 import { createSimulatedServices } from './infrastructure/channels';
@@ -38,14 +41,7 @@ export const createWarningsModule: ModuleFactory = (ctx) => {
     maxRetries: retryPolicy.maxRetries,
   });
 
-  // UC-3 step 23: a confirmed escalation becomes a draft in Pending Approvals.
-  new EscalationRequestHandler({
-    warnings,
-    events: ctx.eventBus,
-    audit: ctx.auditLog,
-    clock: ctx.clock,
-    ids: ctx.ids,
-  }).register();
+  registerReportHandoffs(warnings, ctx);
   startAutomaticRetries(controller, ctx);
 
   return {
@@ -55,6 +51,31 @@ export const createWarningsModule: ModuleFactory = (ctx) => {
     devRouter: createWarningsDevRouter(gateway, ctx),
   };
 };
+
+/** UC3 approved reports and explicit cluster escalations both become pending warning drafts. */
+function registerReportHandoffs(warnings: MongoWarningRepository, ctx: ModuleContext): void {
+  const deps = { warnings, events: ctx.eventBus, audit: ctx.auditLog, clock: ctx.clock };
+  new EscalationRequestHandler({ ...deps, ids: ctx.ids }).register();
+  new ReportApprovalHandler(deps).register();
+}
+
+/**
+ * UC-1, the citizen's side: `GET /api/me/alerts`, what the mobile app's Alerts tab polls. It reads the
+ * same warnings and notifications the officer's side writes, and has its own mount point (`/api/me`)
+ * because the officer's routes are guarded for DMC Officers as a whole.
+ */
+export const createCitizenAlertsModule: ModuleFactory = (ctx) => ({
+  name: 'citizen-alerts',
+  mountPath: '/api/me',
+  router: createMyAlertsRouter(
+    new CitizenAlertInbox({
+      warnings: new MongoWarningRepository(),
+      notifications: new MongoAlertNotificationRepository(),
+      clock: ctx.clock,
+    }),
+    ctx,
+  ),
+});
 
 /** E3: what is due again is retried by itself, except under test, where nothing may run on a timer. */
 function startAutomaticRetries(controller: WarningController, ctx: ModuleContext): void {

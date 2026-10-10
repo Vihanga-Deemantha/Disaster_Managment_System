@@ -5,7 +5,7 @@ import { DEMO_PASSWORD, dmcHeading, signInAs, waitForServiceWorker } from './sup
  * UC-1 Issue Warning through a real browser, the real API and the seeded database: the five pending
  * warnings of the wireframe and 200 citizens. Each test uses its own warning, so they never meet.
  *   Gampaha: the main flow · Ratnapura: some pushes fail (A1) · Kegalle: every gateway down (E2)
- *   Colombo: rejected (A3) · Kalu Ganga basin: four-eyes (BR2) and offline (BR6)
+ *   Colombo: rejected (A3) · Kalu Ganga basin: offline (BR6)
  */
 const FIRST_OFFICER = 'dmc.officer@safezone.lk'; // submitted the Kalu Ganga warning
 const SECOND_OFFICER = 'dmc.officer2@safezone.lk';
@@ -13,9 +13,14 @@ const SECOND_OFFICER = 'dmc.officer2@safezone.lk';
 const reviewLink = (page: Page, hazard: string, area: string) =>
   page.getByRole('link', { name: `Review the ${hazard} warning for ${area}` });
 
+/** The sidebar entry; its description is the live count ("5 waiting"). */
+const pendingLink = (page: Page) =>
+  page.getByRole('link', { name: 'Pending Approvals', exact: true });
+
 async function openReview(page: Page, hazard: string, area: string) {
   await reviewLink(page, hazard, area).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Review warning' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Review Warning' })).toBeVisible();
+  await expect(page.getByText('Warning Information')).toBeVisible();
 }
 
 async function signInAndOpen(page: Page, officer: string, hazard: string, area: string) {
@@ -45,8 +50,13 @@ async function setGateway(
   await panel.getByLabel(`${channel} gateway`).selectOption({ label: mode });
 }
 
-const channelCells = (page: Page, channel: string) =>
-  page.getByRole('row', { name: new RegExp(`^${channel}`) }).getByRole('cell');
+/** One channel's line in the Notification Summary: its name, then what it delivered and what failed. */
+const channelRow = (page: Page, channel: string) =>
+  page.getByRole('listitem').filter({ hasText: channel });
+
+/** The bar under "Citizens Reached". Its name carries the percentage, rounded down. */
+const reachedBar = (page: Page, percent: number) =>
+  page.getByRole('progressbar', { name: `${percent}% of citizens reached`, exact: true });
 
 test.afterEach(async ({ page }) => {
   // The API keeps the gateway modes in memory; leave them as the next test expects them.
@@ -67,7 +77,8 @@ test.describe('UC-1 Issue Warning', () => {
     await signInAs(page, SECOND_OFFICER);
     await expect(dmcHeading(page)).toBeVisible();
     await expect(page.getByRole('row')).toHaveCount(6);
-    await expect(page.getByText('Critical or high severity')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'High Priority' })).toBeVisible();
+    await expect(pendingLink(page)).toHaveAccessibleDescription('5 waiting');
 
     await openReview(page, 'Flood', 'Gampaha');
     await expect(page.getByText(/registered citizens live in the target area/)).toBeVisible();
@@ -90,12 +101,27 @@ test.describe('UC-1 Issue Warning', () => {
 
     await confirmIssue(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Warning issued' })).toBeVisible();
-    await expect(page.getByText('100% of citizens reached')).toBeVisible();
-    await expect(channelCells(page, 'SMS').nth(2)).toHaveText('0');
+    await expect(page.getByRole('heading', { level: 1, name: 'Warning Issued' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Warning Issued Successfully' }),
+    ).toBeVisible();
+    await expect(reachedBar(page, 100)).toBeVisible();
+    await expect(channelRow(page, 'SMS Notification')).toContainText('delivered');
+    await expect(channelRow(page, 'SMS Notification')).not.toContainText('failed');
+    await expect(channelRow(page, 'WhatsApp Notification')).toContainText('Not sent');
+    await expect(
+      page.getByText('All notifications have been delivered successfully.'),
+    ).toBeVisible();
+    await expect(pendingLink(page)).toHaveAccessibleDescription('4 waiting');
     await page.getByRole('link', { name: 'Back to Pending Approvals' }).click();
     await expect(reviewLink(page, 'Flood', 'Gampaha')).toHaveCount(0);
     await expect(page.getByRole('row')).toHaveCount(5);
+
+    await page.getByRole('link', { name: 'Issued Warnings' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Issued Warnings' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Delivery summary of the Flood warning for Gampaha' }),
+    ).toBeVisible();
   });
 
   test('BR3: a wrong password stops the issue, and nothing is sent', async ({ page }) => {
@@ -105,8 +131,8 @@ test.describe('UC-1 Issue Warning', () => {
 
     await expect(dialog.getByRole('alert')).toContainText('Invalid credentials.');
     await dialog.getByRole('button', { name: 'Cancel' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Review warning' })).toBeVisible();
-    await expect(page.getByText('Waiting for approval', { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Review Warning' })).toBeVisible();
+    await expect(page.getByText('Pending Approval', { exact: true })).toBeVisible();
   });
 
   test('A1: with some pushes failing SMS still reaches everyone, and Retry failed clears the failures', async ({
@@ -117,14 +143,14 @@ test.describe('UC-1 Issue Warning', () => {
 
     await confirmIssue(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Warning issued' })).toBeVisible();
-    await expect(page.getByText('100% of citizens reached')).toBeVisible();
-    await expect(channelCells(page, 'Push notification').nth(2)).not.toHaveText('0');
-    await expect(channelCells(page, 'SMS').nth(2)).toHaveText('0');
+    await expect(page.getByRole('heading', { level: 1, name: 'Warning Issued' })).toBeVisible();
+    await expect(reachedBar(page, 100)).toBeVisible();
+    await expect(channelRow(page, 'Push Notification')).toContainText('failed');
+    await expect(channelRow(page, 'SMS Notification')).not.toContainText('failed');
 
     await page.getByRole('button', { name: 'Retry failed' }).click();
 
-    await expect(channelCells(page, 'Push notification').nth(2)).toHaveText('0');
+    await expect(channelRow(page, 'Push Notification')).not.toContainText('failed');
     await expect(page.getByRole('button', { name: 'Retry failed' })).toBeHidden();
   });
 
@@ -137,9 +163,10 @@ test.describe('UC-1 Issue Warning', () => {
 
     await confirmIssue(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Warning issued' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Warning Issued' })).toBeVisible();
     await expect(page.getByText('Every delivery channel is unavailable')).toBeVisible();
-    await expect(page.getByText('0% of citizens reached')).toBeVisible();
+    await expect(channelRow(page, 'Push Notification')).toContainText('Not sent');
+    await expect(reachedBar(page, 0)).toBeVisible();
     const download = page.getByRole('link', { name: /Download the list of citizens not reached/ });
     await expect(download).toBeVisible();
     const csv = await page.request.get((await download.getAttribute('href')) as string);
@@ -151,7 +178,7 @@ test.describe('UC-1 Issue Warning', () => {
     await setGateway(page, 'SMS', 'Working');
     await page.getByRole('button', { name: 'Retry failed' }).click();
 
-    await expect(page.getByText('100% of citizens reached')).toBeVisible();
+    await expect(reachedBar(page, 100)).toBeVisible();
     await expect(page.getByText('Every delivery channel is unavailable')).toBeHidden();
     await expect(download).toBeHidden();
   });
@@ -168,18 +195,70 @@ test.describe('UC-1 Issue Warning', () => {
     await expect(
       page.getByText('This warning was rejected. Reason: Duplicate of the Gampaha warning'),
     ).toBeVisible();
-    await page.getByRole('link', { name: 'Back to Pending Approvals' }).click();
+    await page.getByRole('link', { name: 'Back to pending list' }).click();
     await expect(reviewLink(page, 'Flood', 'Kelani Ganga basin')).toHaveCount(0);
+
+    await page.getByRole('link', { name: 'Rejected Warnings' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Rejected Warnings' })).toBeVisible();
+    await expect(page.getByRole('row', { name: /Kelani Ganga basin/ })).toContainText(
+      'Duplicate of the Gampaha warning',
+    );
   });
 
-  test('BR2: the officer who submitted a warning cannot approve it', async ({ page }) => {
-    await signInAndOpen(page, FIRST_OFFICER, 'Flood', 'Kalu Ganga basin');
-
-    const dialog = await confirmIssue(page);
-
-    await expect(dialog.getByRole('alert')).toContainText(
-      'You submitted this warning, so a different DMC Officer must approve it.',
-    );
+  test('DMC approves a citizen report, finds its request, and issues it themselves', async ({
+    page,
+  }) => {
+    const headers = { 'X-Requested-With': 'SafeZone' };
+    const login = await page.request.post('/api/auth/login', {
+      headers,
+      data: { identifier: '0770000001', password: DEMO_PASSWORD },
+    });
+    expect(login.ok()).toBe(true);
+    const submitted = await page.request.post('/api/hazard-reports', {
+      headers,
+      multipart: {
+        clientReportId: 'e2e-approved-individual-report',
+        hazardType: 'ROAD_BLOCKAGE',
+        description: 'Road blocked by fallen trees.',
+        lat: '7.0873',
+        lng: '79.9925',
+        locationSource: 'MANUAL',
+        capturedAt: new Date().toISOString(),
+      },
+    });
+    expect(submitted.status()).toBe(201);
+    const { report } = await submitted.json();
+    const logout = await page.request.post('/api/auth/logout', { headers });
+    expect(logout.ok()).toBe(true);
+    await signInAs(page, FIRST_OFFICER);
+    await expect(dmcHeading(page)).toBeVisible();
+    const approved = await page.request.post(`/api/hazard-reports/${report.id}/verify`, {
+      headers,
+      data: {},
+    });
+    expect(approved.ok()).toBe(true);
+    await page.reload();
+    await reviewLink(page, 'Road blockage', 'Gampaha').click();
+    await expect(page.getByRole('link', { name: 'View approved report' })).toBeVisible();
+    const warningId = page.url().split('/').pop();
+    const review = await (await page.request.get(`/api/warnings/${warningId}`)).json();
+    const updated = await page.request.patch(`/api/warnings/${warningId}`, {
+      headers,
+      data: {
+        expectedVersion: review.warning.version,
+        messages: {
+          SI: 'සිංහල පණිවිඩය',
+          TA: 'தமிழ் செய்தி',
+          EN: 'Road blockage. Follow official instructions.',
+        },
+      },
+    });
+    expect(updated.ok()).toBe(true);
+    await page.reload();
+    await confirmIssue(page);
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Warning Issued', exact: true }),
+    ).toBeVisible();
   });
 
   test('BR6: offline, the list and the warning open from the saved copy, and Approve & Issue is off', async ({
@@ -188,12 +267,13 @@ test.describe('UC-1 Issue Warning', () => {
   }) => {
     await signInAndOpen(page, SECOND_OFFICER, 'Flood', 'Kalu Ganga basin');
     await waitForServiceWorker(page);
-    await expect(page.getByRole('heading', { level: 1, name: 'Review warning' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Review Warning' })).toBeVisible();
+    await expect(page.getByText('Warning Information')).toBeVisible();
 
     await context.setOffline(true);
     await page.reload();
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Review warning' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Review Warning' })).toBeVisible();
     await expect(page.getByText('You are offline. Showing saved data.')).toBeVisible();
     const approve = page.getByRole('button', { name: 'Approve & Issue' });
     await expect(approve).toBeDisabled();
@@ -201,7 +281,7 @@ test.describe('UC-1 Issue Warning', () => {
       'title',
       'Issuing needs a connection so you can see delivery results',
     );
-    await page.getByRole('link', { name: 'Back to Pending Approvals' }).first().click();
+    await page.getByRole('link', { name: 'Back to pending list' }).click();
     await expect(dmcHeading(page)).toBeVisible();
     await expect(reviewLink(page, 'Flood', 'Kalu Ganga basin')).toBeVisible();
 

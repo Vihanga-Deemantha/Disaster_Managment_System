@@ -30,6 +30,7 @@ export interface WarningDto {
   validTo: string;
   status: WarningStatus;
   submittedBy: string;
+  submittedByName?: string;
   submittedAt: string;
   approvedBy?: string;
   approvedAt?: string;
@@ -38,6 +39,7 @@ export interface WarningDto {
   rejectedAt?: string;
   rejectionReason?: string;
   sourceClusterId?: string;
+  sourceReportId?: string;
   updatedAt: string;
   version: number;
 }
@@ -81,6 +83,7 @@ export function toWarningDto(warning: Warning): WarningDto {
     validTo: state.validTo.toISOString(),
     status: state.status,
     submittedBy: state.submittedBy,
+    submittedByName: state.submittedByName,
     submittedAt: state.submittedAt.toISOString(),
     approvedBy: state.approvedBy,
     approvedAt: iso(state.approvedAt),
@@ -89,6 +92,7 @@ export function toWarningDto(warning: Warning): WarningDto {
     rejectedAt: iso(state.rejectedAt),
     rejectionReason: state.rejectionReason,
     sourceClusterId: state.sourceClusterId,
+    sourceReportId: state.sourceReportId,
     updatedAt: state.updatedAt.toISOString(),
     version: state.version,
   });

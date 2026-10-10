@@ -5,9 +5,9 @@ import {
   type HazardType,
   type Language,
 } from '@contracts/enums';
-import { HTML_LANG, type Translate } from '@/shared/i18n/I18nProvider';
+import { DATE_LOCALE, type Translate } from '@/shared/i18n/I18nProvider';
 import { translateCode } from '@/shared/i18n/translateError';
-import type { FieldIssue, IssueResult, Messages, WarningDto } from './types';
+import type { DeliveryDto, FieldIssue, IssueResult, Messages, WarningDto } from './types';
 
 /** One SMS holds 160 characters (SC1-05). Counted the way the server counts, in characters a person sees. */
 export const SMS_MAX_LENGTH = 160;
@@ -32,6 +32,31 @@ export const hasRetryableDelivery = (result: IssueResult): boolean =>
   result.failed > 0 ||
   CHANNELS.some((channel) => result.byChannel[channel].failed > 0);
 
+/**
+ * How a delivery stands, in the four ways the screen speaks about it (HCI-05a: never a flat "100%
+ * delivered"). An outage comes first, then citizens still being retried, then citizens no channel reached.
+ */
+export type DeliveryOutcome = 'OUTAGE' | 'PENDING' | 'FAILED' | 'ALL';
+
+export function deliveryOutcome({
+  result,
+  allChannelsUnavailable,
+}: Pick<DeliveryDto, 'result' | 'allChannelsUnavailable'>): DeliveryOutcome {
+  if (allChannelsUnavailable) return 'OUTAGE';
+  if (result.pendingRetry > 0) return 'PENDING';
+  return result.failed > 0 ? 'FAILED' : 'ALL';
+}
+
+/** A warning is active until its validity ends; after that the screen must not go on saying so. */
+export const validityState = (
+  warning: Pick<WarningDto, 'validTo'>,
+  now: number,
+): 'ACTIVE' | 'EXPIRED' => (Date.parse(warning.validTo) > now ? 'ACTIVE' : 'EXPIRED');
+
+/** 12458 as "12,458": a big number must be readable at a glance (written like the dates are). */
+export const formatCount = (value: number, language: Language): string =>
+  value.toLocaleString(DATE_LOCALE[language]);
+
 /** The hazards present in a list, in the app's usual order, each with how many warnings it has. */
 export const hazardCounts = (warnings: readonly WarningDto[]): [HazardType, number][] =>
   HAZARD_TYPES.map((hazard): [HazardType, number] => [
@@ -43,6 +68,46 @@ export const urgentCount = (warnings: readonly WarningDto[]): number =>
   warnings.filter((warning) => warning.severity === 'CRITICAL' || warning.severity === 'HIGH')
     .length;
 
+const DAY_MS = 86_400_000;
+
+const sameDay = (a: number, b: number): boolean =>
+  new Date(a).toDateString() === new Date(b).toDateString();
+
+/** How many came in on today's date (the officer's own calendar). */
+export const submittedTodayCount = (warnings: readonly WarningDto[], now: number): number =>
+  warnings.filter((warning) => sameDay(Date.parse(warning.submittedAt), now)).length;
+
+/** How many have been waiting for more than a day. */
+export const waitingOverADay = (warnings: readonly WarningDto[], now: number): number =>
+  warnings.filter((warning) => now - Date.parse(warning.submittedAt) > DAY_MS).length;
+
+/** How many different people submitted these. */
+export const submitterCount = (warnings: readonly WarningDto[]): number =>
+  new Set(warnings.map((warning) => warning.submittedBy)).size;
+
+/**
+ * Who submitted it, in words: the name saved with the warning, else "Duty Officer" for a draft that a Duty
+ * Officer confirmed from a UC-3 cluster (the event carries only an id), else the id itself.
+ */
+export function submitterLabel(warning: WarningDto, t: Translate): string {
+  return (
+    warning.submittedByName ??
+    (warning.sourceClusterId ? t('role.DUTY_OFFICER') : warning.submittedBy)
+  );
+}
+
+/** Everything a search can match on, lower-cased: the hazard's name, the places, the submitter, the reason. */
+export const searchText = (warning: WarningDto, t: Translate): string =>
+  [
+    t(`warnings.hazard.${warning.hazardType}`),
+    areaNames(warning),
+    submitterLabel(warning, t),
+    warning.warningId,
+    warning.rejectionReason ?? '',
+  ]
+    .join(' ')
+    .toLowerCase();
+
 /** When the longest-waiting warning was submitted (epoch milliseconds). The list must not be empty. */
 export const oldestSubmittedAt = (warnings: readonly WarningDto[]): number =>
   Math.min(...warnings.map((warning) => Date.parse(warning.submittedAt)));
@@ -52,7 +117,7 @@ export const areaNames = (warning: WarningDto): string =>
   warning.targetAreas.map((area) => area.name).join(', ');
 
 export const formatDateTime = (iso: string, language: Language): string =>
-  new Date(iso).toLocaleString(HTML_LANG[language], { dateStyle: 'medium', timeStyle: 'short' });
+  new Date(iso).toLocaleString(DATE_LOCALE[language], { dateStyle: 'medium', timeStyle: 'short' });
 
 const two = (value: number): string => String(value).padStart(2, '0');
 

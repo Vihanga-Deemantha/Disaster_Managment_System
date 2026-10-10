@@ -92,6 +92,8 @@ export interface DemoWarning {
   area: TargetAreaProps;
   /** Who submitted it. One is a DMC Officer, so the four-eyes rule (BR2) can be demonstrated. */
   submittedBy: string;
+  /** That account's display name, kept with the warning so the list can show a person, not an id. */
+  submittedByName: string;
   messages: Messages;
 }
 
@@ -120,6 +122,7 @@ export const DEMO_WARNINGS: readonly DemoWarning[] = [
     severity: 'HIGH',
     area: district('GAMPAHA', 'Gampaha'),
     submittedBy: 'usr-duty-1',
+    submittedByName: 'Duty Officer (demo)',
     messages: {
       EN: 'Flood warning for Gampaha: heavy rain is raising river levels. Move to higher ground now and follow official instructions.',
       SI: 'ගම්පහ ගංවතුර අනතුරු ඇඟවීම: අධික වර්ෂාව නිසා ගංගාවල ජල මට්ටම ඉහළ යයි. දැන්ම උස් බිම්වලට ගොස් නිල උපදෙස් පිළිපදින්න.',
@@ -132,6 +135,7 @@ export const DEMO_WARNINGS: readonly DemoWarning[] = [
     severity: 'CRITICAL',
     area: district('RATNAPURA', 'Ratnapura'),
     submittedBy: 'usr-duty-1',
+    submittedByName: 'Duty Officer (demo)',
     messages: {
       EN: 'Landslide warning for Ratnapura: slopes are unstable after days of rain. Leave steep areas now and follow official instructions.',
       SI: 'රත්නපුර නායයෑමේ අනතුරු ඇඟවීම: දින කිහිපයක වර්ෂාවෙන් පසු බෑවුම් අස්ථායී ය. බෑවුම් සහිත ප්‍රදේශවලින් දැන්ම ඉවත් වී නිල උපදෙස් පිළිපදින්න.',
@@ -150,6 +154,7 @@ export const DEMO_WARNINGS: readonly DemoWarning[] = [
       boundary: basinRing('basin-kalu'),
     },
     submittedBy: 'usr-dmc-1',
+    submittedByName: 'DMC Officer (demo)',
     messages: {
       EN: 'Flood warning for the Kalu Ganga basin: the river is expected to overflow tonight. Move family and valuables to higher ground.',
       SI: 'කළු ගඟ ද්‍රෝණියේ ගංවතුර අනතුරු ඇඟවීම: අද රාත්‍රියේ ගඟ පිටාර ගලනු ඇතැයි අපේක්ෂා කෙරේ. පවුලත් වටිනා භාණ්ඩත් උස් බිමකට ගෙන යන්න.',
@@ -168,6 +173,7 @@ export const DEMO_WARNINGS: readonly DemoWarning[] = [
       boundary: basinRing('basin-kelani'),
     },
     submittedBy: 'usr-duty-1',
+    submittedByName: 'Duty Officer (demo)',
     messages: {
       EN: 'Flood warning for the Kelani Ganga basin: the river is rising fast. Move away from the river banks and follow official instructions.',
       SI: 'කැලණි ගඟ ද්‍රෝණියේ ගංවතුර අනතුරු ඇඟවීම: ගඟේ ජල මට්ටම වේගයෙන් ඉහළ යයි. ගං ඉවුරුවලින් ඈත් වී නිල උපදෙස් පිළිපදින්න.',
@@ -180,6 +186,7 @@ export const DEMO_WARNINGS: readonly DemoWarning[] = [
     severity: 'HIGH',
     area: district('KEGALLE', 'Kegalle'),
     submittedBy: 'usr-duty-1',
+    submittedByName: 'Duty Officer (demo)',
     messages: {
       EN: 'Landslide warning for Kegalle: slopes are saturated. Avoid steep roads and cuttings, and leave at once if you see cracks or hear rumbling.',
       SI: 'කෑගල්ල නායයෑමේ අනතුරු ඇඟවීම: බෑවුම් ජලයෙන් පිරී ඇත. බෑවුම් සහිත මාර්ග වළක්වා ගන්න; ඉරිතැලීම් දුටුවහොත් හෝ ගොරවන හඬක් ඇසුණහොත් වහාම ඉවත් වන්න.',

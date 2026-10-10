@@ -70,7 +70,7 @@ function ValidityFields({ values, errors, onChange }: FieldsProps) {
       >
         {SEVERITIES.map((severity) => (
           <option key={severity} value={severity}>
-            {t(`warnings.severity.${severity}`)}
+            {t(`severity.${severity}`)}
           </option>
         ))}
       </SelectField>

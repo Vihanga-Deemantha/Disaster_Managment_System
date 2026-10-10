@@ -1,0 +1,11 @@
+{
+  "clientReportId": "m2-f7627cb8-48b2-48af-b416-fa585c8aa79e",
+  "reportId": "b071a4f1-d2ea-4c2b-b0f4-47f3ba69cc16",
+  "clusterId": "seed-cluster-kalutara",
+  "firstOutcome": "CREATED",
+  "retryOutcome": "ALREADY_RECEIVED",
+  "photoBytes": 68,
+  "officerQueueVerified": true,
+  "capturedAtPreserved": true,
+  "ownerPreserved": true
+}

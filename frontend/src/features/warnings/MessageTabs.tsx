@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { LANGUAGES, type Language } from '@contracts/enums';
 import { HTML_LANG, useT } from '@/shared/i18n/I18nProvider';
 import { Alert } from '@/shared/ui/Alert';
+import { Icon } from '@/shared/ui/Icon';
 import { SMS_MAX_LENGTH, missingLanguages, smsLength } from './format';
 import type { Messages } from './types';
 
@@ -19,7 +20,7 @@ function SmsCounter({ text }: { text: string }) {
 }
 
 /**
- * The warning text in Sinhala, Tamil and English (SC1-05, HCI-06a). A language with no text is marked
+ * The warning message in Sinhala, Tamil and English (SC1-05, HCI-06a). A language with no text is marked
  * on its tab and explained in the panel, because the warning cannot be issued without all three.
  */
 export function MessageTabs({ messages }: { messages: Messages }) {
@@ -35,9 +36,13 @@ export function MessageTabs({ messages }: { messages: Messages }) {
 
   return (
     <section aria-labelledby={`${id}-heading`} className="space-y-3">
-      <h2 id={`${id}-heading`} className="text-lg font-bold text-navy-900">
-        {t('warnings.review.textHeading')}
-      </h2>
+      <h3
+        id={`${id}-heading`}
+        className="flex items-center gap-2.5 text-[15px] font-bold text-navy-900"
+      >
+        <Icon name="fileText" size={18} className="text-ink-soft" />
+        {t('warnings.review.message')}
+      </h3>
       <div role="tablist" aria-label={t('warnings.review.languageTabs')} className="flex gap-2">
         {LANGUAGES.map((language) => (
           <button
@@ -48,7 +53,7 @@ export function MessageTabs({ messages }: { messages: Messages }) {
             aria-selected={active === language}
             aria-controls={`${id}-panel`}
             onClick={() => setActive(language)}
-            className={`min-h-11 rounded-md border px-4 text-sm font-semibold ${
+            className={`min-h-10 rounded-lg border px-4 text-sm font-semibold ${
               active === language
                 ? 'border-accent-600 bg-accent-600 text-white'
                 : 'border-line bg-white text-navy-900 hover:bg-accent-100'
@@ -62,14 +67,14 @@ export function MessageTabs({ messages }: { messages: Messages }) {
         role="tabpanel"
         id={`${id}-panel`}
         aria-labelledby={`${id}-tab-${active}`}
-        className="space-y-2 rounded-lg border border-line bg-card p-4"
+        className="space-y-2 rounded-xl bg-accent-50 p-4"
       >
         {text.trim() === '' ? (
           <Alert tone="warning">
             {t('warnings.review.missing', { language: t(`lang.${active}`) })}
           </Alert>
         ) : (
-          <p lang={HTML_LANG[active]} className="whitespace-pre-wrap text-ink">
+          <p lang={HTML_LANG[active]} className="whitespace-pre-wrap leading-relaxed text-ink">
             {text}
           </p>
         )}

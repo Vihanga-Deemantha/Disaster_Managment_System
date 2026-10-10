@@ -35,13 +35,19 @@ describe('UC-1 UCD-12a: boundsOf (what the map zooms to)', () => {
 
 describe('UC-1 screen 2: WarningMap', () => {
   it('draws nothing for a warning with no area', () => {
-    const { container } = render(<WarningMap areas={[]} label="Map" />);
+    const { container } = render(<WarningMap areas={[]} label="Map" legend="Key" />);
 
     expect(container).toBeEmptyDOMElement();
   });
 
   it('draws a district without a boundary as a circle on its centre, over street tiles', () => {
-    render(<WarningMap areas={[aDistrict()]} label="Map of the target area" />);
+    render(
+      <WarningMap
+        areas={[aDistrict()]}
+        label="Map of the target area"
+        legend="Affected area (Gampaha)"
+      />,
+    );
 
     const map = screen.getByRole('group', { name: 'Map of the target area' });
     expect(map).toBeInTheDocument();
@@ -55,8 +61,14 @@ describe('UC-1 screen 2: WarningMap', () => {
     expect(screen.queryByTestId('polygon')).not.toBeInTheDocument();
   });
 
+  it('names the red area in a key on the map, so the colour is never the only clue', () => {
+    render(<WarningMap areas={[aDistrict()]} label="Map" legend="Affected area (Gampaha)" />);
+
+    expect(screen.getByText('Affected area (Gampaha)')).toBeInTheDocument();
+  });
+
   it('draws a river basin as its real outline', () => {
-    render(<WarningMap areas={[aBasin()]} label="Map" />);
+    render(<WarningMap areas={[aBasin()]} label="Map" legend="Key" />);
 
     expect(screen.getByTestId('polygon')).toHaveAttribute(
       'data-positions',
@@ -70,14 +82,14 @@ describe('UC-1 screen 2: WarningMap', () => {
   });
 
   it('draws an empty outline as a circle, since there is nothing to outline', () => {
-    render(<WarningMap areas={[aDistrict({ boundary: [] })]} label="Map" />);
+    render(<WarningMap areas={[aDistrict({ boundary: [] })]} label="Map" legend="Key" />);
 
     expect(screen.getByTestId('circle')).toBeInTheDocument();
     expect(screen.queryByTestId('polygon')).not.toBeInTheDocument();
   });
 
   it('zooms to every area at once', () => {
-    render(<WarningMap areas={[aDistrict(), aBasin()]} label="Map" />);
+    render(<WarningMap areas={[aDistrict(), aBasin()]} label="Map" legend="Key" />);
 
     expect(screen.getAllByTestId('circle')).toHaveLength(1);
     expect(screen.getAllByTestId('polygon')).toHaveLength(1);

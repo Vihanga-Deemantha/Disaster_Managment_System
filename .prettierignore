@@ -7,3 +7,10 @@ playwright-report
 test-results
 package-lock.json
 frontend/public
+mobile/android
+mobile/ios
+mobile/.expo
+mobile/dist
+mobile/expo-env.d.ts
+# Generated mutation-test report; preserve the tool's output.
+backend/src/modules/analytics/evidence/mutation/index.html

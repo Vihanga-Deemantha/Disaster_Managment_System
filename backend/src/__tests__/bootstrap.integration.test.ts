@@ -45,9 +45,10 @@ describe('the assembled application', () => {
   it('registers every use-case module', async () => {
     const { app } = await startApplication();
 
-    expect(MODULE_FACTORIES).toHaveLength(4);
+    // Four use cases, and UC-1's citizen side (`/api/me`, the phone's Alerts tab) as its own mount.
+    expect(MODULE_FACTORIES).toHaveLength(5);
     // A placeholder module has no routes yet (404); one that is built answers 401 until you sign in.
-    for (const path of ['warnings', 'resources', 'hazard-reports', 'analytics']) {
+    for (const path of ['warnings', 'me', 'resources', 'hazard-reports', 'analytics']) {
       const res = await request(app).get(`/api/${path}/anything`);
       expect(['ROUTE_NOT_FOUND', 'UNAUTHENTICATED']).toContain(res.body.error.code);
     }

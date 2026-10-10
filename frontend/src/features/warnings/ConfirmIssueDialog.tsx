@@ -9,9 +9,10 @@ import { Alert } from '@/shared/ui/Alert';
 import { Button } from '@/shared/ui/Button';
 import { Dialog } from '@/shared/ui/Dialog';
 import { PasswordField } from '@/shared/ui/Field';
-import { SeverityBadge } from '@/shared/ui/SeverityBadge';
+import { SeverityPill } from '@/shared/ui/SeverityPill';
 import { deliveryPath, isOutage, issueWarning } from './api';
 import { areaNames } from './format';
+import { pendingChanged } from './nav';
 import type { OptionalChannel, ReviewDto } from './types';
 
 /** What is about to happen, in the officer's own words: how bad, where, to how many, on which channels. */
@@ -22,7 +23,7 @@ function ConfirmSummary({ review, channels }: { review: ReviewDto; channels: rea
     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
       <dt className="text-ink-soft">{t('warnings.confirm.severity')}</dt>
       <dd>
-        <SeverityBadge severity={warning.severity} />
+        <SeverityPill severity={warning.severity} />
       </dd>
       <dt className="text-ink-soft">{t('warnings.confirm.areas')}</dt>
       <dd className="font-semibold">{areaNames(warning)}</dd>
@@ -80,10 +81,12 @@ export function ConfirmIssueDialog({
     try {
       await reauth(password);
       await issueWarning(api, warning.warningId, optional, key);
+      pendingChanged();
       navigate(deliveryPath(warning.warningId));
     } catch (error) {
       // E2: the warning IS issued, only the gateways were down. The summary screen explains it.
       if (isOutage(error)) {
+        pendingChanged();
         navigate(deliveryPath(warning.warningId));
         return;
       }

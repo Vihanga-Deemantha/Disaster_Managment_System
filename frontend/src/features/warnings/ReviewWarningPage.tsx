@@ -10,64 +10,87 @@ import { useCachedResource } from '@/shared/offline/useCachedResource';
 import { useOnlineStatus } from '@/shared/offline/useOnlineStatus';
 import { Alert } from '@/shared/ui/Alert';
 import { Button, buttonClasses } from '@/shared/ui/Button';
-import { SeverityBadge } from '@/shared/ui/SeverityBadge';
+import { Card } from '@/shared/ui/Card';
+import { Icon } from '@/shared/ui/Icon';
+import { PageHeader } from '@/shared/ui/PageHeader';
 import { Spinner } from '@/shared/ui/Spinner';
 import { AudiencePanel } from './AudiencePanel';
 import { ConfirmIssueDialog } from './ConfirmIssueDialog';
 import { DemoTools } from './DemoGatewayPanel';
 import { EditWarningForm } from './EditWarningForm';
 import { MessageTabs } from './MessageTabs';
-import { RejectDialog } from './RejectDialog';
+import { RejectDialog, type RejectOutcome } from './RejectDialog';
+import { InfoRow, WarningFacts, WarningTitle } from './WarningFacts';
 import { WarningMap } from './WarningMap';
 import { deliveryPath, getReview } from './api';
-import { describeIssue, formatDateTime } from './format';
-import type { OptionalChannel, ReviewDto, ValidationResult, WarningDto } from './types';
+import { areaNames, describeIssue, formatDateTime, submitterLabel } from './format';
+import { pendingChanged } from './nav';
+import type {
+  OptionalChannel,
+  ReviewDto,
+  ValidationResult,
+  WarningDto,
+  WarningStatus,
+} from './types';
 
 type Mode = 'view' | 'edit' | 'reject' | 'issue';
 
-function AreaChips({ warning }: { warning: WarningDto }) {
-  const t = useT();
+/** What the warning is, then who submitted it and when. */
+function WarningInformation({ warning }: { warning: WarningDto }) {
+  const { t, language } = useI18n();
+  const submitted = Date.parse(warning.submittedAt);
   return (
-    <>
-      {warning.targetAreas.map((area) => (
-        <p key={area.areaId} className="font-semibold">
-          {area.name}
-          <span className="ml-2 rounded bg-accent-100 px-1.5 py-0.5 text-xs text-navy-900">
-            {t(`warnings.area.${area.type}`)}
-          </span>
-        </p>
-      ))}
-    </>
+    <WarningFacts warning={warning}>
+      <InfoRow label={t('warnings.review.label.submittedBy')} icon="user">
+        {submitterLabel(warning, t)}
+      </InfoRow>
+      <InfoRow label={t('warnings.review.label.submittedAt')} icon="clock">
+        {formatDateTime(warning.submittedAt, language)}
+        <span className="ml-2 text-xs font-normal text-ink-soft">
+          {relativeTime(submitted, Date.now(), HTML_LANG[language])}
+        </span>
+      </InfoRow>
+      {warning.sourceReportId && (
+        <InfoRow label={t('warnings.review.sourceReport')} icon="fileText">
+          <Link
+            to={`/hazard-reports/reports/${warning.sourceReportId}`}
+            className="text-accent-700 underline"
+          >
+            {t('warnings.review.openReport')}
+          </Link>
+        </InfoRow>
+      )}
+    </WarningFacts>
   );
 }
 
-function ReviewHeader({ warning }: { warning: WarningDto }) {
-  const { t, language } = useI18n();
-  const submitted = relativeTime(Date.parse(warning.submittedAt), Date.now(), HTML_LANG[language]);
+/** The big card on the left: title with the hazard icon, the information, and the message in three languages. */
+function WarningCard({ warning }: { warning: WarningDto }) {
+  const t = useT();
   return (
-    <header className="space-y-2">
-      <Link to="/warnings" className="text-sm font-semibold text-accent-700 underline">
-        {t('warnings.review.back')}
-      </Link>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold text-navy-900">{t('warnings.review.title')}</h1>
-        <SeverityBadge severity={warning.severity} />
-        <span className="rounded border border-line px-2 py-0.5 text-xs font-semibold">
-          {t(`warnings.status.${warning.status}`)}
-        </span>
-      </div>
-      <p className="text-lg font-semibold text-navy-900">
-        {t(`warnings.hazard.${warning.hazardType}`)}
-      </p>
-      <AreaChips warning={warning} />
-      <p className="text-sm text-ink-soft">
-        {t('warnings.review.validity', {
-          from: formatDateTime(warning.validFrom, language),
-          to: formatDateTime(warning.validTo, language),
-        })}
-      </p>
-      <p className="text-sm text-ink-soft">{t('warnings.review.submitted', { time: submitted })}</p>
-    </header>
+    <Card>
+      <WarningTitle warning={warning} />
+      <hr className="my-5 border-line-soft" />
+      <h3 className="mb-4 text-[15px] font-bold text-navy-900">{t('warnings.review.info')}</h3>
+      <WarningInformation warning={warning} />
+      <hr className="my-5 border-line-soft" />
+      <MessageTabs messages={warning.messages} />
+    </Card>
+  );
+}
+
+const STATUS_STYLES: Record<WarningStatus, string> = {
+  PENDING_APPROVAL: 'bg-danger-100 text-danger-600',
+  ISSUED: 'bg-success-100 text-success-600',
+  REJECTED: 'bg-line text-ink',
+};
+
+function StatusPill({ status }: { status: WarningStatus }) {
+  const t = useT();
+  return (
+    <span className={`rounded-xl px-4 py-2 text-sm font-bold ${STATUS_STYLES[status]}`}>
+      {t(`warnings.status.${status}`)}
+    </span>
   );
 }
 
@@ -115,50 +138,164 @@ interface ActionsProps {
   review: ReviewDto;
   online: boolean;
   userId: string;
-  onChoose: (mode: Mode) => void;
 }
 
-/**
- * Edit, Reject and Approve & Issue. A warning whose approval started but did not finish can only be
- * carried on by the officer who started it, and can no longer be edited or rejected. Issuing is off
- * while offline: the officer must see the delivery results, so it needs a connection (BR6).
- */
-function ReviewActions({ review, online, userId, onChoose }: ActionsProps) {
-  const t = useT();
+/** What the officer may do: nothing once approval has started, unless they are the one who started it. */
+function actionState({ review, userId }: Pick<ActionsProps, 'review' | 'userId'>) {
   const { warning, validation } = review;
   const approved = warning.approvedAt !== undefined;
   const mine = warning.approvedBy === userId;
-  const canApprove = validation.ok && (!approved || mine);
+  return { approved, mine, canApprove: validation.ok && (!approved || mine) };
+}
+
+/** Edit, Reject and Approve & Issue, at the top right as in the design. Issuing is off while offline (BR6). */
+function ActionButtons({
+  review,
+  online,
+  userId,
+  onChoose,
+}: ActionsProps & { onChoose: (mode: Mode) => void }) {
+  const t = useT();
+  const { approved, canApprove } = actionState({ review, userId });
   return (
-    <div className="space-y-3">
+    <div className="flex flex-wrap justify-end gap-3">
+      <Button variant="secondary" disabled={approved} onClick={() => onChoose('edit')}>
+        {t('warnings.action.edit')}
+      </Button>
+      <Button variant="secondary" disabled={approved} onClick={() => onChoose('reject')}>
+        <Icon name="x" size={16} className="text-danger-600" />
+        {t('warnings.action.reject')}
+      </Button>
+      <Button
+        disabled={!canApprove || !online}
+        title={online ? undefined : t('warnings.action.offlineTooltip')}
+        onClick={() => onChoose('issue')}
+      >
+        <Icon name="send" size={16} />
+        {t('warnings.action.approve')}
+      </Button>
+    </div>
+  );
+}
+
+/** The explanations that go with the buttons: approval half-done, or no connection to issue over. */
+function ActionNotes({ review, online, userId }: ActionsProps) {
+  const t = useT();
+  const { approved, mine } = actionState({ review, userId });
+  return (
+    <>
       {approved ? (
         <Alert tone="info">
           {t(mine ? 'warnings.review.beingIssued' : 'warnings.review.beingIssuedByOther')}
         </Alert>
       ) : null}
-      <div className="flex flex-wrap gap-3">
-        <Button variant="secondary" disabled={approved} onClick={() => onChoose('edit')}>
-          {t('warnings.action.edit')}
-        </Button>
-        <Button variant="secondary" disabled={approved} onClick={() => onChoose('reject')}>
-          {t('warnings.action.reject')}
-        </Button>
-        <Button
-          disabled={!canApprove || !online}
-          title={online ? undefined : t('warnings.action.offlineTooltip')}
-          onClick={() => onChoose('issue')}
-        >
-          {t('warnings.action.approve')}
-        </Button>
-      </div>
       {online ? null : (
         <p className="text-sm text-ink-soft">{t('warnings.action.offlineTooltip')}</p>
       )}
+    </>
+  );
+}
+
+function BackBar({
+  status,
+  syncedAt,
+  reload,
+}: {
+  status: WarningStatus;
+  syncedAt: number | undefined;
+  reload: () => void;
+}) {
+  const t = useT();
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <Link
+        to="/warnings"
+        className="flex items-center gap-2 text-sm font-semibold text-navy-900 hover:underline"
+      >
+        <Icon name="arrowLeft" size={16} />
+        {t('warnings.review.back')}
+      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <LastSynced syncedAt={syncedAt} />
+        <Button variant="ghost" onClick={reload}>
+          {t('warnings.review.reload')}
+        </Button>
+        <StatusPill status={status} />
+      </div>
     </div>
   );
 }
 
-function ReviewScreen({ review, reload }: { review: ReviewDto; reload: () => void }) {
+/** The column beside the warning: where it is on a map, and who will receive it. */
+function SidePanels({
+  review,
+  optional,
+  onToggle,
+  locked,
+}: {
+  review: ReviewDto;
+  optional: readonly OptionalChannel[];
+  onToggle: (channel: OptionalChannel) => void;
+  locked: boolean;
+}) {
+  const t = useT();
+  const { warning } = review;
+  return (
+    <div className="space-y-5">
+      <Card>
+        <h2 className="mb-4 text-[15px] font-bold text-navy-900">{t('warnings.review.map')}</h2>
+        <WarningMap
+          areas={warning.targetAreas}
+          label={t('warnings.review.mapLabel')}
+          legend={t('warnings.review.legend', { area: areaNames(warning) })}
+        />
+      </Card>
+      <Card>
+        <AudiencePanel
+          recipients={review.recipients}
+          optional={optional}
+          onToggle={onToggle}
+          locked={locked}
+        />
+      </Card>
+    </div>
+  );
+}
+
+/** The two questions that stop the page: why reject it, and are you sure you want to issue it. */
+function Dialogs({
+  mode,
+  review,
+  optional,
+  onClose,
+  onRejected,
+}: {
+  mode: Mode;
+  review: ReviewDto;
+  optional: readonly OptionalChannel[];
+  onClose: () => void;
+  onRejected: (outcome: RejectOutcome) => void;
+}) {
+  if (mode === 'reject') {
+    return (
+      <RejectDialog warningId={review.warning.warningId} onClose={onClose} onDone={onRejected} />
+    );
+  }
+  if (mode === 'issue') {
+    return <ConfirmIssueDialog review={review} optional={optional} onClose={onClose} />;
+  }
+  return null;
+}
+
+function ReviewScreen({
+  review,
+  syncedAt,
+  reload,
+}: {
+  review: ReviewDto;
+  syncedAt: number | undefined;
+  reload: () => void;
+}) {
   const t = useT();
   const online = useOnlineStatus();
   const userId = useAuth().user!.userId;
@@ -172,56 +309,58 @@ function ReviewScreen({ review, reload }: { review: ReviewDto; reload: () => voi
     setOptional((current) =>
       current.includes(channel) ? current.filter((c) => c !== channel) : [...current, channel],
     );
+  /** A queued rejection has not reached the server, so there is nothing new to read yet. */
+  const rejected = (outcome: RejectOutcome): void => {
+    close();
+    if (outcome === 'queued') {
+      setQueued(true);
+      return;
+    }
+    pendingChanged();
+    reload();
+  };
 
   return (
-    <div className="space-y-6">
-      <ReviewHeader warning={warning} />
+    <>
+      {pending ? (
+        <ActionButtons review={review} online={online} userId={userId} onChoose={setMode} />
+      ) : null}
+      <BackBar status={warning.status} syncedAt={syncedAt} reload={reload} />
       {queued ? <Alert tone="info">{t('warnings.review.queued')}</Alert> : null}
-      <WarningMap areas={warning.targetAreas} label={t('warnings.review.mapLabel')} />
-      {mode === 'edit' ? (
-        <EditWarningForm
-          warning={warning}
-          onCancel={close}
-          onSaved={(wasQueued) => {
-            setQueued(wasQueued);
-            close();
-            // Nothing has reached the server yet when the change was queued, so there is nothing new to read.
-            if (!wasQueued) reload();
-          }}
-        />
-      ) : (
-        <MessageTabs messages={warning.messages} />
-      )}
-      <AudiencePanel
-        recipients={review.recipients}
-        optional={optional}
-        onToggle={toggle}
-        locked={!pending}
-      />
       {pending ? (
         <>
           <ProblemList validation={review.validation} />
-          <ReviewActions review={review} online={online} userId={userId} onChoose={setMode} />
-          <DemoTools />
+          <ActionNotes review={review} online={online} userId={userId} />
         </>
       ) : (
         <Outcome warning={warning} />
       )}
-      {mode === 'reject' ? (
-        <RejectDialog
-          warningId={warning.warningId}
-          onClose={close}
-          onDone={(outcome) => {
-            close();
-            if (outcome === 'queued') setQueued(true);
-            else reload();
-          }}
-        />
-      ) : null}
-      {mode === 'issue' ? (
-        <ConfirmIssueDialog review={review} optional={optional} onClose={close} />
-      ) : null}
-    </div>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        {mode === 'edit' ? (
+          <EditWarningForm
+            warning={warning}
+            onCancel={close}
+            onSaved={(wasQueued) => {
+              setQueued(wasQueued);
+              close();
+              // Nothing has reached the server yet when the change was queued, so there is nothing new to read.
+              if (!wasQueued) reload();
+            }}
+          />
+        ) : (
+          <WarningCard warning={warning} />
+        )}
+        <SidePanels review={review} optional={optional} onToggle={toggle} locked={!pending} />
+      </div>
+      {pending ? <DemoTools /> : null}
+      <Dialogs
+        mode={mode}
+        review={review}
+        optional={optional}
+        onClose={close}
+        onRejected={rejected}
+      />
+    </>
   );
 }
 
@@ -238,7 +377,8 @@ export function ReviewWarningPage() {
   });
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
+      <PageHeader title={t('warnings.review.title')} subtitle={t('warnings.review.subtitle')} />
       {review.error ? (
         <Alert tone="danger">
           <span>{translateError(t, review.error)}</span>{' '}
@@ -248,17 +388,9 @@ export function ReviewWarningPage() {
         </Alert>
       ) : null}
       {review.data ? (
-        <>
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <LastSynced syncedAt={review.syncedAt} />
-            <Button variant="ghost" onClick={review.reload}>
-              {t('warnings.review.reload')}
-            </Button>
-          </div>
-          <ReviewScreen review={review.data} reload={review.reload} />
-        </>
+        <ReviewScreen review={review.data} syncedAt={review.syncedAt} reload={review.reload} />
       ) : (
-        <Link to="/warnings" className="text-sm font-semibold text-accent-700 underline">
+        <Link to="/warnings" className="text-sm font-semibold text-navy-900 underline">
           {t('warnings.review.back')}
         </Link>
       )}

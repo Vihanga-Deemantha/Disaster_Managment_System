@@ -18,6 +18,7 @@ describe('UC-1 persistence: MongoWarningRepository', () => {
   it('stores a warning and reads back exactly what was stored', async () => {
     const warning = aWarning({
       sourceClusterId: 'cluster-7',
+      sourceReportId: 'report-7',
       targetAreas: [
         aTargetArea({
           areaId: 'basin-kelani',
@@ -152,5 +153,28 @@ describe('UC-1 A2 / BR5: MongoWarningRepository.save is compare-and-set', () => 
     const raw = await mongoose.connection.collection('warnings').findOne({ _id: 'W-1' as never });
 
     expect(raw).toMatchObject({ approvedBy: 'usr-dmc-1' });
+  });
+});
+
+describe('UC-1 citizen inbox: MongoWarningRepository.findByIds', () => {
+  it('returns the warnings that exist, whatever their status, and skips ids nobody stored', async () => {
+    const issued = aWarning({ warningId: 'W-issued' });
+    issued.approve('usr-dmc-1', NOW);
+    issued.markIssued(NOW);
+    await repository.insert(issued);
+    await repository.insert(aWarning({ warningId: 'W-pending' }));
+    await repository.insert(aWarning({ warningId: 'W-other' }));
+
+    const found = await repository.findByIds(['W-issued', 'W-pending', 'W-missing']);
+
+    expect(found.map((w) => w.warningId).sort()).toEqual(['W-issued', 'W-pending']);
+    expect(found.find((w) => w.warningId === 'W-issued')?.status).toBe('ISSUED');
+    expect(found[0]?.snapshot().messages).toEqual(MESSAGES);
+  });
+
+  it('answers an empty list for an empty request', async () => {
+    await repository.insert(aWarning());
+
+    expect(await repository.findByIds([])).toEqual([]);
   });
 });

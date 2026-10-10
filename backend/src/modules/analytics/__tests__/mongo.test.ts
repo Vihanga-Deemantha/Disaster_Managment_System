@@ -66,6 +66,7 @@ describe('UC-4 projection repositories', () => {
   it('UC-4 seed: six months, ten districts, real demo organisation IDs and empty Jaffna', async () => {
     const store = new MongoAnalyticsStore();
     await seedAnalyticsStore(store, new Date('2026-10-07T09:00:00Z'));
+    // Ten district profiles across six months; the current month has seven days.
     expect(await store.list()).toHaveLength(60);
     const filter = AnalyticsFilter.create(
       {
@@ -82,6 +83,7 @@ describe('UC-4 projection repositories', () => {
     expect(allocations).toHaveLength(70);
     expect(allocations.every((row) => row.organizationId === 'org-red-cross')).toBe(true);
     expect(new Set(allocations.map((row) => row.district)).size).toBe(10);
+    expect(await store.distributionByDistrict(filter)).toHaveLength(70);
     expect(await store.countReach(filter)).toHaveLength(70);
     expect(
       await store.distributionByDistrict(

@@ -1,0 +1,179 @@
+{
+  "fixtures": true,
+  "mapBelowDialog": true,
+  "runtimeErrors": [],
+  "checks": [
+    {
+      "name": "01-dashboard",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "02-cluster",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "03-report",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "04-history",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "05-verify-dialog",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "06-reject-dialog",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "07-escalation-dialog",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "17-report-offline",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "08-dashboard-phone",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "09-cluster-phone",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "10-report-phone",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "11-history-phone",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "12-my-reports-phone",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "13-my-reports",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "18-my-reports-offline",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "14-my-reports-SI",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "14-my-reports-TA",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "15-empty",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    },
+    {
+      "name": "16-error",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "pageOverflow": false,
+      "fixture": true
+    }
+  ],
+  "historyStatusMinimumWidth": 256
+}

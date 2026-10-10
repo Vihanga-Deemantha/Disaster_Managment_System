@@ -30,7 +30,7 @@ beforeEach(async () => clearDatabase());
 const withCsrf = <T extends request.Test>(test: T): T =>
   test.set(CSRF_HEADER, CSRF_HEADER_VALUE) as T;
 
-async function startApplication(): Promise<Application> {
+async function startApplication(includeDemoWarnings = true): Promise<Application> {
   const built = await buildApplication(config, nullLogger);
   const seedContext: SeedContext = {
     logger: nullLogger,
@@ -41,7 +41,7 @@ async function startApplication(): Promise<Application> {
     demoPasswordHash: await built.auth.hasher.hash(DEFAULT_DEMO_PASSWORD),
   };
   await seedAuth(seedContext);
-  await seedWarnings(seedContext);
+  if (includeDemoWarnings) await seedWarnings(seedContext);
   return built;
 }
 
@@ -69,6 +69,58 @@ const setGateway = (agent: Agent, channel: string, mode: string) =>
   withCsrf(agent.put(`/api/dev/gateways/${channel}`)).send({ mode });
 
 describe('UC-1 end to end: a DMC Officer reviews, confirms and issues a warning', () => {
+  it.each([
+    ['duty.officer@safezone.lk', 'ROAD_BLOCKAGE'],
+    [FIRST_OFFICER, 'OTHER'],
+  ])(
+    'approved citizen report enters the DMC queue when %s approves %s',
+    async (email, hazardType) => {
+      const { app } = await startApplication(false);
+      const citizen = await signIn(app, '0770000001');
+      const officer = await signIn(app, email);
+      const dmc = email === FIRST_OFFICER ? officer : await signIn(app, FIRST_OFFICER);
+      const submitted = await withCsrf(citizen.post('/api/hazard-reports'))
+        .field('clientReportId', 'integration-report-approval')
+        .field('hazardType', hazardType)
+        .field('description', 'Confirmed hazard evidence')
+        .field('lat', '7.0873')
+        .field('lng', '79.9925')
+        .field('locationSource', 'MANUAL')
+        .field('capturedAt', new Date().toISOString());
+      expect(submitted.status).toBe(201);
+      const reportId = submitted.body.report.id as string;
+      const approved = await withCsrf(officer.post(`/api/hazard-reports/${reportId}/verify`)).send(
+        {},
+      );
+      expect(approved.status).toBe(200);
+      const list = await dmc.get('/api/warnings?status=PENDING_APPROVAL');
+      const warning = list.body.find(
+        (row: { sourceReportId?: string }) => row.sourceReportId === reportId,
+      );
+      expect(warning).toMatchObject({ hazardType, status: 'PENDING_APPROVAL' });
+      expect(await mongoose.connection.collection('alert_notifications').countDocuments()).toBe(0);
+      expect(
+        (await withCsrf(officer.post(`/api/hazard-reports/${reportId}/verify`)).send({})).status,
+      ).toBe(409);
+      expect((await dmc.get('/api/warnings?status=PENDING_APPROVAL')).body).toHaveLength(1);
+      if (email !== FIRST_OFFICER) {
+        expect((await issue(officer, warning.warningId, 'duty-issue-denied')).status).toBe(403);
+      }
+      const updated = await withCsrf(dmc.patch(`/api/warnings/${warning.warningId}`)).send({
+        expectedVersion: warning.version,
+        messages: {
+          SI: 'සිංහල පණිවිඩය',
+          TA: 'தமிழ் செய்தி',
+          EN: 'Confirmed hazard. Follow official instructions.',
+        },
+      });
+      expect(updated.status).toBe(200);
+      const issued = await issue(dmc, warning.warningId, 'report-approval-issue-key');
+      expect(issued.status).toBe(200);
+      expect(issued.body.warning.status).toBe('ISSUED');
+      expect(issued.body.result.targeted).toBeGreaterThan(0);
+    },
+  );
   it('UC-1 steps 1 to 14: lists the five pending warnings, estimates the audience, issues, and tells UC-4', async () => {
     const { app, ctx } = await startApplication();
     const issued: WarningIssued[] = [];
@@ -159,7 +211,7 @@ describe('UC-1 end to end: a DMC Officer reviews, confirms and issues a warning'
     );
   });
 
-  it('UC-1 BR2: the officer who submitted the Kalu Ganga warning cannot approve it; the other one can', async () => {
+  it('DMC policy: the submitting DMC can issue; another officer cannot issue it twice', async () => {
     const { app } = await startApplication();
     const submitter = await signIn(app, FIRST_OFFICER);
     const reviewer = await signIn(app, SECOND_OFFICER);
@@ -167,10 +219,10 @@ describe('UC-1 end to end: a DMC Officer reviews, confirms and issues a warning'
     const refused = await issue(submitter, 'warning-demo-kalutara', 'integration-key-0004');
     const allowed = await issue(reviewer, 'warning-demo-kalutara', 'integration-key-0005');
 
-    expect(refused.status).toBe(403);
-    expect(refused.body.error.code).toBe('SELF_APPROVAL_FORBIDDEN');
-    expect(allowed.status).toBe(200);
-    expect(allowed.body.result.targeted).toBeGreaterThan(0);
+    expect(refused.status).toBe(200);
+    expect(refused.body.result.targeted).toBeGreaterThan(0);
+    expect(allowed.status).toBe(409);
+    expect(allowed.body.error.code).toBe('WARNING_NOT_PENDING');
   });
 
   it('UC-1 BR1: keeps out the signed-out, and a citizen who is signed in', async () => {
@@ -186,6 +238,67 @@ describe('UC-1 end to end: a DMC Officer reviews, confirms and issues a warning'
     const res = await citizen.get('/api/warnings');
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('FORBIDDEN_ROLE');
+  });
+});
+
+describe('UC-1, the citizen’s side: GET /api/me/alerts is what the phone’s Alerts tab polls', () => {
+  /** The first Gampaha demo citizen (Sinhala, has a device token) and the first Colombo one (Tamil). */
+  const GAMPAHA_CITIZEN = '0771500001';
+  const COLOMBO_CITIZEN = '0771500061';
+
+  it('shows nothing until an officer issues the warning, then the citizen’s own alert in their language', async () => {
+    const { app } = await startApplication();
+    const citizen = await signIn(app, GAMPAHA_CITIZEN);
+    const colombo = await signIn(app, COLOMBO_CITIZEN);
+    const officer = await signIn(app, SECOND_OFFICER);
+    expect((await citizen.get('/api/me/alerts')).body.alerts).toEqual([]);
+
+    const drafted = await officer.get('/api/warnings/warning-demo-gampaha');
+    const res = await issue(officer, 'warning-demo-gampaha', 'inbox-key-0001');
+    expect(res.status).toBe(200);
+
+    const inbox = await citizen.get('/api/me/alerts');
+    expect(inbox.status).toBe(200);
+    expect(inbox.headers['cache-control']).toBe('no-store');
+    expect(inbox.body.alerts).toHaveLength(1);
+    expect(inbox.body.alerts[0]).toMatchObject({
+      warningId: 'warning-demo-gampaha',
+      language: 'SI',
+      message: drafted.body.warning.messages.SI,
+      severity: drafted.body.warning.severity,
+      hazardType: drafted.body.warning.hazardType,
+      validTo: drafted.body.warning.validTo,
+    });
+    expect(inbox.body.alerts[0].areas).toEqual([
+      { areaId: 'GAMPAHA', type: 'DISTRICT', name: 'Gampaha', district: 'GAMPAHA' },
+    ]);
+    expect(Date.parse(inbox.body.serverTime)).toBeGreaterThanOrEqual(
+      Date.parse(inbox.body.alerts[0].deliveredAt),
+    );
+    expect((await colombo.get('/api/me/alerts')).body.alerts).toEqual([]);
+  });
+
+  it('shows an alert as soon as one channel got through, even while the pushes are still failing', async () => {
+    const { app } = await startApplication();
+    const officer = await signIn(app, SECOND_OFFICER);
+    expect((await setGateway(officer, 'PUSH', 'DOWN')).status).toBe(200);
+    await issue(officer, 'warning-demo-gampaha', 'inbox-key-0002');
+    const citizen = await signIn(app, GAMPAHA_CITIZEN);
+
+    const inbox = await citizen.get('/api/me/alerts');
+
+    expect(inbox.body.alerts).toHaveLength(1);
+  });
+
+  it('keeps the signed-out and the staff out', async () => {
+    const { app } = await startApplication();
+    const officer = await signIn(app, SECOND_OFFICER);
+
+    const anonymous = await request(app).get('/api/me/alerts');
+    const staff = await officer.get('/api/me/alerts');
+
+    expect([anonymous.status, anonymous.body.error.code]).toEqual([401, 'UNAUTHENTICATED']);
+    expect([staff.status, staff.body.error.code]).toEqual([403, 'FORBIDDEN_ROLE']);
   });
 });
 

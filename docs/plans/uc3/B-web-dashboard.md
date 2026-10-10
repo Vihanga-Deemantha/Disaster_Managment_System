@@ -184,7 +184,7 @@ error.REPORT_NOT_FOUND | CLUSTER_NOT_FOUND | REPORT_ALREADY_REVIEWED | ESCALATIO
 no query string; `{ status: 'REJECTED', q: 'bridge road' }` → `?status=REJECTED&q=bridge+road` · ids are URL-encoded ·
 `reject` sends `{ reason }`.
 
-- [ ] Tests → fail → implement → pass → `npm run typecheck -w frontend` (catches a missing translation key) → commit
+- [x] Tests → fail → implement → pass → `npm run typecheck -w frontend` (catches a missing translation key) → commit
       `feat(uc3-web): api module, types and strings`.
 
 ### Task W1.2: Pure model functions
@@ -243,7 +243,7 @@ BLOCKED carrying them; CLOSED → BLOCKED; recommended + online → READY; recom
 every band / report status / cluster status (table test) · `formatTime('2026-10-07T09:02:00.000Z', 'EN')` contains
 `14:32`.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): view-model functions`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): view-model functions`.
 
 ### Task W1.3: Shared pieces and the route shell
 
@@ -311,7 +311,7 @@ when `document.visibilityState` is `hidden`, stops after unmount · routes: a du
 dashboard heading; a citizen sees "My reports"; `/hazard-reports/nope` redirects to the dashboard (all with MSW
 handlers returning `[]`).
 
-- [ ] Tests → fail → implement (screens can be one-line stubs for now) → pass → commit `feat(uc3-web): route shell and shared components`.
+- [x] Tests → fail → implement (screens can be one-line stubs for now) → pass → commit `feat(uc3-web): route shell and shared components`.
 
 ---
 
@@ -349,7 +349,7 @@ handlers returning `[]`).
 | `reloads by itself every 15 seconds while online`                         | fake timers; third cluster appears                                                 |
 | `offline: shows the saved list and when it was synced`                    | load once, `setBrowserOnline(false)`, re-render → rows still there + "Last synced" |
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): officer dashboard (step 11)`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): officer dashboard (step 11)`.
 
 ---
 
@@ -377,7 +377,7 @@ attribution="© OpenStreetMap contributors"/>` + one `<Marker>` with a `<Popup>{
 **Tests:** card with photo / without photo; offline note only when flagged; rejection reason only when rejected; link
 target.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): cluster map and report card`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): cluster map and report card`.
 
 ### Task W3.2: `ClusterDetail` with escalation confirmation
 
@@ -424,7 +424,7 @@ ESCALATION_NOT_ALLOWED` the dialog shows the translated error and `reload()` run
 | `unknown cluster shows the error state`                                                                                                                | 404 `CLUSTER_NOT_FOUND`                                                                                     |
 | `ConfirmActionDialog`: confirm calls the action once, shows busy, closes on success; failure keeps it open with the message; Esc is ignored while busy |                                                                                                             |
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): cluster detail and escalation confirmation (steps 15–16, H4)`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): cluster detail and escalation confirmation (steps 15–16, H4)`.
 
 ---
 
@@ -443,7 +443,7 @@ cleared when the dialog closes.
 **Tests:** confirm disabled while empty or whitespace · enabled with text; submits the trimmed reason · busy state
 blocks a double submit · failure stays open with the message · cancel calls `onClose` and clears the text.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): reject dialog with mandatory reason (H8, H10)`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): reject dialog with mandatory reason (H8, H10)`.
 
 ### Task W4.2: `ReportDetail`
 
@@ -482,7 +482,7 @@ blocks a double submit · failure stays open with the message · cancel calls `o
 | `a report without a photo says so`                                                           |                                                                                 |
 | `unknown report shows the error state`                                                       | 404                                                                             |
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): report verification screen (steps 12–14, A2)`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): report verification screen (steps 12–14, A2)`.
 
 ---
 
@@ -501,7 +501,7 @@ reporter type, status chip, and for rejected rows `history.rejectedBecause`. Eac
 **Tests:** lists reports newest first · choosing _Rejected_ requests `?status=REJECTED` and shows reasons ·
 searching "bridge" requests `?q=bridge` · empty state · error + retry · row link target.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): reports history`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): reports history`.
 
 ### Task W5.2: `CitizenReports` (D13)
 
@@ -514,19 +514,29 @@ rejected. Empty state `mine.empty`. No actions.
 **Tests** (`signIn(makeCitizen())`): shows the mobile-app notice and the citizen's reports with statuses · a rejected
 report shows its reason · empty state · error + retry.
 
-- [ ] Tests → fail → implement → pass → commit `feat(uc3-web): read-only my reports for citizens`.
+- [x] Tests → fail → implement → pass → commit `feat(uc3-web): read-only my reports for citizens`.
 
 ### Task W5.3: Gates and manual check
 
 - [ ] From the repo root: `npm run lint && npm run typecheck && npm test` → green, with
       `src/features/hazard-reports/**` at 100%.
-- [ ] `npm run seed` then `npm run dev`; sign in as the duty officer and walk demo steps 6–7: open Kalutara (87),
+      W5: root lint passes (one existing UC4 warning); frontend typecheck/build and all 930 frontend tests pass.
+      Root typecheck and seven shared backend password-hashing tests remain blocked by the known missing optional
+      `argon2` dependency. UC3 web and backend coverage gates pass at 100%; shared code was not changed.
+- [x] `npm run seed` then `npm run dev`; sign in as the duty officer and walk demo steps 6–7: open Kalutara (87),
       reject one report with a reason (82), verify three (→ _Escalation recommended_), confirm escalation, then sign in as
       the DMC officer and check Pending Approvals (UC1's screen; if UC1 is not merged yet, check the API log line for the
       published event instead).
-- [ ] Sign in as a demo citizen → the read-only list.
-- [ ] Screenshot every screen and state for the report; compare against your final wireframes.
-- [ ] Update the status table in `IMPLEMENTATION_PLAN.md` (W1–W5 DONE).
+- [x] Sign in as a demo citizen → the read-only list.
+- [x] Capture screen/state evidence: 21 screenshots, including mobile, empty/error and offline views, in
+      `docs/plans/uc3/evidence/w5/`. The two citizen empty/error captures use explicitly marked browser fixtures.
+- [ ] Compare against the owner's final wireframes (not present in this checkout).
+- [x] Update the status table in `IMPLEMENTATION_PLAN.md` (W1–W5 DONE).
+
+The walkthrough used an isolated `safezone_uc3_w5` database and local ports 4190/5190, preserving existing dev data.
+Playwright drove the real UI because the in-app browser connection timed out. UC1's new draft was confirmed as
+`PENDING_APPROVAL`, submitted by `usr-duty-1`, with `sourceClusterId: seed-cluster-kalutara`.
+See [W5 verification evidence](evidence/w5/README.md) for results and limitations.
 
 ---
 

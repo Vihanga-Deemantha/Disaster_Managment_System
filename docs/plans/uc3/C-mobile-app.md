@@ -1,5 +1,24 @@
 # Plan C – UC3 Mobile App (`mobile/`) – Reporter (Citizen / Community Volunteer)
 
+## Progress — 9 October 2026
+
+The authoritative phase table is [IMPLEMENTATION_PLAN.md](../../../IMPLEMENTATION_PLAN.md). The task examples below describe the original plan; their historical unchecked steps are not a current progress report.
+
+| Phase | Progress                                                                                   |
+| ----- | ------------------------------------------------------------------------------------------ |
+| M0    | DONE — foundation and installed standalone APK accepted                                    |
+| M1    | DONE — validators and journal core                                                         |
+| M2    | DONE — corrected photo upload accepted on the phone                                        |
+| M3    | DONE — sync engine, 646 passing mobile tests; commit `26aec6e`                             |
+| M4    | WIP — offline save/login/reconnect accepted on phone; closed-app OS delivery pending       |
+| M5    | DONE — owner accepted reporter history, offline/reconnect status and notification feedback |
+| M6    | DONE — automated checks passed; owner accepted manual pin and photo recovery on the phone  |
+| M7    | WIP — physical sync acceptance started; device setup and T1–T8 results pending             |
+
+See `evidence/m0` through `evidence/m4` for verification details. M4 device acceptance is tracked separately from automated implementation checks.
+
+M5 implementation and installation checks are recorded in `evidence/m5/README.md`. Its history cache is scoped per owner; queue subscriptions and server reads are coordinated by a single controller. After an offline save, the form retains its existing retry behaviour and offers **Report another hazard** explicitly, rather than automatically clearing the form.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development` or
 > `superpowers:executing-plans`. Steps use checkbox (`- [ ]`) syntax. Read `IMPLEMENTATION_PLAN.md` (decisions, REST
 > contract) and **`D-offline-sync-design.md`** first. Phases M1 and M3 need no device and no backend.
@@ -1368,6 +1387,10 @@ maps to its chip; details; a delivered-but-not-cleaned local entry is hidden; or
 
 ## Phase M4 – OS-level background sync (needs the development build)
 
+**Implementation progress — 9 October:** Native journal/photo storage, authenticated session checks, API reachability, local notifications, the module-scope OS task and signed-in foreground/reconnect triggers are implemented. The report form now saves before delivery and distinguishes a saved report from a failed storage write. Detailed verification and pending phone checks are tracked in [M4 evidence](evidence/m4/README.md).
+
+The implementation uses the existing shared API client and storage wrapper. SDK 57 multipart uploads retain the tested `expo-file-system` `File` transport from M2; the older URI-based FormData example below is illustrative and must not replace it. Reachability uses `GET /api/health` with native public-internet detection disabled so a reachable laptop API works over local Wi-Fi. Notification permission is requested only through an explained foreground button. Background restrictions are visible on My reports; the full offline report list remains M5.
+
 ### Task M4.1: Adapters and composition
 
 **Files:** Create everything under `adapters/` and `composition.ts` (not covered by unit tests – they are thin and
@@ -1523,7 +1546,7 @@ export function getHazardReportsRuntime(): HazardReportsRuntime {
 The app-wide `ApiClient` used by `SessionProvider` should be this same instance (`getHazardReportsRuntime().api`) so
 there is exactly one refresh single-flight per runtime.
 
-- [ ] Implement; `npx tsc --noEmit` clean; replace the temporary wiring from M2.3 with the runtime. Commit
+- [x] Implement; `npx tsc --noEmit` clean; replace the temporary wiring from M2.3 with the runtime. Commit
       `feat(mobile): adapters and composition root`.
 
 ### Task M4.2: The background task
@@ -1573,9 +1596,9 @@ export const triggerSyncTaskForTesting = (): Promise<boolean> =>
   BackgroundTask.triggerTaskWorkerForTestingAsync();
 ```
 
-- [ ] Confirm against the installed typings: `BackgroundTaskResult`, `BackgroundTaskStatus`, `registerTaskAsync`
+- [x] Confirm against the installed typings: `BackgroundTaskResult`, `BackgroundTaskStatus`, `registerTaskAsync`
       options (`minimumInterval` in **minutes**, minimum 15), `triggerTaskWorkerForTestingAsync`.
-- [ ] Confirm `mobile/index.ts` still imports this file **before** `expo-router/entry`, and `package.json` `main` is
+- [x] Confirm `mobile/index.ts` still imports this file **before** `expo-router/entry`, and `package.json` `main` is
       `index.ts`.
 - [ ] If any native package or plugin was added since the last build, rebuild the development client.
 - [ ] Commit `feat(mobile): OS background sync task (WorkManager / BGTaskScheduler)`.
@@ -1613,7 +1636,7 @@ export function useSyncTriggers(): void {
 vendor) should be surfaced once on _My reports_: "Background sending is turned off for Safe Zone in your phone's
 settings. Saved reports will be sent when you open the app."
 
-- [ ] On the phone: airplane mode on → submit (still the M2 screen: it will say it could not send) → airplane mode off
+- [x] On the phone: airplane mode on → submit (shows Saved on this phone) → airplane mode off
       with the app open → the entry disappears from the journal within seconds (check the server). That is trigger
       `RECONNECT`.
 - [ ] App in the background, one entry journaled → run the `adb … jobscheduler run` command from Plan D §11 → the
@@ -1694,6 +1717,8 @@ _Submit_ shows a busy state and ignores a second press while a submission is in 
 
 ## Phase M6 – Manual pin and photo recovery
 
+**9 Oct implementation and acceptance:** manual map taps/dragging, explicit GPS adjustment, permission settings, genuine last-known confirmation, map failure/reload feedback, and invalid-photo retake/continue controls are implemented. Mobile lint/typecheck, 47 suites / 736 tests with coverage, and Android export passed. The owner accepted the M6 phone checklist on APK `a1688c84-60d1-40a7-8f35-0b286600f803`; see `evidence/m6/README.md`. The offline map message preserves confirmed coordinates and never claims that an unconfirmed last-known point has been used. M6.1 and M6.2 are committed together as one phase. M7 sync acceptance and M4 closed-app delivery remain open.
+
 ### Task M6.1: `MapPin` (E1)
 
 **Files:** Create `components/MapPin.tsx`
@@ -1711,20 +1736,22 @@ In `ReportHazardScreen`: `LOCATING` → spinner line; `READY` → read-only map 
 `Linking.openSettings()` and _Try again_; "Could not get a GPS fix"), the editable map, and "Tap the map to place the
 pin."
 
-- [ ] On the phone: deny the location permission → manual pin → Submit → the web report detail says "Pinned on the map
+- [x] On the phone: deny the location permission → manual pin → Submit → the web report detail says "Pinned on the map
       by the reporter". Then allow it → GPS pin → _Adjust pin_ → source becomes MANUAL.
-- [ ] Commit `feat(mobile): manual location pin (E1)`.
+- [x] Manual location pin (E1) committed in phase commit `6dc454e`.
 
 ### Task M6.2: Photo recovery (E2)
 
-- [ ] In `PhotoField`, a photo failing `validatePickedPhoto` is **not** attached; show the reason ("Use a JPEG, PNG or
+- [x] In `PhotoField`, a photo failing `validatePickedPhoto` is **not** attached; show the reason ("Use a JPEG, PNG or
       WebP photo" / "This photo is larger than 5 MB") with _Retake_ and _Continue without photo_.
-- [ ] On the phone: pick the > 5 MB gallery image kept for the demo → message → _Continue without photo_ → Submit works.
-- [ ] Commit `feat(mobile): invalid photo recovery (E2)`.
+- [x] On the phone: pick the > 5 MB gallery image kept for the demo → message → _Continue without photo_ → Submit works.
+- [x] Invalid photo recovery (E2) committed in phase commit `6dc454e`.
 
 ---
 
 ## Phase M7 – Sync acceptance tests
+
+**9 Oct:** acceptance preparation started using the installed M6 standalone APK. API health is confirmed. The owner reports Oppo F11 Pro / Android 11 and has deferred USB testing; T1–T8 physical outcomes remain pending. Track results in `evidence/m7/README.md`. Existing automated coverage does not substitute for these device checks.
 
 - [ ] Run T1–T8 from `D-offline-sync-design.md` §11 on the real phone. Record the screen for T2, T3, T4.
 - [ ] Note the phone model, Android version and the result of each test in the report (prototype constraints

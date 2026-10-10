@@ -129,4 +129,48 @@ describe('Formatted impact exports', () => {
       (await new CsvReportExporter().export(empty)).toString().trim().split('\r\n'),
     ).toHaveLength(1);
   });
+  it('CSV safely quotes object-valued cells', () => {
+    expect(csvCell({ note: 'a "quoted" value' })).toBe('"{""note"":""a \\""quoted\\"" value""}"');
+    expect(csvCell(null)).toBe('"null"');
+  });
+  it('PDF handles an unselected event, organisation scope and zero delivery/capacity totals', () => {
+    const pages = reportPages({
+      ...model,
+      filter: { ...input, eventId: undefined, organizationId: 'org-red-cross' },
+      sections: {
+        alerts: [{ ...alert, targeted: 0, reached: 0 }],
+        occupancy: [{ ...occupancy, occupancy: 0, capacity: 0 }],
+        distribution: [],
+      },
+    }).join('\n');
+    expect(pages).toContain('Organisation scope: org-red-cross');
+    expect(pages).not.toContain('(Event:');
+    expect(pages).toContain('0.0%');
+    expect(pages).toContain('No supplies recorded');
+    expect(pages).not.toMatch(/NaN|Infinity/);
+  });
+  it('PDF renders a missing legacy supply label as an empty cell', () => {
+    const legacy = { ...dispatch, supplyCategory: undefined } as unknown as typeof dispatch;
+    const pages = reportPages({ ...model, sections: { distribution: [legacy] } }).join('\n');
+    expect(pages).toContain('Relief resource allocations');
+    expect(pages).not.toContain('undefined');
+  });
+  it.each([24, 26, 60])(
+    'PDF paginates a %s-line title without losing verification details',
+    (lines) => {
+      const pages = reportPages({
+        ...model,
+        title: Array.from({ length: lines }, (_, i) => `Title line ${i + 1}`).join('\n'),
+      });
+      expect(pages.length).toBeGreaterThan(1);
+      expect(pages.join('\n')).toContain(`Title line ${lines}`);
+      expect(pages.join('\n')).toContain('Report verification');
+      expect(pages.join('\n')).toContain('Content SHA-256: abc123');
+    },
+  );
+  it('PDF wraps long unbroken identifiers and retains the last characters', () => {
+    const pages = reportPages({ ...model, title: 'X'.repeat(200) + 'END' }).join('\n');
+    expect(pages).toContain('END');
+    expect(pages).not.toContain('X'.repeat(200));
+  });
 });

@@ -469,8 +469,8 @@ describe('UC-1 steps 6 to 14: POST /api/warnings/:id/issue', () => {
   });
 });
 
-describe('UC-1 BR2: the officer who submitted a warning cannot approve it', () => {
-  it('UC-1 BR2: is refused for the submitter, and allowed for a different DMC Officer', async () => {
+describe('DMC-only issuing includes requests the DMC submitted', () => {
+  it('allows the submitting DMC, while another DMC cannot issue it a second time', async () => {
     const api = createWarningsApi({ recipients: citizens(1) });
     await api.add(aWarning({ submittedBy: OFFICER }));
 
@@ -481,10 +481,10 @@ describe('UC-1 BR2: the officer who submitted a warning cannot approve it', () =
       .set(IDEMPOTENCY_HEADER, 'issue-key-0002')
       .send({});
 
-    expect(own.status).toBe(403);
-    expect(own.body.error.code).toBe('SELF_APPROVAL_FORBIDDEN');
-    expect(other.status).toBe(200);
-    expect(other.body.warning).toMatchObject({ status: 'ISSUED', approvedBy: 'usr-dmc-2' });
+    expect(own.status).toBe(200);
+    expect(own.body.warning).toMatchObject({ status: 'ISSUED', approvedBy: OFFICER });
+    expect(other.status).toBe(409);
+    expect(other.body.error.code).toBe('WARNING_NOT_PENDING');
   });
 });
 

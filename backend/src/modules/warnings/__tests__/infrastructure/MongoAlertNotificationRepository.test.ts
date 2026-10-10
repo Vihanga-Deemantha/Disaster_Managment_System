@@ -113,3 +113,99 @@ describe('UC-1 persistence: MongoAlertNotificationRepository', () => {
     ).resolves.toBeUndefined();
   });
 });
+
+describe('UC-1 citizen inbox: MongoAlertNotificationRepository.findDeliveredByCitizen', () => {
+  const sent = (id: string, citizenId: string, warningId: string, minutes: number) => {
+    const notification = AlertNotification.create(
+      { notificationId: id, warningId, citizenId, language: 'EN', content: `text ${id}` },
+      at(minutes),
+    );
+    notification.recordAttempts([result('SMS', 'DELIVERED')], at(minutes), 3);
+    return notification;
+  };
+
+  it('lists this citizen’s delivered alerts, newest first, with their attempts', async () => {
+    await repository.insertMany([
+      sent('N-old', 'c-1', 'W-1', 1),
+      sent('N-new', 'c-1', 'W-2', 9),
+      sent('N-mid', 'c-1', 'W-3', 5),
+    ]);
+
+    const inbox = await repository.findDeliveredByCitizen('c-1', 10);
+
+    expect(inbox.map((n) => n.notificationId)).toEqual(['N-new', 'N-mid', 'N-old']);
+    expect(inbox[0]?.deliveredAt()).toEqual(at(9));
+    expect(inbox[0]?.content).toBe('text N-new');
+  });
+
+  it('never lists another citizen’s alerts', async () => {
+    await repository.insertMany([sent('N-1', 'c-1', 'W-1', 1), sent('N-2', 'c-2', 'W-1', 1)]);
+
+    expect(
+      (await repository.findDeliveredByCitizen('c-2', 10)).map((n) => n.notificationId),
+    ).toEqual(['N-2']);
+    expect(await repository.findDeliveredByCitizen('c-3', 10)).toEqual([]);
+  });
+
+  it('leaves out what has not got through: waiting for a retry, failed, or unreachable', async () => {
+    const waiting = aNotification({ id: 'N-wait', citizenId: 'c-1', warningId: 'W-1' });
+    const failed = aNotification({ id: 'N-fail', citizenId: 'c-1', warningId: 'W-2' });
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      failed.recordAttempts([result('SMS', 'FAILED')], at(1), 3);
+    }
+    waiting.recordAttempts([result('SMS', 'FAILED')], at(1), 3);
+    const unreachable = AlertNotification.unreachable(
+      {
+        notificationId: 'N-none',
+        warningId: 'W-3',
+        citizenId: 'c-1',
+        language: 'SI',
+        content: 'x',
+      },
+      at(1),
+    );
+    await repository.insertMany([waiting, failed, unreachable, sent('N-ok', 'c-1', 'W-4', 2)]);
+
+    expect(
+      (await repository.findDeliveredByCitizen('c-1', 10)).map((n) => n.notificationId),
+    ).toEqual(['N-ok']);
+  });
+
+  it('includes an alert that reached the citizen on one channel while another still waits', async () => {
+    const partial = aNotification({ id: 'N-1', citizenId: 'c-1' });
+    partial.recordAttempts([result('PUSH', 'FAILED'), result('SMS', 'DELIVERED')], at(1), 3);
+    await repository.insertMany([partial]);
+
+    expect(await repository.findDeliveredByCitizen('c-1', 10)).toHaveLength(1);
+  });
+
+  it('stops at the limit, keeping the newest', async () => {
+    await repository.insertMany([
+      sent('N-1', 'c-1', 'W-1', 1),
+      sent('N-2', 'c-1', 'W-2', 2),
+      sent('N-3', 'c-1', 'W-3', 3),
+    ]);
+
+    expect(
+      (await repository.findDeliveredByCitizen('c-1', 2)).map((n) => n.notificationId),
+    ).toEqual(['N-3', 'N-2']);
+  });
+
+  it('breaks a tie in creation time by id, so the order never changes between calls', async () => {
+    await repository.insertMany([sent('N-b', 'c-1', 'W-1', 4), sent('N-a', 'c-1', 'W-2', 4)]);
+
+    expect(
+      (await repository.findDeliveredByCitizen('c-1', 10)).map((n) => n.notificationId),
+    ).toEqual(['N-a', 'N-b']);
+  });
+
+  it('is served by an index that starts with the citizen, not by reading every notification', async () => {
+    const indexes = await AlertNotificationModel.collection.indexes();
+
+    expect(indexes.map((index) => index.key)).toContainEqual({
+      citizenId: 1,
+      overallStatus: 1,
+      createdAt: -1,
+    });
+  });
+});

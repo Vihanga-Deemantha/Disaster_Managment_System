@@ -30,6 +30,8 @@ export interface WarningDto {
   validTo: string;
   status: WarningStatus;
   submittedBy: string;
+  /** The submitter's name when the warning carries one (a snapshot taken when it was created). */
+  submittedByName?: string;
   submittedAt: string;
   approvedBy?: string;
   approvedAt?: string;
@@ -38,6 +40,7 @@ export interface WarningDto {
   rejectedAt?: string;
   rejectionReason?: string;
   sourceClusterId?: string;
+  sourceReportId?: string;
   updatedAt: string;
   version: number;
 }

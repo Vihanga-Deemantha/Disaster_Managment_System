@@ -7,6 +7,7 @@ import {
   getReview,
   isOutage,
   issueWarning,
+  listByStatus,
   listPending,
   retryFailed,
   reviewPath,
@@ -31,6 +32,15 @@ describe('the warnings API calls', () => {
     await listPending(api);
     expect(calls).toEqual([['/api/warnings?status=PENDING_APPROVAL']]);
   });
+
+  it.each(['PENDING_APPROVAL', 'ISSUED', 'REJECTED'] as const)(
+    'asks for the %s warnings of the three lists',
+    async (status) => {
+      const { api, calls } = recorder();
+      await listByStatus(api, status);
+      expect(calls).toEqual([[`/api/warnings?status=${status}`]]);
+    },
+  );
 
   it('UC-1 step 2: asks for one warning’s review', async () => {
     const { api, calls } = recorder();
