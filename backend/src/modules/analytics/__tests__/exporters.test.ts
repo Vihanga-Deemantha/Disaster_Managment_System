@@ -149,12 +149,15 @@ describe('Formatted impact exports', () => {
     expect(pages).toContain('No supplies recorded');
     expect(pages).not.toMatch(/NaN|Infinity/);
   });
-  it('PDF renders a missing legacy supply label as an empty cell', () => {
-    const legacy = { ...dispatch, supplyCategory: undefined } as unknown as typeof dispatch;
-    const pages = reportPages({ ...model, sections: { distribution: [legacy] } }).join('\n');
-    expect(pages).toContain('Relief resource allocations');
-    expect(pages).not.toContain('undefined');
-  });
+  it.each([undefined, null])(
+    'PDF renders legacy supply label %s as an empty cell',
+    (supplyCategory) => {
+      const legacy = { ...dispatch, supplyCategory } as unknown as typeof dispatch;
+      const pages = reportPages({ ...model, sections: { distribution: [legacy] } }).join('\n');
+      expect(pages).toContain('Relief resource allocations');
+      expect(pages).not.toContain('undefined');
+    },
+  );
   it.each([24, 26, 60])(
     'PDF paginates a %s-line title without losing verification details',
     (lines) => {
